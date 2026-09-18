@@ -62,6 +62,43 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
                 $this->assertNotSame('', $sugestao->place->id);
             }
         }
+
+        $primeira = $colecao->first();
+
+        // mainText converge para o mesmo valor nos dois providers: e o campo
+        // estruturado (titulo do HERE / structuredFormat.mainText do Google).
+        // description e secondaryText legitimamente diferem em pontuacao e
+        // conteudo entre providers, por isso nao sao comparados entre si aqui.
+        $this->assertSame('Avenida Paulista, 1000', $primeira->mainText);
+
+        // mainText e description tem que ser campos distintos: se um mapper
+        // colapsar o rotulo completo em mainText, esta asserção quebra mesmo
+        // que a fixture mude no futuro.
+        $this->assertNotSame($primeira->description, $primeira->mainText);
+
+        $this->assertIsString($primeira->secondaryText);
+        $this->assertNotSame('', $primeira->secondaryText);
+        $this->assertNotSame($primeira->mainText, $primeira->secondaryText);
+
+        // O contrato de place=null diverge deliberadamente por provider: o
+        // HERE tem itens chainQuery/categoryQuery, que sao refinamentos de
+        // busca (ex.: "Postos Shell") sem id resolvivel via /lookup; o Google
+        // nao tem equivalente e toda predicao carrega um placeId.
+        if ($provider === Provider::Here) {
+            $this->assertNotNull($primeira->place);
+            $temSugestaoSemPlace = array_filter(
+                $colecao->all(),
+                fn ($sugestao) => $sugestao->place === null,
+            ) !== [];
+            $this->assertTrue(
+                $temSugestaoSemPlace,
+                'Esperava ao menos uma sugestao com place null (chainQuery) para o HERE.',
+            );
+        } else {
+            foreach ($colecao as $sugestao) {
+                $this->assertNotNull($sugestao->place);
+            }
+        }
     }
 
     #[DataProvider('providers')]
