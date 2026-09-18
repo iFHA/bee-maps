@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "title": "Avenida Paulista, 1000, Sao Paulo - SP, 01310-100, Brasil",
+      "id": "here:af:streetsection:HGkDGxvQXcBcOPSQhBbMPB:CggIBCD",
+      "resultType": "houseNumber",
+      "address": {
+        "label": "Avenida Paulista, 1000, Sao Paulo - SP, 01310-100, Brasil",
+        "countryCode": "BRA",
+        "countryName": "Brasil",
+        "state": "Sao Paulo",
+        "stateCode": "SP",
+        "city": "Sao Paulo",
+        "district": "Bela Vista",
+        "street": "Avenida Paulista",
+        "postalCode": "01310-100",
+        "houseNumber": "1000"
+      },
+      "position": { "lat": -23.5615, "lng": -46.6562 },
+      "scoring": { "queryScore": 0.87 }
+    }
+  ]
+}

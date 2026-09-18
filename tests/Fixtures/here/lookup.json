@@ -1,0 +1,16 @@
+{
+  "title": "Shopping Paulista, Sao Paulo - SP, Brasil",
+  "id": "here:pds:place:076sxxxx-abcdef",
+  "resultType": "place",
+  "address": {
+    "label": "Shopping Paulista, Sao Paulo - SP, Brasil",
+    "countryName": "Brasil",
+    "stateCode": "SP",
+    "city": "Sao Paulo",
+    "district": "Paraiso",
+    "street": "Rua Treze de Maio",
+    "postalCode": "01327-000",
+    "houseNumber": "1947"
+  },
+  "position": { "lat": -23.5701, "lng": -46.6412 }
+}
