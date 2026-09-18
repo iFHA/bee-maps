@@ -2,6 +2,7 @@
 
 namespace BeeDelivery\BeeMaps;
 
+use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use Illuminate\Support\ServiceProvider;
 
 final class BeeMapsServiceProvider extends ServiceProvider
@@ -9,6 +10,12 @@ final class BeeMapsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/bee-maps.php', 'bee-maps');
+
+        $this->app->singleton(MapsHttpClient::class, fn ($app) => new MapsHttpClient(
+            $app->make(\Illuminate\Http\Client\Factory::class),
+            $app->make(\Illuminate\Contracts\Events\Dispatcher::class),
+            $app['config']->get('bee-maps.http'),
+        ));
     }
 
     public function boot(): void
