@@ -3,7 +3,7 @@
 return [
     'providers' => [
         BeeDelivery\BeeMaps\Providers\Google\GoogleProvider::class,
-        BeeDelivery\BeeMaps\Providers\Here\HereProvider::class,
+        // BeeDelivery\BeeMaps\Providers\Here\HereProvider::class, // Task 9: uncomment after implementing HereProvider
     ],
 
     'defaults' => [

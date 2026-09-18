@@ -2,6 +2,7 @@
 
 namespace BeeDelivery\BeeMaps;
 
+use BeeDelivery\BeeMaps\Providers\Google\GoogleProvider;
 use BeeDelivery\BeeMaps\Providers\ProviderRegistry;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use Illuminate\Support\ServiceProvider;
@@ -16,6 +17,12 @@ final class BeeMapsServiceProvider extends ServiceProvider
             $app->make(\Illuminate\Http\Client\Factory::class),
             $app->make(\Illuminate\Contracts\Events\Dispatcher::class),
             $app['config']->get('bee-maps.http'),
+        ));
+
+        $this->app->singleton(GoogleProvider::class, fn ($app) => new GoogleProvider(
+            $app->make(MapsHttpClient::class),
+            $app['config']->get('bee-maps.google'),
+            $app['config']->get('bee-maps.defaults.language'),
         ));
 
         $this->app->singleton(ProviderRegistry::class, fn ($app) => new ProviderRegistry(

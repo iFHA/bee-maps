@@ -1,0 +1,26 @@
+{
+  "suggestions": [
+    {
+      "placePrediction": {
+        "placeId": "ChIJ0WGkg4FEzpQRrlsz_whLqZs",
+        "text": { "text": "Avenida Paulista, 1000 - Bela Vista, Sao Paulo - SP, Brasil" },
+        "structuredFormat": {
+          "mainText": { "text": "Avenida Paulista, 1000" },
+          "secondaryText": { "text": "Bela Vista, Sao Paulo - SP, Brasil" }
+        },
+        "types": ["street_address", "geocode"]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJXXXXXXXXXXXXXXXXXXXXXXX",
+        "text": { "text": "Shopping Paulista - Sao Paulo, SP" },
+        "structuredFormat": {
+          "mainText": { "text": "Shopping Paulista" },
+          "secondaryText": { "text": "Sao Paulo, SP" }
+        },
+        "types": ["shopping_mall", "establishment"]
+      }
+    }
+  ]
+}
