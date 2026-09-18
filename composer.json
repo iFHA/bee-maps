@@ -20,7 +20,8 @@
     },
     "extra": {
         "laravel": {
-            "providers": [ "BeeDelivery\\BeeMaps\\BeeMapsServiceProvider" ]
+            "providers": [ "BeeDelivery\\BeeMaps\\BeeMapsServiceProvider" ],
+            "aliases": { "BeeMaps": "BeeDelivery\\BeeMaps\\Facades\\BeeMaps" }
         }
     },
     "config": { "sort-packages": true },

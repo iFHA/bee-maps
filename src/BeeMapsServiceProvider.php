@@ -2,6 +2,7 @@
 
 namespace BeeDelivery\BeeMaps;
 
+use BeeDelivery\BeeMaps\Providers\ProviderRegistry;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use Illuminate\Support\ServiceProvider;
 
@@ -15,6 +16,14 @@ final class BeeMapsServiceProvider extends ServiceProvider
             $app->make(\Illuminate\Http\Client\Factory::class),
             $app->make(\Illuminate\Contracts\Events\Dispatcher::class),
             $app['config']->get('bee-maps.http'),
+        ));
+
+        $this->app->singleton(ProviderRegistry::class, fn ($app) => new ProviderRegistry(
+            array_map(fn (string $classe) => $app->make($classe), $app['config']->get('bee-maps.providers', [])),
+        ));
+
+        $this->app->singleton(MapServiceFactory::class, fn ($app) => new MapServiceFactory(
+            $app->make(ProviderRegistry::class),
         ));
     }
 
