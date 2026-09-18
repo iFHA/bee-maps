@@ -80,6 +80,15 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
         $this->assertNotSame('', $primeira->secondaryText);
         $this->assertNotSame($primeira->mainText, $primeira->secondaryText);
 
+        // Google devolve secondaryText como campo estruturado; HERE o deriva
+        // removendo o prefixo do titulo do label completo — ambas estrategias
+        // legitimamente produzem valores diferentes por provider, entao pinamos.
+        if ($provider === Provider::Here) {
+            $this->assertSame('Sao Paulo - SP, 01310-100, Brasil', $primeira->secondaryText);
+        } else {
+            $this->assertSame('Bela Vista, Sao Paulo - SP, Brasil', $primeira->secondaryText);
+        }
+
         // O contrato de place=null diverge deliberadamente por provider: o
         // HERE tem itens chainQuery/categoryQuery, que sao refinamentos de
         // busca (ex.: "Postos Shell") sem id resolvivel via /lookup; o Google
