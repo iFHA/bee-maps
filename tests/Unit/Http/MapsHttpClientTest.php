@@ -70,4 +70,34 @@ final class MapsHttpClientTest extends TestCase
 
         $this->client()->post(Provider::Google, Service::Autocomplete, 'https://exemplo.test/x', ['input' => 'a']);
     }
+
+    public function test_preserva_null_quando_provider_nao_envia_codigo(): void
+    {
+        Http::fake(['exemplo.test/*' => Http::response([], 429)]);
+
+        try {
+            $this->client()->get(Provider::Google, Service::Geocoding, 'https://exemplo.test/x');
+            $this->fail('Esperava ProviderRateLimitException');
+        } catch (ProviderRateLimitException $e) {
+            $this->assertNull($e->providerCode());
+        }
+    }
+
+    public function test_converte_codigo_para_string_quando_provider_envia(): void
+    {
+        Http::fake(['exemplo.test/*' => Http::response([
+            'error' => [
+                'status' => 'PERMISSION_DENIED',
+                'message' => 'chave sem permissao',
+            ],
+        ], 403)]);
+
+        try {
+            $this->client()->get(Provider::Google, Service::Geocoding, 'https://exemplo.test/x');
+            $this->fail('Esperava ProviderAuthenticationException');
+        } catch (ProviderAuthenticationException $e) {
+            $this->assertSame('PERMISSION_DENIED', $e->providerCode());
+            $this->assertStringContainsString('chave sem permissao', $e->getMessage());
+        }
+    }
 }

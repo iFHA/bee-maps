@@ -74,11 +74,16 @@ final class MapsHttpClient
         $codigo = $corpo['error']['status'] ?? $corpo['error']['code'] ?? null;
         $mensagem = $corpo['error']['message'] ?? $resposta->reason() ?? 'falha na chamada ao provider';
 
+        // Preserva null: providerCode() é ?string justamente para distinguir
+        // "o provider não mandou código" de "mandou um código". Um (string) aqui
+        // transformaria todo ausente em '' e quebraria essa distinção.
+        $codigo = $codigo !== null ? (string) $codigo : null;
+
         return match (true) {
-            $status === 401, $status === 403 => new ProviderAuthenticationException($provider, $service, $mensagem, $status, (string) $codigo),
-            $status === 429 => new ProviderRateLimitException($provider, $service, $mensagem, $status, (string) $codigo),
-            $status >= 500 => new ProviderUnavailableException($provider, $service, $mensagem, $status, (string) $codigo),
-            default => new ProviderRequestException($provider, $service, $mensagem, $status, (string) $codigo),
+            $status === 401, $status === 403 => new ProviderAuthenticationException($provider, $service, $mensagem, $status, $codigo),
+            $status === 429 => new ProviderRateLimitException($provider, $service, $mensagem, $status, $codigo),
+            $status >= 500 => new ProviderUnavailableException($provider, $service, $mensagem, $status, $codigo),
+            default => new ProviderRequestException($provider, $service, $mensagem, $status, $codigo),
         };
     }
 }
