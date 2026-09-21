@@ -2,7 +2,7 @@
 
 SDK Laravel multi-provider de geolocalização. Google Maps e HERE atrás dos mesmos contratos, com respostas tipadas — trocar de provedor não muda o código que consome.
 
-> **Status:** `0.x`. Autocomplete e geocoding estão implementados nos dois provedores. Busca de lugares, rotas, matriz de rotas e otimização de waypoints ainda não existem (ver [Ainda não implementado](#ainda-não-implementado)). A API pública pode mudar antes do `1.0.0`.
+> **Status:** `0.x`. Autocomplete, geocoding, busca de lugares e rotas estão implementados nos dois provedores. Matriz de rotas e otimização de frota ainda não existem (ver [Ainda não implementado](#ainda-não-implementado)). A API pública pode mudar antes do `1.0.0`.
 
 ## Requisitos
 
@@ -123,6 +123,57 @@ $maps->geocoding(Provider::Here)->lookup($doGoogle);
 
 Se você grava identificadores no banco, **grave também o provedor** — ou re-geocodifique por texto ao trocar.
 
+## Busca de lugares
+
+```php
+use BeeDelivery\BeeMaps\DTOs\Requests\PlaceSearchRequest;
+
+$lugares = BeeMaps::placeSearch(Provider::Google)->search(
+    new PlaceSearchRequest('farmacia', new Coordinates(-23.5615, -46.6562)),
+);
+
+foreach ($lugares as $lugar) {
+    echo $lugar->name, ' — ', $lugar->address->formatted, PHP_EOL;
+}
+```
+
+Cada `Place` traz `place` (`?PlaceReference`), `name`, `address` (`Address` estruturado nos dois provedores) e `coordinates`.
+
+**O HERE exige contexto geográfico.** O `discover` não aceita busca sem `at` ou `in`: passe `near`, ou `region`, ou deixe `bee-maps.defaults.region` preenchido. Sem nenhum dos três, o pacote lança `InvalidRequestException` **antes** de sair para a rede, em vez de deixar o HERE responder 400. No Google os três são opcionais.
+
+## Rota
+
+```php
+use BeeDelivery\BeeMaps\DTOs\Requests\RouteRequest;
+use BeeDelivery\BeeMaps\Enums\TravelMode;
+
+$rota = BeeMaps::routing(Provider::Here)->route(new RouteRequest(
+    origin: new Coordinates(-23.5615, -46.6562),
+    destination: new Coordinates(-23.5505, -46.6425),
+    intermediates: [new Coordinates(-23.5580, -46.6500)],
+    mode: TravelMode::TwoWheeler,
+    optimizeIntermediates: true,
+    includePolyline: true,
+    includeLegs: true,
+));
+
+echo $rota->distance->kilometers(), ' km em ', $rota->duration->minutes(), ' min', PHP_EOL;
+
+// raw() para repassar ao front; coordinates() decodifica sob demanda.
+$pontos = $rota->polyline?->coordinates() ?? $rota->legs[0]->polyline->coordinates();
+```
+
+`polyline`, `legs` e `optimizedOrder` são **opt-in**: sem `includePolyline`, `includeLegs` e `optimizeIntermediates`, os dois provedores devolvem `null`, `[]` e `[]`. Pedir geometria encarece o field mask do Google e infla a resposta do HERE, então nada disso vem sem você pedir.
+
+`TravelMode` tem quatro casos, traduzidos para o vocabulário de cada API:
+
+| `TravelMode` | Google | HERE |
+|---|---|---|
+| `Drive` | `DRIVE` | `car` |
+| `TwoWheeler` | `TWO_WHEELER` | `scooter` |
+| `Bicycle` | `BICYCLE` | `bicycle` |
+| `Walk` | `WALK` | `pedestrian` |
+
 ## Códigos de país
 
 O pacote aceita ISO 3166-1 **alpha-2** (`BR`) ou **alpha-3** (`BRA`) e converte para o formato que cada API exige — o Google quer alpha-2, o HERE quer alpha-3. Um código inválido lança `InvalidRequestException` em vez de produzir um filtro que a API ignora em silêncio.
@@ -225,16 +276,39 @@ final class AutocompleteComCache implements \BeeDelivery\BeeMaps\Contracts\Servi
 
 Só 429 e 5xx são repetidos. Falhas de autenticação (401/403) **não** são — repeti-las dobraria a carga exatamente quando o provedor está bloqueando você.
 
+Todo endpoint é sobrescrevível por quem publica o config, o que permite apontar para um proxy ou corrigir uma URL sem esperar release do pacote:
+
+```php
+'google' => ['endpoints' => [
+    'autocomplete' => 'https://places.googleapis.com/v1/places:autocomplete',
+    'geocoding'    => 'https://maps.googleapis.com/maps/api/geocode/json',
+    'place_search' => 'https://places.googleapis.com/v1/places:searchText',
+    'routing'      => 'https://routes.googleapis.com/directions/v2:computeRoutes',
+]],
+
+'here' => ['endpoints' => [
+    'autosuggest'  => 'https://autosuggest.search.hereapi.com/v1/autosuggest',
+    'geocode'      => 'https://geocode.search.hereapi.com/v1/geocode',
+    'revgeocode'   => 'https://revgeocode.search.hereapi.com/v1/revgeocode',
+    'lookup'       => 'https://lookup.search.hereapi.com/v1/lookup',
+    'discover'     => 'https://discover.search.hereapi.com/v1/discover',
+    'routing'      => 'https://router.hereapi.com/v8/routes',
+    'findsequence' => 'https://wps.hereapi.com/v8/findsequence2',
+]],
+```
+
 ## Serviços disponíveis
 
 | Serviço | Google | HERE |
 |---|---|---|
 | Autocomplete | `places:autocomplete` | `/v1/autosuggest` |
 | Geocoding | Geocoding API | `/v1/geocode`, `/v1/revgeocode`, `/v1/lookup` |
+| PlaceSearch | `places:searchText` | `/v1/discover` |
+| Routing | `directions/v2:computeRoutes` | `/v8/routes` (+ `/v8/findsequence2` quando otimiza) |
 
 ### Ainda não implementado
 
-Busca de lugares, rotas, matriz de rotas e otimização de waypoints **não existem neste pacote**. Não há contrato, não há classe, e chamar não é possível.
+Matriz de rotas e otimização de frota **não existem neste pacote**. Não há contrato, não há classe, e chamar não é possível.
 
 ## Limitações conhecidas
 
@@ -244,6 +318,12 @@ Busca de lugares, rotas, matriz de rotas e otimização de waypoints **não exis
 - No Google, `administrative_area_level_2` é mapeado para `city`. No Brasil esse nível é o município; nos Estados Unidos é o *county*, e o HERE devolveria a cidade — os dois provedores discordariam.
 
 **Uma resposta malformada do HERE devolve coleção vazia** em vez de erro de mapeamento, pela mesma regra de "nenhum resultado não é erro".
+
+**`Route::polyline` é nulo no HERE quando a rota tem waypoints intermediários.** O HERE devolve uma polyline por trecho e não existe forma válida de concatenar duas *flexible polylines* como string. Nesse caso a geometria vive em `RouteLeg::polyline`. O Google sempre devolve a polyline da rota inteira.
+
+**`PlaceSearch` no Google usa o SKU Enterprise do Text Search.** O field mask pede `places.addressComponents` para que `Place::address` venha estruturado como no HERE. Quem preferir o SKU Basic remove o campo do `GooglePlaceSearchRequestMapper::fieldMask()` e passa a receber `Address` apenas com `formatted`.
+
+**Rota otimizada no HERE custa duas chamadas upstream.** O `/v8/routes` não reordena waypoints; a ordem vem da Waypoints Sequence API (`/v8/findsequence2`). As duas chamadas são agrupadas em um único `MapRequestCompleted` com `upstreamCalls: 2`, para que a comparação de latência contra o Google não atribua ao HERE uma lentidão sem causa visível. O endpoint fica em `bee-maps.here.endpoints.findsequence` porque a documentação do HERE é ambígua entre `findsequence2` e `findsequence.json`.
 
 **A suíte não roda contra Laravel 10.** O `orchestra/testbench ^8.0` só casa com versões pontuais do Laravel 10 bloqueadas por advisories de segurança. Isso afeta só o desenvolvimento do pacote — **consumidores em Laravel 10 instalam normalmente** (verificado por resolução do Composer com plataforma forçada).
 
