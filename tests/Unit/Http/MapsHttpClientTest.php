@@ -10,6 +10,7 @@ use BeeDelivery\BeeMaps\Exceptions\ProviderUnavailableException;
 use BeeDelivery\BeeMaps\Support\Events\MapRequestCompleted;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use BeeDelivery\BeeMaps\Tests\TestCase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 
@@ -98,6 +99,35 @@ final class MapsHttpClientTest extends TestCase
         } catch (ProviderAuthenticationException $e) {
             $this->assertSame('PERMISSION_DENIED', $e->providerCode());
             $this->assertStringContainsString('chave sem permissao', $e->getMessage());
+        }
+    }
+
+    public function test_falha_de_conexao_nao_vaza_credencial_na_mensagem_da_excecao(): void
+    {
+        Http::fake(function () {
+            throw new ConnectionException('cURL error 28: timed out for https://exemplo.test/v1/x?q=rua&apiKey=SEGREDO_NAO_PODE_VAZAR');
+        });
+
+        try {
+            $this->client()->get(Provider::Here, Service::Autocomplete, 'https://exemplo.test/v1/x', ['q' => 'rua', 'apiKey' => 'SEGREDO_NAO_PODE_VAZAR']);
+            $this->fail('Esperava ProviderUnavailableException');
+        } catch (ProviderUnavailableException $e) {
+            $this->assertStringNotContainsString('SEGREDO_NAO_PODE_VAZAR', $e->getMessage());
+            $this->assertStringContainsString('apiKey=[REDACTED]', $e->getMessage());
+        }
+    }
+
+    public function test_falha_de_conexao_preserva_parametro_que_apenas_contem_palavra_chave_como_substring(): void
+    {
+        Http::fake(function () {
+            throw new ConnectionException('cURL error 28: timed out for https://exemplo.test/v1/x?monkey=banana');
+        });
+
+        try {
+            $this->client()->get(Provider::Here, Service::Autocomplete, 'https://exemplo.test/v1/x', ['monkey' => 'banana']);
+            $this->fail('Esperava ProviderUnavailableException');
+        } catch (ProviderUnavailableException $e) {
+            $this->assertStringContainsString('monkey=banana', $e->getMessage());
         }
     }
 }

@@ -50,7 +50,7 @@ final class MapsHttpClient
             /** @var Response $resposta */
             $resposta = $call();
         } catch (ConnectionException $e) {
-            throw new ProviderUnavailableException($provider, $service, $e->getMessage());
+            throw new ProviderUnavailableException($provider, $service, $this->redigirCredenciais($e->getMessage()));
         }
 
         $this->events->dispatch(new MapRequestCompleted(
@@ -72,7 +72,7 @@ final class MapsHttpClient
         $status = $resposta->status();
         $corpo = $resposta->json();
         $codigo = $corpo['error']['status'] ?? $corpo['error']['code'] ?? null;
-        $mensagem = $corpo['error']['message'] ?? $resposta->reason() ?? 'falha na chamada ao provider';
+        $mensagem = $this->redigirCredenciais($corpo['error']['message'] ?? $resposta->reason() ?? 'falha na chamada ao provider');
 
         // Preserva null: providerCode() é ?string justamente para distinguir
         // "o provider não mandou código" de "mandou um código". Um (string) aqui
@@ -85,5 +85,25 @@ final class MapsHttpClient
             $status >= 500 => new ProviderUnavailableException($provider, $service, $mensagem, $status, $codigo),
             default => new ProviderRequestException($provider, $service, $mensagem, $status, $codigo),
         };
+    }
+
+    /**
+     * Redige valores de parâmetros de query que parecem credenciais (ex.: apiKey, token)
+     * em qualquer texto que possa conter a URL da requisição, mantendo o nome do
+     * parâmetro visível para não perder capacidade de diagnóstico.
+     *
+     * Guzzle só redige a senha em `user:pass@host` (Psr7\Utils::redactUserInfo); query
+     * strings com `apiKey=...` (HERE) ou `key=...` (Google) passam intactas para
+     * mensagens de exceção e, dali, para logs.
+     */
+    private function redigirCredenciais(string $texto): string
+    {
+        $parametrosCredencial = 'apiKey|api_key|key|token|access_token|signature|sig';
+
+        return preg_replace(
+            "/([?&])({$parametrosCredencial})=[^&\\s]*/i",
+            '$1$2=[REDACTED]',
+            $texto,
+        );
     }
 }
