@@ -26,6 +26,7 @@ final class BeeMapsServiceProvider extends ServiceProvider
             $app->make(MapsHttpClient::class),
             $app['config']->get('bee-maps.google'),
             $app['config']->get('bee-maps.defaults.language'),
+            $app['config']->get('bee-maps.defaults.region'),
         ));
 
         $this->app->singleton(HereProvider::class, fn ($app) => new HereProvider(

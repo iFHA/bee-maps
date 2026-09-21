@@ -20,6 +20,7 @@ final class GoogleAutocomplete implements Autocomplete
         private readonly string $url,
         private readonly string $apiKey,
         private readonly string $language,
+        private readonly string $region,
     ) {
     }
 
@@ -29,7 +30,7 @@ final class GoogleAutocomplete implements Autocomplete
             Provider::Google,
             Service::Autocomplete,
             $this->url,
-            $this->requestMapper->toPayload($request, $this->language),
+            $this->requestMapper->toPayload($request, $this->language, $this->region),
             [
                 'X-Goog-Api-Key' => $this->apiKey,
                 'X-Goog-FieldMask' => $this->requestMapper->fieldMask(),

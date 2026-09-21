@@ -30,4 +30,20 @@ final class GoogleAutocompleteTest extends TestCase
         Http::assertSent(fn ($request) => $request->hasHeader('X-Goog-Api-Key', 'chave-google-de-teste')
             && $request->hasHeader('X-Goog-FieldMask', (new GoogleAutocompleteRequestMapper())->fieldMask()));
     }
+
+    public function test_countries_vazio_usa_a_regiao_configurada_como_padrao(): void
+    {
+        Http::fake([
+            'places.googleapis.com/*' => Http::response(
+                json_decode(file_get_contents(__DIR__ . '/../Fixtures/google/autocomplete.json'), true),
+                200,
+            ),
+        ]);
+
+        $this->app->make(MapServiceFactory::class)
+            ->autocomplete(Provider::Google)
+            ->suggest(new AutocompleteRequest('Av Paulista'));
+
+        Http::assertSent(fn ($request) => $request['includedRegionCodes'] === ['BR']);
+    }
 }

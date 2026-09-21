@@ -22,6 +22,7 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
         private readonly MapsHttpClient $http,
         private readonly array $config,
         private readonly string $language,
+        private readonly string $region,
     ) {
     }
 
@@ -39,6 +40,7 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
             $this->config['endpoints']['autocomplete'],
             $this->apiKey(),
             $this->language,
+            $this->region,
         );
     }
 
