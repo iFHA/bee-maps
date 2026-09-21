@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "title": "Drogaria Sao Paulo",
+      "id": "here:pds:place:076c3nbf-1234567890abcdef",
+      "resultType": "place",
+      "address": {
+        "label": "Drogaria Sao Paulo, Avenida Paulista 1000, Sao Paulo - SP, 01310-100, Brasil",
+        "countryCode": "BRA",
+        "countryName": "Brasil",
+        "state": "Sao Paulo",
+        "stateCode": "SP",
+        "city": "Sao Paulo",
+        "district": "Bela Vista",
+        "street": "Avenida Paulista",
+        "postalCode": "01310-100",
+        "houseNumber": "1000"
+      },
+      "position": { "lat": -23.5615, "lng": -46.6562 },
+      "distance": 42
+    },
+    {
+      "title": "Farmacia Popular",
+      "id": "here:pds:place:076c3nbf-abcdef1234567890",
+      "resultType": "place",
+      "address": {
+        "label": "Farmacia Popular, Rua Augusta 500, Sao Paulo - SP, Brasil",
+        "countryCode": "BRA",
+        "countryName": "Brasil",
+        "stateCode": "SP",
+        "city": "Sao Paulo",
+        "district": "Consolacao",
+        "street": "Rua Augusta",
+        "houseNumber": "500"
+      },
+      "position": { "lat": -23.5505, "lng": -46.6425 }
+    }
+  ]
+}

@@ -5,7 +5,6 @@ namespace BeeDelivery\BeeMaps\Providers\Here\Mappers;
 use BeeDelivery\BeeMaps\DTOs\Responses\GeocodeResult;
 use BeeDelivery\BeeMaps\DTOs\Responses\GeocodeResultCollection;
 use BeeDelivery\BeeMaps\Enums\Provider;
-use BeeDelivery\BeeMaps\Support\ValueObjects\Address;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
 
@@ -19,8 +18,10 @@ final class HereGeocodeResponseMapper
      *                                calibrar este valor contra o proprio corpus de enderecos
      *                                antes de trocar de provider.
      */
-    public function __construct(private readonly float $partialThreshold = 1.0)
-    {
+    public function __construct(
+        private readonly float $partialThreshold = 1.0,
+        private readonly HereAddressMapper $enderecos = new HereAddressMapper(),
+    ) {
     }
 
     /**
@@ -40,21 +41,10 @@ final class HereGeocodeResponseMapper
 
     private function toResult(array $item): GeocodeResult
     {
-        $endereco = $item['address'] ?? [];
-        $cep = $endereco['postalCode'] ?? null;
         $score = isset($item['scoring']['queryScore']) ? (float) $item['scoring']['queryScore'] : null;
 
         return new GeocodeResult(
-            address: new Address(
-                street: $endereco['street'] ?? null,
-                number: $endereco['houseNumber'] ?? null,
-                neighborhood: $endereco['district'] ?? null,
-                city: $endereco['city'] ?? null,
-                state: $endereco['stateCode'] ?? $endereco['state'] ?? null,
-                country: $endereco['countryName'] ?? null,
-                postalCode: $cep !== null ? str_replace('-', '', $cep) : null,
-                formatted: $endereco['label'] ?? ($item['title'] ?? ''),
-            ),
+            address: $this->enderecos->fromItem($item['address'] ?? [], $item['title'] ?? ''),
             coordinates: new Coordinates(
                 (float) $item['position']['lat'],
                 (float) $item['position']['lng'],

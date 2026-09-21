@@ -43,6 +43,7 @@ return [
             'geocode'     => 'https://geocode.search.hereapi.com/v1/geocode',
             'revgeocode'  => 'https://revgeocode.search.hereapi.com/v1/revgeocode',
             'lookup'      => 'https://lookup.search.hereapi.com/v1/lookup',
+            'discover'    => 'https://discover.search.hereapi.com/v1/discover',
         ],
     ],
 ];
