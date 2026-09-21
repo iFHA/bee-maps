@@ -1,0 +1,7 @@
+# Arquivos que nao precisam ir no tarball distribuido pelo Composer.
+# Quem instala com --prefer-dist recebe so o codigo de producao.
+/tests           export-ignore
+/phpunit.xml     export-ignore
+/.superpowers    export-ignore
+/.gitattributes  export-ignore
+/.gitignore      export-ignore

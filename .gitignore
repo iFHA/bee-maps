@@ -2,3 +2,7 @@
 composer.lock
 .phpunit.cache/
 .phpunit.result.cache
+
+# Artefatos internos de execucao (planos, relatorios de revisao, ledger).
+# Nunca devem ir para um repositorio publico.
+/.superpowers/
