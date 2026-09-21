@@ -11,6 +11,17 @@ final class GeocodeResultCollection extends TypedCollection
         $this->items = array_values($items);
     }
 
+    /**
+     * @return list<GeocodeResult>
+     */
+    public function all(): array
+    {
+        return parent::all();
+    }
+
+    /**
+     * @return GeocodeResult|null
+     */
     public function first(): ?GeocodeResult
     {
         return $this->items[0] ?? null;

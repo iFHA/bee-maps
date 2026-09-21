@@ -11,6 +11,17 @@ final class SuggestionCollection extends TypedCollection
         $this->items = array_values($items);
     }
 
+    /**
+     * @return list<Suggestion>
+     */
+    public function all(): array
+    {
+        return parent::all();
+    }
+
+    /**
+     * @return Suggestion|null
+     */
     public function first(): ?Suggestion
     {
         return $this->items[0] ?? null;

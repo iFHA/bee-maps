@@ -126,9 +126,13 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
 
         $this->assertSame('Avenida Paulista', $resultado->address->street);
         $this->assertSame('1000', $resultado->address->number);
+        $this->assertSame('Bela Vista', $resultado->address->neighborhood);
         $this->assertSame('Sao Paulo', $resultado->address->city);
         $this->assertSame('SP', $resultado->address->state);
+        $this->assertSame('Brasil', $resultado->address->country);
         $this->assertSame('01310100', $resultado->address->postalCode);
+        // formatted diverge legitimamente entre providers, entao so garantimos
+        // que existe - nao pinamos um valor literal.
         $this->assertNotSame('', $resultado->address->formatted);
         $this->assertEqualsWithDelta(-23.5615, $resultado->coordinates->latitude, 0.0001);
         $this->assertIsBool($resultado->partial);
