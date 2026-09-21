@@ -28,7 +28,7 @@ final class MapsHttpClient
 
     public function get(Provider $provider, Service $service, string $url, array $query = [], array $headers = []): array
     {
-        return $this->send($provider, $service, fn () => $this->pending($headers)->get($url, $query));
+        return $this->send($provider, $service, fn () => $this->pending($headers)->get($url, $this->serializarQuery($query)));
     }
 
     public function post(Provider $provider, Service $service, string $url, array $payload, array $headers = []): array
@@ -43,6 +43,25 @@ final class MapsHttpClient
             ->timeout($this->config['timeout'])
             ->connectTimeout($this->config['connect_timeout'])
             ->retry($this->config['attempts'], $this->config['retry_delay_ms'], $this->deveTentarNovamente(...), throw: false);
+    }
+
+    /**
+     * PHP/Guzzle serializam array em query string com indices ("in[0]=a&in[1]=b"),
+     * formato que a maioria das APIs de terceiros nao aceita para repetir uma
+     * mesma chave (ex.: o filtro "in" do HERE precisa de "in=a&in=b"). Serializa
+     * manualmente cada valor de array como a mesma chave repetida.
+     */
+    private function serializarQuery(array $parametros): string
+    {
+        $partes = [];
+
+        foreach ($parametros as $chave => $valor) {
+            foreach ((array) $valor as $item) {
+                $partes[] = rawurlencode((string) $chave) . '=' . rawurlencode((string) $item);
+            }
+        }
+
+        return implode('&', $partes);
     }
 
     /**

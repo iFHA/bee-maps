@@ -30,6 +30,30 @@ final class MapsHttpClientTest extends TestCase
         $this->assertSame(['ok' => true], $resposta);
     }
 
+    public function test_valor_de_query_em_array_vira_chave_repetida_em_vez_de_indexada(): void
+    {
+        Http::fake(['exemplo.test/*' => Http::response(['ok' => true], 200)]);
+
+        $this->client()->get(
+            Provider::Here,
+            Service::Autocomplete,
+            'https://exemplo.test/x',
+            ['in' => ['circle:1,2;r=3000', 'countryCode:BRA'], 'q' => 'rua'],
+        );
+
+        Http::assertSent(function ($request): bool {
+            $url = urldecode($request->url());
+
+            $this->assertStringNotContainsString('in[0]=', $url);
+            $this->assertStringNotContainsString('in[1]=', $url);
+            $this->assertStringContainsString('in=circle:1,2;r=3000', $url);
+            $this->assertStringContainsString('in=countryCode:BRA', $url);
+            $this->assertStringContainsString('q=rua', $url);
+
+            return true;
+        });
+    }
+
     public function test_dispara_evento_com_provider_servico_e_status(): void
     {
         Event::fake([MapRequestCompleted::class]);
