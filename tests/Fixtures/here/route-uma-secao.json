@@ -1,0 +1,18 @@
+{
+  "routes": [
+    {
+      "id": "rota-de-teste-1",
+      "sections": [
+        {
+          "id": "secao-1",
+          "type": "vehicle",
+          "departure": { "place": { "type": "place", "location": { "lat": 50.10228, "lng": 8.69821 } } },
+          "arrival": { "place": { "type": "place", "location": { "lat": 50.09878, "lng": 8.68752 } } },
+          "summary": { "duration": 780, "length": 5200, "baseDuration": 700 },
+          "polyline": "BFoz5xJ67i1B1B7PzIhaxL7Y",
+          "transport": { "mode": "car" }
+        }
+      ]
+    }
+  ]
+}

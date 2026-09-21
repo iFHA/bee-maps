@@ -1,0 +1,27 @@
+{
+  "routes": [
+    {
+      "id": "rota-de-teste-2",
+      "sections": [
+        {
+          "id": "secao-1",
+          "type": "vehicle",
+          "departure": { "place": { "type": "place", "location": { "lat": 50.10228, "lng": 8.69821 } } },
+          "arrival": { "place": { "type": "place", "location": { "lat": 50.10063, "lng": 8.6915 } } },
+          "summary": { "duration": 780, "length": 5200 },
+          "polyline": "BFoz5xJ67i1B1B7PzIhaxL7Y",
+          "transport": { "mode": "car" }
+        },
+        {
+          "id": "secao-2",
+          "type": "vehicle",
+          "departure": { "place": { "type": "place", "location": { "lat": 50.10063, "lng": 8.6915 } } },
+          "arrival": { "place": { "type": "place", "location": { "lat": 50.09878, "lng": 8.68752 } } },
+          "summary": { "duration": 1050, "length": 7200 },
+          "polyline": "BFoz5xJ67i1B1B7PzIhaxL7Y",
+          "transport": { "mode": "car" }
+        }
+      ]
+    }
+  ]
+}
