@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "waypoints": [
+        { "id": "start", "lat": 50.10228, "lng": 8.69821, "sequence": 0, "estimatedArrival": null },
+        { "id": "destination2", "lat": 50.10063, "lng": 8.6915, "sequence": 1, "estimatedArrival": null },
+        { "id": "destination1", "lat": 50.1001, "lng": 8.69, "sequence": 2, "estimatedArrival": null },
+        { "id": "end", "lat": 50.09878, "lng": 8.68752, "sequence": 3, "estimatedArrival": null }
+      ],
+      "distance": "12400",
+      "time": "1830",
+      "description": "Sequencia otimizada"
+    }
+  ]
+}

@@ -46,6 +46,11 @@ return [
             'lookup'      => 'https://lookup.search.hereapi.com/v1/lookup',
             'discover'    => 'https://discover.search.hereapi.com/v1/discover',
             'routing'     => 'https://router.hereapi.com/v8/routes',
+            // Waypoints Sequence API: resolve a ordem de visita, nao a rota.
+            // O host diverge do que a secao 8 do spec registra (router.hereapi.com,
+            // que responde 404) — ver D18. Fica em config porque a doc do HERE
+            // ainda e ambigua entre `findsequence2` e `findsequence.json`.
+            'findsequence' => 'https://wps.hereapi.com/v8/findsequence2',
         ],
     ],
 ];

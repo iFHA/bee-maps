@@ -17,6 +17,7 @@ use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutosuggestRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutosuggestResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereDiscoverRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereDiscoverResponseMapper;
+use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereFindSequenceMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereGeocodeResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereRouteRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereRouteResponseMapper;
@@ -84,7 +85,9 @@ final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesG
             $this->http,
             new HereRouteRequestMapper(),
             new HereRouteResponseMapper(),
+            new HereFindSequenceMapper(),
             $this->config['endpoints']['routing'],
+            $this->config['endpoints']['findsequence'],
             $this->apiKey(),
             $this->language,
         );
