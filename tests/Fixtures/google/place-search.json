@@ -1,0 +1,33 @@
+{
+  "places": [
+    {
+      "id": "ChIJ0WGkg4FEzpQRrlsz_whLqZs",
+      "displayName": { "text": "Drogaria Sao Paulo", "languageCode": "pt-BR" },
+      "formattedAddress": "Av. Paulista, 1000 - Bela Vista, Sao Paulo - SP, 01310-100, Brasil",
+      "location": { "latitude": -23.5615, "longitude": -46.6562 },
+      "addressComponents": [
+        { "longText": "1000", "shortText": "1000", "types": ["street_number"] },
+        { "longText": "Avenida Paulista", "shortText": "Av. Paulista", "types": ["route"] },
+        { "longText": "Bela Vista", "shortText": "Bela Vista", "types": ["sublocality_level_1", "sublocality"] },
+        { "longText": "Sao Paulo", "shortText": "Sao Paulo", "types": ["administrative_area_level_2", "political"] },
+        { "longText": "Sao Paulo", "shortText": "SP", "types": ["administrative_area_level_1", "political"] },
+        { "longText": "Brasil", "shortText": "BR", "types": ["country", "political"] },
+        { "longText": "01310-100", "shortText": "01310-100", "types": ["postal_code"] }
+      ]
+    },
+    {
+      "id": "ChIJz0WGkg4FEpQRrlsz_whLqAb",
+      "displayName": { "text": "Farmacia Popular", "languageCode": "pt-BR" },
+      "formattedAddress": "R. Augusta, 500 - Consolacao, Sao Paulo - SP, Brasil",
+      "location": { "latitude": -23.5505, "longitude": -46.6425 },
+      "addressComponents": [
+        { "longText": "500", "shortText": "500", "types": ["street_number"] },
+        { "longText": "Rua Augusta", "shortText": "R. Augusta", "types": ["route"] },
+        { "longText": "Consolacao", "shortText": "Consolacao", "types": ["sublocality_level_1", "sublocality"] },
+        { "longText": "Sao Paulo", "shortText": "Sao Paulo", "types": ["administrative_area_level_2", "political"] },
+        { "longText": "Sao Paulo", "shortText": "SP", "types": ["administrative_area_level_1", "political"] },
+        { "longText": "Brasil", "shortText": "BR", "types": ["country", "political"] }
+      ]
+    }
+  ]
+}

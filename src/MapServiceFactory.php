@@ -4,8 +4,10 @@ namespace BeeDelivery\BeeMaps;
 
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesAutocomplete;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesGeocoding;
+use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesPlaceSearch;
 use BeeDelivery\BeeMaps\Contracts\Services\Autocomplete;
 use BeeDelivery\BeeMaps\Contracts\Services\Geocoding;
+use BeeDelivery\BeeMaps\Contracts\Services\PlaceSearch;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Enums\Service;
 use BeeDelivery\BeeMaps\Exceptions\ServiceNotSupportedByProviderException;
@@ -33,5 +35,14 @@ final class MapServiceFactory
         return $mapProvider instanceof ProvidesGeocoding
             ? $mapProvider->geocoding()
             : throw ServiceNotSupportedByProviderException::make($provider, Service::Geocoding);
+    }
+
+    public function placeSearch(Provider $provider): PlaceSearch
+    {
+        $mapProvider = $this->registry->get($provider);
+
+        return $mapProvider instanceof ProvidesPlaceSearch
+            ? $mapProvider->placeSearch()
+            : throw ServiceNotSupportedByProviderException::make($provider, Service::PlaceSearch);
     }
 }

@@ -23,8 +23,9 @@ return [
     'google' => [
         'key' => env('GOOGLE_MAPS_KEY'),
         'endpoints' => [
-            'autocomplete' => 'https://places.googleapis.com/v1/places:autocomplete',
-            'geocoding'    => 'https://maps.googleapis.com/maps/api/geocode/json',
+            'autocomplete'  => 'https://places.googleapis.com/v1/places:autocomplete',
+            'geocoding'     => 'https://maps.googleapis.com/maps/api/geocode/json',
+            'place_search'  => 'https://places.googleapis.com/v1/places:searchText',
         ],
     ],
 
