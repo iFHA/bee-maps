@@ -100,7 +100,7 @@ final class GoogleRouteMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route.json'), true);
 
-        $rota = (new GoogleRouteResponseMapper())->toRoute($resposta);
+        $rota = (new GoogleRouteResponseMapper())->toRoute($resposta, true, true);
 
         $this->assertSame(12400, $rota->distance->meters);
         // O Google devolve duracao como string "1830s"; o contrato e int.
@@ -114,13 +114,31 @@ final class GoogleRouteMapperTest extends TestCase
         $this->assertSame(780, $rota->legs[0]->duration->seconds);
         $this->assertEqualsWithDelta(38.5, $rota->legs[0]->origin->latitude, 0.00001);
         $this->assertEqualsWithDelta(43.252, $rota->legs[1]->destination->latitude, 0.00001);
-        $this->assertSame('_mqNvxq`@', $rota->legs[1]->polyline->raw());
+        $this->assertSame('_flwFn`faV_mqNvxq`@', $rota->legs[1]->polyline->raw());
+        // Decodificar, nao so comparar a string: a polyline de uma perna tem que
+        // ser autonoma. A primeira versao desta fixture usava um fragmento de
+        // delta da polyline da rota, que sozinho decodificava para uma
+        // coordenada no Golfo da Guine — e comparar raw() nao pegava isso.
+        $this->assertCount(2, $rota->legs[1]->polyline->coordinates());
+        $this->assertEqualsWithDelta(40.7, $rota->legs[1]->polyline->coordinates()[0]->latitude, 0.00001);
+    }
+
+    public function test_pernas_so_aparecem_quando_pedidas(): void
+    {
+        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route.json'), true);
+
+        // Simetrico com o HERE: o contrato diz que pernas sao opt-in, entao o
+        // mapper nao repassa o que a resposta trouxer sem ninguem ter pedido.
+        $rota = (new GoogleRouteResponseMapper())->toRoute($resposta, false);
+
+        $this->assertSame([], $rota->legs);
+        $this->assertSame(12400, $rota->distance->meters);
     }
 
     public function test_resposta_sem_rota_vira_excecao_tipada(): void
     {
         $this->expectException(InvalidRequestException::class);
 
-        (new GoogleRouteResponseMapper())->toRoute(['routes' => []]);
+        (new GoogleRouteResponseMapper())->toRoute(['routes' => []], true);
     }
 }

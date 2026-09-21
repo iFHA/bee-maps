@@ -18,7 +18,17 @@ final class GoogleRouteResponseMapper
     ) {
     }
 
-    public function toRoute(array $resposta): Route
+    /**
+     * @param bool $incluirPernas           Pernas sao opt-in no contrato do pacote. O field
+     *                                      mask ja omite `routes.legs` quando ninguem pediu,
+     *                                      mas honrar o flag aqui tambem e o que garante a
+     *                                      simetria com o HERE: sem includeLegs, NENHUM
+     *                                      provider devolve pernas, independente do que a
+     *                                      resposta trouxer.
+     * @param bool $otimizouIntermediarios  Mesma razao para optimizedOrder, que o DTO Route
+     *                                      documenta como "vazio sem otimizacao".
+     */
+    public function toRoute(array $resposta, bool $incluirPernas, bool $otimizouIntermediarios = false): Route
     {
         $rota = $resposta['routes'][0] ?? null;
 
@@ -30,8 +40,10 @@ final class GoogleRouteResponseMapper
             distance: new Distance((int) ($rota['distanceMeters'] ?? 0)),
             duration: new Duration($this->segundos($rota['duration'] ?? null)),
             polyline: $this->polyline($rota['polyline']['encodedPolyline'] ?? null),
-            legs: array_map($this->perna(...), $rota['legs'] ?? []),
-            optimizedOrder: array_map('intval', $rota['optimizedIntermediateWaypointIndex'] ?? []),
+            legs: $incluirPernas ? array_map($this->perna(...), $rota['legs'] ?? []) : [],
+            optimizedOrder: $otimizouIntermediarios
+                ? array_map('intval', $rota['optimizedIntermediateWaypointIndex'] ?? [])
+                : [],
         );
     }
 
