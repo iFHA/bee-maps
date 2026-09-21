@@ -1,7 +1,20 @@
 {
     "name": "beedelivery/bee-maps",
     "description": "SDK Laravel multi-provider de geolocalizacao (Google Maps, HERE)",
+    "keywords": [
+        "geolocation",
+        "maps",
+        "google-maps",
+        "here",
+        "geocoding",
+        "autocomplete",
+        "laravel"
+    ],
     "license": "MIT",
+    "homepage": "https://github.com/bee-delivery/bee-maps",
+    "support": {
+        "issues": "https://github.com/bee-delivery/bee-maps/issues"
+    },
     "type": "library",
     "require": {
         "php": "^8.2",

@@ -12,8 +12,12 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
 final class HereGeocodeResponseMapper
 {
     /**
-     * @param float $partialThreshold Abaixo deste queryScore o resultado e considerado parcial.
-     *                                Default conservador e nao calibrado — ver a nota da Task 11.
+     * @param float $partialThreshold Abaixo deste queryScore (0 a 1) o resultado e considerado
+     *                                parcial. O default de 1.0 e deliberadamente conservador e
+     *                                nao foi calibrado contra dados reais: consumidores cuja
+     *                                logica de negocio ramifica em cima de `partial` devem
+     *                                calibrar este valor contra o proprio corpus de enderecos
+     *                                antes de trocar de provider.
      */
     public function __construct(private readonly float $partialThreshold = 1.0)
     {

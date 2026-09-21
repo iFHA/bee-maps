@@ -6,6 +6,8 @@ use BeeDelivery\BeeMaps\Providers\Google\GoogleProvider;
 use BeeDelivery\BeeMaps\Providers\Here\HereProvider;
 use BeeDelivery\BeeMaps\Providers\ProviderRegistry;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
 
 final class BeeMapsServiceProvider extends ServiceProvider
@@ -15,8 +17,8 @@ final class BeeMapsServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../config/bee-maps.php', 'bee-maps');
 
         $this->app->singleton(MapsHttpClient::class, fn ($app) => new MapsHttpClient(
-            $app->make(\Illuminate\Http\Client\Factory::class),
-            $app->make(\Illuminate\Contracts\Events\Dispatcher::class),
+            $app->make(Factory::class),
+            $app->make(Dispatcher::class),
             $app['config']->get('bee-maps.http'),
         ));
 
@@ -34,7 +36,7 @@ final class BeeMapsServiceProvider extends ServiceProvider
         ));
 
         $this->app->singleton(ProviderRegistry::class, fn ($app) => new ProviderRegistry(
-            array_map(fn (string $classe) => $app->make($classe), $app['config']->get('bee-maps.providers', [])),
+            array_map(fn (string $class) => $app->make($class), $app['config']->get('bee-maps.providers', [])),
         ));
 
         $this->app->singleton(MapServiceFactory::class, fn ($app) => new MapServiceFactory(

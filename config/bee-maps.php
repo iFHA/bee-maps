@@ -14,8 +14,8 @@ return [
     'http' => [
         'timeout'         => (int) env('BEE_MAPS_HTTP_TIMEOUT', 10),
         'connect_timeout' => (int) env('BEE_MAPS_HTTP_CONNECT_TIMEOUT', 3),
-        // Numero TOTAL de tentativas, incluindo a primeira (e nao o numero de
-        // repeticoes): attempts => 2 significa a chamada original + 1 retry.
+        // Número TOTAL de tentativas, incluindo a primeira (e não o número de
+        // repetições): attempts => 2 significa a chamada original + 1 retry.
         'attempts'        => (int) env('BEE_MAPS_HTTP_ATTEMPTS', 2),
         'retry_delay_ms'  => (int) env('BEE_MAPS_HTTP_RETRY_DELAY', 200),
     ],
@@ -30,8 +30,12 @@ return [
 
     'here' => [
         'api_key' => env('HERE_API_KEY'),
-        // Abaixo deste queryScore o resultado e marcado como parcial.
-        // 1.0 e o valor mais conservador e NAO esta calibrado: ver Task 11.
+        // Converte o scoring.queryScore do HERE (0 a 1) no booleano `partial`:
+        // abaixo deste limiar, o resultado é marcado como parcial. O default de
+        // 1.0 é deliberadamente conservador e não foi calibrado contra dados
+        // reais. Se sua lógica de negócio ramifica em cima de `partial`,
+        // calibre este valor contra o seu próprio corpus de endereços antes
+        // de trocar de provider.
         'partial_threshold' => (float) env('BEE_MAPS_HERE_PARTIAL_THRESHOLD', 1.0),
         'endpoints' => [
             'autosuggest' => 'https://autosuggest.search.hereapi.com/v1/autosuggest',
