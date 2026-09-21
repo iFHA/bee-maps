@@ -40,7 +40,21 @@ final class GoogleEncodedPolylineDecoder implements PolylineDecoder
                 throw new InvalidRequestException('Polyline do Google truncada: a string acabou no meio de um delta.');
             }
 
-            $byte = ord($encoded[$indice]) - 63;
+            $codigo = ord($encoded[$indice]);
+
+            // O alfabeto e ASCII 63 ('?') a 126 ('~'): byte fora disso produz
+            // $byte negativo, encerra o varint antes da hora e devolve
+            // coordenada plausivel e errada em vez de erro — justamente o que o
+            // @throws de PolylineDecoder::decode() promete evitar.
+            if ($codigo < 63 || $codigo > 126) {
+                throw new InvalidRequestException(sprintf(
+                    'Caractere invalido em polyline do Google na posicao %d: "%s".',
+                    $indice,
+                    $encoded[$indice],
+                ));
+            }
+
+            $byte = $codigo - 63;
             $indice++;
 
             $resultado |= ($byte & 0x1F) << $deslocamento;

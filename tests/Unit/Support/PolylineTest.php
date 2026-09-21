@@ -90,4 +90,22 @@ final class PolylineTest extends TestCase
 
         (new Polyline('BFoz5xJ!!!', new HereFlexiblePolylineDecoder()))->coordinates();
     }
+
+    public function test_decodificador_do_google_rejeita_polyline_de_outro_provider(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessageMatches('/caractere|invalid/i');
+
+        // Antes: devolvia 8 pontos perto de (0,0) sem lançar nada. Como raw() e
+        // feito para ser persistido e repassado, um raw lido com o decodificador
+        // do provider errado dava coordenada plausivel e errada.
+        (new Polyline('BFoz5xJ67i1B1B7PzIhaxL7Y', new GoogleEncodedPolylineDecoder()))->coordinates();
+    }
+
+    public function test_decodificador_do_google_rejeita_caractere_fora_do_alfabeto(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+
+        (new Polyline('!!!!', new GoogleEncodedPolylineDecoder()))->coordinates();
+    }
 }
