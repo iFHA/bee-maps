@@ -5,6 +5,7 @@ namespace BeeDelivery\BeeMaps\Tests\Unit\ValueObjects;
 use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class CoordinatesTest extends TestCase
 {
@@ -35,5 +36,49 @@ final class CoordinatesTest extends TestCase
         $this->expectException(InvalidRequestException::class);
 
         new Coordinates(0.0, 181.0);
+    }
+
+    public function test_from_string_aceita_o_formato_que_to_string_produz(): void
+    {
+        $original = new Coordinates(-23.5615, -46.6562);
+
+        $reconstruida = Coordinates::fromString($original->toString());
+
+        $this->assertEqualsWithDelta($original->latitude, $reconstruida->latitude, 0.0000001);
+        $this->assertEqualsWithDelta($original->longitude, $reconstruida->longitude, 0.0000001);
+    }
+
+    public function test_from_string_tolera_espacos_em_volta(): void
+    {
+        $coordenada = Coordinates::fromString('  -23.5 , -46.6  ');
+
+        $this->assertSame(-23.5, $coordenada->latitude);
+        $this->assertSame(-46.6, $coordenada->longitude);
+    }
+
+    public static function paresInvalidos(): array
+    {
+        return [
+            'vazio' => [''],
+            'so latitude' => ['-23.5'],
+            'tres partes' => ['-23.5,-46.6,10'],
+            'nao numerico' => ['sao paulo,-46.6'],
+            'separador errado' => ['-23.5;-46.6'],
+        ];
+    }
+
+    #[DataProvider('paresInvalidos')]
+    public function test_from_string_rejeita_par_malformado(string $par): void
+    {
+        $this->expectException(InvalidRequestException::class);
+
+        Coordinates::fromString($par);
+    }
+
+    public function test_from_string_ainda_valida_a_faixa(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+
+        Coordinates::fromString('-91,0');
     }
 }

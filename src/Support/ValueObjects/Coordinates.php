@@ -19,6 +19,24 @@ final readonly class Coordinates
         }
     }
 
+    /**
+     * Inverso de toString(). Existe porque o par "lat,lng" e o formato que tanto
+     * o config do pacote quanto as duas APIs usam — e parsear isso inline em cada
+     * ponto de uso e como um `partial` mal derivado nasce.
+     */
+    public static function fromString(string $par): self
+    {
+        $partes = array_map('trim', explode(',', $par));
+
+        if (count($partes) !== 2 || ! is_numeric($partes[0]) || ! is_numeric($partes[1])) {
+            throw new InvalidRequestException(
+                "Par de coordenadas invalido: \"{$par}\". Formato esperado: \"latitude,longitude\".",
+            );
+        }
+
+        return new self((float) $partes[0], (float) $partes[1]);
+    }
+
     public function toString(): string
     {
         // sprintf em vez de concatenacao direta: o cast padrao do PHP renderiza
