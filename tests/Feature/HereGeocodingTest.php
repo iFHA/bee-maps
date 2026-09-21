@@ -2,7 +2,9 @@
 
 namespace BeeDelivery\BeeMaps\Tests\Feature;
 
+use BeeDelivery\BeeMaps\DTOs\Requests\GeocodeFilters;
 use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
 use BeeDelivery\BeeMaps\Exceptions\PlaceReferenceProviderMismatchException;
 use BeeDelivery\BeeMaps\MapServiceFactory;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
@@ -66,5 +68,40 @@ final class HereGeocodingTest extends TestCase
         $this->expectException(PlaceReferenceProviderMismatchException::class);
 
         $this->geocoding()->lookup(new PlaceReference(Provider::Google, 'ChIJ0WGkg4FEzpQRrlsz_whLqZs'));
+    }
+
+    public function test_filtro_de_pais_alpha2_chega_como_countryCode_alpha3(): void
+    {
+        Http::fake([
+            'geocode.search.hereapi.com/*' => Http::response(
+                json_decode(file_get_contents(__DIR__ . '/../Fixtures/here/geocode.json'), true),
+                200,
+            ),
+        ]);
+
+        $this->geocoding()->geocode('Av Paulista 1000', new GeocodeFilters(country: 'BR'));
+
+        Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'in=countryCode:BRA'));
+    }
+
+    public function test_filtro_de_pais_alpha3_tambem_funciona(): void
+    {
+        Http::fake([
+            'geocode.search.hereapi.com/*' => Http::response(
+                json_decode(file_get_contents(__DIR__ . '/../Fixtures/here/geocode.json'), true),
+                200,
+            ),
+        ]);
+
+        $this->geocoding()->geocode('Av Paulista 1000', new GeocodeFilters(country: 'BRA'));
+
+        Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'in=countryCode:BRA'));
+    }
+
+    public function test_filtro_de_pais_invalido_lanca_excecao(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+
+        $this->geocoding()->geocode('Av Paulista 1000', new GeocodeFilters(country: 'XX'));
     }
 }

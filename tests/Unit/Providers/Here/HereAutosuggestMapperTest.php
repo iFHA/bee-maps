@@ -22,7 +22,10 @@ final class HereAutosuggestMapperTest extends TestCase
 
         $this->assertSame('Av Paulista', $query['q']);
         $this->assertSame('-23.5000000,-46.6000000', $query['at']);
-        $this->assertSame('countryCode:BRA', $query['in']);
+        $this->assertSame(
+            ['circle:-23.5000000,-46.6000000;r=3000', 'countryCode:BRA'],
+            $query['in'],
+        );
         $this->assertSame('pt-BR', $query['lang']);
     }
 
@@ -34,7 +37,31 @@ final class HereAutosuggestMapperTest extends TestCase
             'BR',
         );
 
-        $this->assertSame('countryCode:BRA', $query['in']);
+        $this->assertSame(['countryCode:BRA'], $query['in']);
+        $this->assertArrayNotHasKey('at', $query);
+    }
+
+    public function test_raio_nulo_com_coordenada_nao_emite_circle(): void
+    {
+        $query = (new HereAutosuggestRequestMapper())->toQuery(
+            new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), null, ['BR']),
+            'pt-BR',
+            'BR',
+        );
+
+        $this->assertSame('-23.5000000,-46.6000000', $query['at']);
+        $this->assertSame(['countryCode:BRA'], $query['in']);
+    }
+
+    public function test_sem_coordenada_nao_emite_circle_mesmo_com_raio(): void
+    {
+        $query = (new HereAutosuggestRequestMapper())->toQuery(
+            new AutocompleteRequest('Av Paulista', null, 3000, ['BR']),
+            'pt-BR',
+            'BR',
+        );
+
+        $this->assertSame(['countryCode:BRA'], $query['in']);
         $this->assertArrayNotHasKey('at', $query);
     }
 
@@ -75,7 +102,7 @@ final class HereAutosuggestMapperTest extends TestCase
             'BR',
         );
 
-        $this->assertSame('countryCode:MEX', $query['in']);
+        $this->assertSame(['countryCode:MEX'], $query['in']);
     }
 
     public function test_codigo_alpha3_passa_direto(): void
@@ -86,7 +113,7 @@ final class HereAutosuggestMapperTest extends TestCase
             'BR',
         );
 
-        $this->assertSame('countryCode:BRA', $query['in']);
+        $this->assertSame(['countryCode:BRA'], $query['in']);
     }
 
     public function test_codigo_de_pais_invalido_lanca_excecao(): void
@@ -121,6 +148,6 @@ final class HereAutosuggestMapperTest extends TestCase
             'BR',
         );
 
-        $this->assertSame('countryCode:BRA,MEX', $query['in']);
+        $this->assertSame(['countryCode:BRA,MEX'], $query['in']);
     }
 }

@@ -9,6 +9,7 @@ use BeeDelivery\BeeMaps\DTOs\Responses\GeocodeResultCollection;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Enums\Service;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleGeocodeResponseMapper;
+use BeeDelivery\BeeMaps\Support\CountryCode;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
@@ -68,7 +69,7 @@ final class GoogleGeocoding implements Geocoding
         $partes = array_filter([
             $filters->city !== null ? 'administrative_area:' . $filters->city : null,
             $filters->postalCode !== null ? 'postal_code:' . $filters->postalCode : null,
-            $filters->country !== null ? 'country:' . $filters->country : null,
+            $filters->country !== null ? 'country:' . CountryCode::toAlpha2($filters->country) : null,
         ]);
 
         return $partes === [] ? null : implode('|', $partes);

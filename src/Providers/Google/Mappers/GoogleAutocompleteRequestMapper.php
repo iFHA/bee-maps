@@ -3,10 +3,11 @@
 namespace BeeDelivery\BeeMaps\Providers\Google\Mappers;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\AutocompleteRequest;
+use BeeDelivery\BeeMaps\Support\CountryCode;
 
 final class GoogleAutocompleteRequestMapper
 {
-    public function toPayload(AutocompleteRequest $request, string $language): array
+    public function toPayload(AutocompleteRequest $request, string $language, string $region): array
     {
         $payload = [
             'input' => $request->query,
@@ -14,20 +15,22 @@ final class GoogleAutocompleteRequestMapper
         ];
 
         if ($request->near !== null) {
-            $payload['locationRestriction'] = [
-                'circle' => [
-                    'center' => [
-                        'latitude' => $request->near->latitude,
-                        'longitude' => $request->near->longitude,
-                    ],
-                    'radius' => $request->radiusMeters,
+            $circle = [
+                'center' => [
+                    'latitude' => $request->near->latitude,
+                    'longitude' => $request->near->longitude,
                 ],
             ];
+
+            if ($request->radiusMeters !== null) {
+                $circle['radius'] = $request->radiusMeters;
+            }
+
+            $payload['locationRestriction'] = ['circle' => $circle];
         }
 
-        if ($request->countries !== []) {
-            $payload['includedRegionCodes'] = array_values($request->countries);
-        }
+        $paises = $request->countries !== [] ? $request->countries : [$region];
+        $payload['includedRegionCodes'] = array_map(fn (string $p) => CountryCode::toAlpha2($p), $paises);
 
         return $payload;
     }

@@ -9,6 +9,7 @@ use BeeDelivery\BeeMaps\DTOs\Responses\GeocodeResultCollection;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Enums\Service;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereGeocodeResponseMapper;
+use BeeDelivery\BeeMaps\Support\CountryCode;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
@@ -29,7 +30,7 @@ final class HereGeocoding implements Geocoding
         $parametros = ['q' => $this->comFiltros($query, $filters)];
 
         if ($filters?->country !== null) {
-            $parametros['in'] = 'countryCode:' . strtoupper($filters->country);
+            $parametros['in'] = 'countryCode:' . CountryCode::toAlpha3($filters->country);
         }
 
         return $this->consultar($this->endpoints['geocode'], $parametros);
