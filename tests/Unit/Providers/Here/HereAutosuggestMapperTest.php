@@ -12,38 +12,32 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class HereAutosuggestMapperTest extends TestCase
 {
-    public function test_monta_query_com_coordenada_e_pais(): void
+    private const CENTRO = '-23.5615000,-46.6562000';
+
+    private function comCentro(): HereAutosuggestRequestMapper
     {
-        $query = (new HereAutosuggestRequestMapper())->toQuery(
+        return new HereAutosuggestRequestMapper(new Coordinates(-23.5615, -46.6562));
+    }
+
+    public function test_coordenada_com_raio_vira_circle_e_nunca_emite_at(): void
+    {
+        $query = $this->comCentro()->toQuery(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), 3000, ['BR']),
             'pt-BR',
             'BR',
         );
 
         $this->assertSame('Av Paulista', $query['q']);
-        $this->assertSame('-23.5000000,-46.6000000', $query['at']);
-        $this->assertSame(
-            ['circle:-23.5000000,-46.6000000;r=3000', 'countryCode:BRA'],
-            $query['in'],
-        );
         $this->assertSame('pt-BR', $query['lang']);
-    }
-
-    public function test_usa_regiao_padrao_quando_nao_ha_pais_no_request(): void
-    {
-        $query = (new HereAutosuggestRequestMapper())->toQuery(
-            new AutocompleteRequest('Av Paulista'),
-            'pt-BR',
-            'BR',
-        );
-
-        $this->assertSame(['countryCode:BRA'], $query['in']);
+        $this->assertSame(['circle:-23.5000000,-46.6000000;r=3000', 'countryCode:BRA'], $query['in']);
+        // O HERE responde 400 "Mutually exclusive parameters violated" se `at` e
+        // `in=circle` vierem juntos. Esta asserção e o portao desse 400.
         $this->assertArrayNotHasKey('at', $query);
     }
 
-    public function test_raio_nulo_com_coordenada_nao_emite_circle(): void
+    public function test_coordenada_sem_raio_vira_at(): void
     {
-        $query = (new HereAutosuggestRequestMapper())->toQuery(
+        $query = $this->comCentro()->toQuery(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), null, ['BR']),
             'pt-BR',
             'BR',
@@ -53,16 +47,49 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame(['countryCode:BRA'], $query['in']);
     }
 
-    public function test_sem_coordenada_nao_emite_circle_mesmo_com_raio(): void
+    public function test_sem_coordenada_cai_no_centro_configurado(): void
     {
-        $query = (new HereAutosuggestRequestMapper())->toQuery(
-            new AutocompleteRequest('Av Paulista', null, 3000, ['BR']),
+        $query = $this->comCentro()->toQuery(new AutocompleteRequest('Av Paulista'), 'pt-BR', 'BR');
+
+        // radiusMeters default e 50000, entao o foco sai como circle.
+        $this->assertSame(['circle:' . self::CENTRO . ';r=50000', 'countryCode:BRA'], $query['in']);
+        $this->assertArrayNotHasKey('at', $query);
+    }
+
+    public function test_sem_coordenada_e_sem_raio_usa_o_centro_como_at(): void
+    {
+        $query = $this->comCentro()->toQuery(
+            new AutocompleteRequest('Av Paulista', null, null, ['BR']),
             'pt-BR',
             'BR',
         );
 
+        $this->assertSame(self::CENTRO, $query['at']);
         $this->assertSame(['countryCode:BRA'], $query['in']);
-        $this->assertArrayNotHasKey('at', $query);
+    }
+
+    public function test_sem_coordenada_e_sem_centro_configurado_lanca_excecao_acionavel(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessageMatches('/autosuggest_center|near/');
+
+        // Sem centro: o Autosuggest do HERE nao tem como ser chamado, e um erro
+        // do pacote e melhor que um 400 opaco do provider.
+        (new HereAutosuggestRequestMapper())->toQuery(new AutocompleteRequest('Av Paulista'), 'pt-BR', 'BR');
+    }
+
+    public function test_pais_invalido_falha_pelo_pais_mesmo_sem_centro(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessageMatches('/pais|ISO 3166/i');
+
+        // Precedencia: a conversao de pais acontece antes da resolucao do foco,
+        // para o erro apontar o que realmente esta errado na entrada.
+        (new HereAutosuggestRequestMapper())->toQuery(
+            new AutocompleteRequest('Av Paulista', null, null, ['Brasil']),
+            'pt-BR',
+            'BR',
+        );
     }
 
     public function test_mapeia_itens_e_anula_place_em_chain_query(): void
@@ -96,7 +123,7 @@ final class HereAutosuggestMapperTest extends TestCase
 
     public function test_converte_pais_fora_das_quatro_entradas_antigas(): void
     {
-        $query = (new HereAutosuggestRequestMapper())->toQuery(
+        $query = $this->comCentro()->toQuery(
             new AutocompleteRequest('Zocalo', null, null, ['MX']),
             'pt-BR',
             'BR',
@@ -107,7 +134,7 @@ final class HereAutosuggestMapperTest extends TestCase
 
     public function test_codigo_alpha3_passa_direto(): void
     {
-        $query = (new HereAutosuggestRequestMapper())->toQuery(
+        $query = $this->comCentro()->toQuery(
             new AutocompleteRequest('Av Paulista', null, null, ['BRA']),
             'pt-BR',
             'BR',
@@ -142,7 +169,8 @@ final class HereAutosuggestMapperTest extends TestCase
 
     public function test_multiplos_paises_sao_convertidos_e_unidos(): void
     {
-        $query = (new HereAutosuggestRequestMapper())->toQuery(
+        // Precisa do centro: sem coordenada e sem raio, o foco vem do config.
+        $query = $this->comCentro()->toQuery(
             new AutocompleteRequest('Fronteira', null, null, ['BR', 'MX']),
             'pt-BR',
             'BR',

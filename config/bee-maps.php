@@ -39,6 +39,13 @@ return [
         // calibre este valor contra o seu próprio corpus de endereços antes
         // de trocar de provider.
         'partial_threshold' => (float) env('BEE_MAPS_HERE_PARTIAL_THRESHOLD', 1.0),
+        // Foco espacial usado pelo Autosuggest quando a requisicao nao traz
+        // coordenada. O endpoint exige um de `at`/`in=bbox`/`in=circle`/`in=ring`
+        // e responde 400 sem nenhum deles — `in=countryCode` NAO conta como foco.
+        // Sem esta chave e sem AutocompleteRequest::$near, o pacote lanca
+        // InvalidRequestException em vez de deixar o 400 vazar do provider.
+        // Formato: "latitude,longitude" (ex.: "-23.5615,-46.6562").
+        'autosuggest_center' => env('BEE_MAPS_HERE_AUTOSUGGEST_CENTER'),
         'endpoints' => [
             'autosuggest' => 'https://autosuggest.search.hereapi.com/v1/autosuggest',
             'geocode'     => 'https://geocode.search.hereapi.com/v1/geocode',

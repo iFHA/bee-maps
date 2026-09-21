@@ -12,6 +12,8 @@ use BeeDelivery\BeeMaps\Contracts\Services\Geocoding;
 use BeeDelivery\BeeMaps\Contracts\Services\PlaceSearch;
 use BeeDelivery\BeeMaps\Contracts\Services\Routing;
 use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Exceptions\ConfigurationException;
+use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
 use BeeDelivery\BeeMaps\Exceptions\MissingCredentialsException;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutosuggestRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutosuggestResponseMapper;
@@ -26,6 +28,7 @@ use BeeDelivery\BeeMaps\Providers\Here\Services\HereGeocoding;
 use BeeDelivery\BeeMaps\Providers\Here\Services\HerePlaceSearch;
 use BeeDelivery\BeeMaps\Providers\Here\Services\HereRouting;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
+use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 
 final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesGeocoding, ProvidesPlaceSearch, ProvidesRouting
 {
@@ -46,7 +49,7 @@ final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesG
     {
         return new HereAutocomplete(
             $this->http,
-            new HereAutosuggestRequestMapper(),
+            new HereAutosuggestRequestMapper($this->centroDoAutosuggest()),
             new HereAutosuggestResponseMapper(),
             $this->config['endpoints']['autosuggest'],
             $this->apiKey(),
@@ -91,6 +94,27 @@ final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesG
             $this->apiKey(),
             $this->language,
         );
+    }
+
+    /**
+     * Config malformado e erro de configuracao, nao de requisicao: quem precisa
+     * agir e quem fez o deploy, e a mensagem tem que dizer qual chave esta errada.
+     */
+    private function centroDoAutosuggest(): ?Coordinates
+    {
+        $centro = $this->config['autosuggest_center'] ?? null;
+
+        if ($centro === null || $centro === '') {
+            return null;
+        }
+
+        try {
+            return Coordinates::fromString((string) $centro);
+        } catch (InvalidRequestException $e) {
+            throw new ConfigurationException(
+                'bee-maps.here.autosuggest_center invalido: ' . $e->getMessage(),
+            );
+        }
     }
 
     private function apiKey(): string

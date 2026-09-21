@@ -27,5 +27,9 @@ abstract class TestCase extends BaseTestCase
     {
         $app['config']->set('bee-maps.google.key', 'chave-google-de-teste');
         $app['config']->set('bee-maps.here.api_key', 'chave-here-de-teste');
+
+        // O Autosuggest do HERE nao funciona sem foco espacial; os testes que
+        // chamam autocomplete sem coordenada dependem deste centro.
+        $app['config']->set('bee-maps.here.autosuggest_center', '-23.5615,-46.6562');
     }
 }

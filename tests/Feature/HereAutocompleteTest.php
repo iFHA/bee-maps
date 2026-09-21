@@ -4,6 +4,7 @@ namespace BeeDelivery\BeeMaps\Tests\Feature;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\AutocompleteRequest;
 use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
 use BeeDelivery\BeeMaps\MapServiceFactory;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Tests\TestCase;
@@ -64,8 +65,23 @@ final class HereAutocompleteTest extends TestCase
             $this->assertStringNotContainsString('in[0]=', $url);
             $this->assertStringContainsString('in=circle:-23.5000000,-46.6000000;r=3000', $url);
             $this->assertStringContainsString('in=countryCode:BRA', $url);
+            // 400 "Mutually exclusive parameters violated" se `at` vier junto.
+            $this->assertStringNotContainsString('at=', $url);
 
             return true;
         });
+    }
+
+    public function test_sem_centro_configurado_e_sem_coordenada_falha_antes_da_rede(): void
+    {
+        // Sem Http::fake: se a excecao nao vier, preventStrayRequests quebra o
+        // teste — que e o comportamento desejado.
+        $this->app['config']->set('bee-maps.here.autosuggest_center', null);
+
+        $this->expectException(InvalidRequestException::class);
+
+        $this->app->make(MapServiceFactory::class)
+            ->autocomplete(Provider::Here)
+            ->suggest(new AutocompleteRequest('Av Paulista'));
     }
 }
