@@ -14,7 +14,9 @@ return [
     'http' => [
         'timeout'         => (int) env('BEE_MAPS_HTTP_TIMEOUT', 10),
         'connect_timeout' => (int) env('BEE_MAPS_HTTP_CONNECT_TIMEOUT', 3),
-        'retries'         => (int) env('BEE_MAPS_HTTP_RETRIES', 2),
+        // Numero TOTAL de tentativas, incluindo a primeira (e nao o numero de
+        // repeticoes): attempts => 2 significa a chamada original + 1 retry.
+        'attempts'        => (int) env('BEE_MAPS_HTTP_ATTEMPTS', 2),
         'retry_delay_ms'  => (int) env('BEE_MAPS_HTTP_RETRY_DELAY', 200),
     ],
 

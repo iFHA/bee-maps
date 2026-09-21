@@ -12,7 +12,10 @@ use BeeDelivery\BeeMaps\Support\Events\MapRequestCompleted;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
+use Throwable;
 
 final class MapsHttpClient
 {
@@ -33,13 +36,33 @@ final class MapsHttpClient
         return $this->send($provider, $service, fn () => $this->pending($headers)->post($url, $payload));
     }
 
-    private function pending(array $headers)
+    private function pending(array $headers): PendingRequest
     {
         return $this->http
             ->withHeaders($headers + ['Accept' => 'application/json'])
             ->timeout($this->config['timeout'])
             ->connectTimeout($this->config['connect_timeout'])
-            ->retry($this->config['retries'], $this->config['retry_delay_ms'], throw: false);
+            ->retry($this->config['attempts'], $this->config['retry_delay_ms'], $this->deveTentarNovamente(...), throw: false);
+    }
+
+    /**
+     * So vale a pena tentar de novo em falha de conexao (timeout, DNS, etc.) ou em
+     * resposta que sinaliza indisponibilidade temporaria (429, 5xx). Repetir um 401/403
+     * apenas dobra a carga no provider exatamente quando ele esta bloqueando a chamada.
+     */
+    private function deveTentarNovamente(Throwable $excecao): bool
+    {
+        if ($excecao instanceof ConnectionException) {
+            return true;
+        }
+
+        if ($excecao instanceof RequestException) {
+            $status = $excecao->response->status();
+
+            return $status === 429 || $status >= 500;
+        }
+
+        return false;
     }
 
     private function send(Provider $provider, Service $service, callable $call): array
@@ -50,6 +73,13 @@ final class MapsHttpClient
             /** @var Response $resposta */
             $resposta = $call();
         } catch (ConnectionException $e) {
+            $this->events->dispatch(new MapRequestCompleted(
+                provider: $provider,
+                service: $service,
+                httpStatus: 0,
+                durationMs: round((microtime(true) - $inicio) * 1000, 2),
+            ));
+
             throw new ProviderUnavailableException($provider, $service, $this->redigirCredenciais($e->getMessage()));
         }
 

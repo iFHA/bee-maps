@@ -54,6 +54,20 @@ final class MapsHttpClientTest extends TestCase
         $this->client()->get(Provider::Google, Service::Geocoding, 'https://exemplo.test/x');
     }
 
+    public function test_401_nao_e_reenviado(): void
+    {
+        Http::fake(['exemplo.test/*' => Http::response(['error' => 'bad key'], 401)]);
+
+        try {
+            $this->client()->get(Provider::Google, Service::Geocoding, 'https://exemplo.test/x');
+            $this->fail('Esperava ProviderAuthenticationException');
+        } catch (ProviderAuthenticationException) {
+            // esperado
+        }
+
+        Http::assertSentCount(1);
+    }
+
     public function test_429_vira_excecao_de_rate_limit(): void
     {
         Http::fake(['exemplo.test/*' => Http::response([], 429)]);
@@ -115,6 +129,27 @@ final class MapsHttpClientTest extends TestCase
             $this->assertStringNotContainsString('SEGREDO_NAO_PODE_VAZAR', $e->getMessage());
             $this->assertStringContainsString('apiKey=[REDACTED]', $e->getMessage());
         }
+    }
+
+    public function test_falha_de_conexao_dispara_evento_com_status_zero(): void
+    {
+        Event::fake([MapRequestCompleted::class]);
+        Http::fake(function () {
+            throw new ConnectionException('cURL error 28: timed out for https://exemplo.test/v1/x');
+        });
+
+        try {
+            $this->client()->get(Provider::Here, Service::Autocomplete, 'https://exemplo.test/v1/x');
+            $this->fail('Esperava ProviderUnavailableException');
+        } catch (ProviderUnavailableException) {
+            // esperado
+        }
+
+        Event::assertDispatched(MapRequestCompleted::class, function (MapRequestCompleted $e): bool {
+            return $e->provider === Provider::Here
+                && $e->service === Service::Autocomplete
+                && $e->httpStatus === 0;
+        });
     }
 
     public function test_falha_de_conexao_preserva_parametro_que_apenas_contem_palavra_chave_como_substring(): void
