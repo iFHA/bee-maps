@@ -29,6 +29,15 @@ final class GoogleGeocodeMapperTest extends TestCase
         $this->assertSame(Provider::Google, $resultado->place->provider);
     }
 
+    public function test_partial_match_false_nao_vira_true(): void
+    {
+        $resultado = (new GoogleGeocodeResponseMapper())
+            ->toCollection($this->fixture('geocode-partial-match-false'))
+            ->first();
+
+        $this->assertFalse($resultado->partial);
+    }
+
     public function test_zero_results_devolve_colecao_vazia(): void
     {
         $colecao = (new GoogleGeocodeResponseMapper())->toCollection($this->fixture('geocode-zero-results'));

@@ -67,7 +67,7 @@ final class GoogleGeocodeResponseMapper
                 (float) $resultado['geometry']['location']['lat'],
                 (float) $resultado['geometry']['location']['lng'],
             ),
-            partial: isset($resultado['partial_match']),
+            partial: ($resultado['partial_match'] ?? false) === true,
             // O Google nao expoe grau de casamento, so o booleano acima.
             matchScore: null,
             place: isset($resultado['place_id'])

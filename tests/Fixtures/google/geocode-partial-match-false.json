@@ -1,0 +1,20 @@
+{
+  "status": "OK",
+  "results": [
+    {
+      "place_id": "ChIJ0WGkg4FEzpQRrlsz_whLqZs",
+      "formatted_address": "Av. Paulista, 1000 - Bela Vista, Sao Paulo - SP, 01310-100, Brasil",
+      "partial_match": false,
+      "address_components": [
+        { "long_name": "1000", "short_name": "1000", "types": ["street_number"] },
+        { "long_name": "Avenida Paulista", "short_name": "Av. Paulista", "types": ["route"] },
+        { "long_name": "Bela Vista", "short_name": "Bela Vista", "types": ["sublocality_level_1"] },
+        { "long_name": "Sao Paulo", "short_name": "Sao Paulo", "types": ["administrative_area_level_2"] },
+        { "long_name": "Sao Paulo", "short_name": "SP", "types": ["administrative_area_level_1"] },
+        { "long_name": "Brasil", "short_name": "BR", "types": ["country"] },
+        { "long_name": "01310-100", "short_name": "01310-100", "types": ["postal_code"] }
+      ],
+      "geometry": { "location": { "lat": -23.5615, "lng": -46.6562 } }
+    }
+  ]
+}
