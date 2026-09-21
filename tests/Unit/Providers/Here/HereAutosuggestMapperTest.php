@@ -4,6 +4,7 @@ namespace BeeDelivery\BeeMaps\Tests\Unit\Providers\Here;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\AutocompleteRequest;
 use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutosuggestRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutosuggestResponseMapper;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
@@ -64,5 +65,62 @@ final class HereAutosuggestMapperTest extends TestCase
 
         $this->assertSame('Avenida Paulista, 1000', $primeiro->mainText);
         $this->assertSame('Sao Paulo - SP, 01310-100, Brasil', $primeiro->secondaryText);
+    }
+
+    public function test_converte_pais_fora_das_quatro_entradas_antigas(): void
+    {
+        $query = (new HereAutosuggestRequestMapper())->toQuery(
+            new AutocompleteRequest('Zocalo', null, null, ['MX']),
+            'pt-BR',
+            'BR',
+        );
+
+        $this->assertSame('countryCode:MEX', $query['in']);
+    }
+
+    public function test_codigo_alpha3_passa_direto(): void
+    {
+        $query = (new HereAutosuggestRequestMapper())->toQuery(
+            new AutocompleteRequest('Av Paulista', null, null, ['BRA']),
+            'pt-BR',
+            'BR',
+        );
+
+        $this->assertSame('countryCode:BRA', $query['in']);
+    }
+
+    public function test_codigo_de_pais_invalido_lanca_excecao(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessageMatches('/XX/');
+
+        (new HereAutosuggestRequestMapper())->toQuery(
+            new AutocompleteRequest('Av Paulista', null, null, ['XX']),
+            'pt-BR',
+            'BR',
+        );
+    }
+
+    public function test_codigo_de_pais_com_nome_por_extenso_lanca_excecao(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessageMatches('/Brasil/');
+
+        (new HereAutosuggestRequestMapper())->toQuery(
+            new AutocompleteRequest('Av Paulista', null, null, ['Brasil']),
+            'pt-BR',
+            'BR',
+        );
+    }
+
+    public function test_multiplos_paises_sao_convertidos_e_unidos(): void
+    {
+        $query = (new HereAutosuggestRequestMapper())->toQuery(
+            new AutocompleteRequest('Fronteira', null, null, ['BR', 'MX']),
+            'pt-BR',
+            'BR',
+        );
+
+        $this->assertSame('countryCode:BRA,MEX', $query['in']);
     }
 }
