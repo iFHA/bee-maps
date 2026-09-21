@@ -339,10 +339,13 @@ Três mudanças observáveis, além dos tipos:
 
 ```bash
 composer install
-vendor/bin/phpunit
+vendor/bin/phpunit                  # suite completa, sem rede
+vendor/bin/phpunit --group live     # smoke contra as APIs reais (exige chaves, custa dinheiro)
 ```
 
-Nenhum teste toca a rede — `Http::preventStrayRequests()` está ativo, então uma requisição não simulada falha em vez de sair.
+Nenhum teste da suíte padrão toca a rede — `Http::preventStrayRequests()` está ativo, então uma requisição não simulada falha em vez de sair.
+
+Os testes `live` são a exceção e por isso ficam **excluídos por padrão** no `phpunit.xml`. Eles precisam de `GOOGLE_MAPS_KEY` e `HERE_API_KEY` no ambiente; sem elas, se marcam como skipped sem tentar a chamada. Servem para responder o que nenhum `Http::fake()` responde: o endpoint existe e a chave tem acesso a ele?
 
 ## Licença
 

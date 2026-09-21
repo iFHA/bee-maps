@@ -8,6 +8,14 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <groups>
+        <exclude>
+            <!-- Testes live batem na API real e custam dinheiro: rodam a mao,
+                 pelo grupo "live" na linha de comando, nunca no CI.
+                 Ver tests/Live/SmokeLiveTest.php. -->
+            <group>live</group>
+        </exclude>
+    </groups>
     <source>
         <include>
             <directory>src</directory>

@@ -1,0 +1,160 @@
+<?php
+
+namespace BeeDelivery\BeeMaps\Tests\Live;
+
+use BeeDelivery\BeeMaps\DTOs\Requests\AutocompleteRequest;
+use BeeDelivery\BeeMaps\DTOs\Requests\PlaceSearchRequest;
+use BeeDelivery\BeeMaps\DTOs\Requests\RouteRequest;
+use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\MapServiceFactory;
+use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
+use BeeDelivery\BeeMaps\Tests\TestCase;
+use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+
+/**
+ * Bate na API real. Roda a mao:
+ *
+ *   GOOGLE_MAPS_KEY=... HERE_API_KEY=... vendor/bin/phpunit --group live
+ *
+ * Nao asserta valores — asserta que a chamada FUNCIONA: endpoint existe, chave
+ * tem acesso, contrato volta preenchido. E a unica camada que pega credencial
+ * sem escopo, endpoint renomeado e SKU nao habilitado.
+ */
+#[Group('live')]
+final class SmokeLiveTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A TestCase base bloqueia requisicao real; aqui e o oposto do resto
+        // da suite — o ponto e justamente sair para a rede.
+        Http::allowStrayRequests();
+    }
+
+    protected function defineEnvironment($app): void
+    {
+        $google = getenv('GOOGLE_MAPS_KEY') ?: null;
+        $here = getenv('HERE_API_KEY') ?: null;
+
+        if ($google === null || $here === null) {
+            $this->markTestSkipped('Defina GOOGLE_MAPS_KEY e HERE_API_KEY para rodar o smoke live.');
+        }
+
+        $app['config']->set('bee-maps.google.key', $google);
+        $app['config']->set('bee-maps.here.api_key', $here);
+    }
+
+    public static function providers(): array
+    {
+        return [
+            'google' => [Provider::Google],
+            'here' => [Provider::Here],
+        ];
+    }
+
+    #[DataProvider('providers')]
+    public function test_autocomplete_responde(Provider $provider): void
+    {
+        $colecao = $this->app->make(MapServiceFactory::class)
+            ->autocomplete($provider)
+            ->suggest(new AutocompleteRequest('Avenida Paulista'));
+
+        $this->assertGreaterThan(0, $colecao->count());
+        $this->assertNotSame('', $colecao->first()->description);
+    }
+
+    #[DataProvider('providers')]
+    public function test_geocoding_responde(Provider $provider): void
+    {
+        $colecao = $this->app->make(MapServiceFactory::class)
+            ->geocoding($provider)
+            ->geocode('Avenida Paulista 1000, Sao Paulo');
+
+        $this->assertGreaterThan(0, $colecao->count());
+        $this->assertNotNull($colecao->first()->coordinates);
+    }
+
+    #[DataProvider('providers')]
+    public function test_place_search_responde_com_endereco_estruturado(Provider $provider): void
+    {
+        $colecao = $this->app->make(MapServiceFactory::class)
+            ->placeSearch($provider)
+            ->search(new PlaceSearchRequest('farmacia', new Coordinates(-23.5615, -46.6562)));
+
+        $this->assertGreaterThan(0, $colecao->count());
+
+        // D16 virando verificacao real: se o SKU Enterprise nao estiver
+        // habilitado na conta, o Google devolve 403 ou vem sem componentes, e
+        // este assert e o unico lugar onde isso aparece antes da producao.
+        $this->assertNotNull($colecao->first()->address->city);
+    }
+
+    #[DataProvider('providers')]
+    public function test_rota_simples_responde_com_polyline(Provider $provider): void
+    {
+        $rota = $this->app->make(MapServiceFactory::class)
+            ->routing($provider)
+            ->route(new RouteRequest(
+                origin: new Coordinates(-23.5615, -46.6562),
+                destination: new Coordinates(-23.5505, -46.6425),
+                includePolyline: true,
+            ));
+
+        $this->assertGreaterThan(0, $rota->distance->meters);
+        $this->assertGreaterThan(0, $rota->duration->seconds);
+        $this->assertNotNull($rota->polyline);
+        // Decodificar de verdade: e o que prova que o formato do provider e o
+        // que o decodificador registrado espera.
+        $this->assertGreaterThan(1, count($rota->polyline->coordinates()));
+    }
+
+    /**
+     * ESTE e o teste que existe por causa da D18. A URL ja foi confirmada contra
+     * a documentacao vigente e por sondagem HTTP; o que falta e o que so a chave
+     * real responde: a conta Bee esta provisionada para a Waypoints Sequence API?
+     *
+     * 401 aqui = a chave nao tem acesso ao servico (provisionamento, nao URL).
+     * 404 aqui = a ambiguidade `findsequence2` vs `findsequence.json` caiu para o
+     * outro lado; trocar bee-maps.here.endpoints.findsequence e rodar de novo.
+     */
+    public function test_rota_otimizada_do_here_usa_o_endpoint_de_sequencia_configurado(): void
+    {
+        $rota = $this->app->make(MapServiceFactory::class)
+            ->routing(Provider::Here)
+            ->route(new RouteRequest(
+                origin: new Coordinates(-23.5615, -46.6562),
+                destination: new Coordinates(-23.5505, -46.6425),
+                intermediates: [
+                    new Coordinates(-23.5580, -46.6500),
+                    new Coordinates(-23.5540, -46.6470),
+                ],
+                optimizeIntermediates: true,
+                includeLegs: true,
+            ));
+
+        $this->assertCount(2, $rota->optimizedOrder);
+        $this->assertGreaterThan(0, $rota->distance->meters);
+    }
+
+    public function test_rota_otimizada_do_google_resolve_em_uma_chamada(): void
+    {
+        $rota = $this->app->make(MapServiceFactory::class)
+            ->routing(Provider::Google)
+            ->route(new RouteRequest(
+                origin: new Coordinates(-23.5615, -46.6562),
+                destination: new Coordinates(-23.5505, -46.6425),
+                intermediates: [
+                    new Coordinates(-23.5580, -46.6500),
+                    new Coordinates(-23.5540, -46.6470),
+                ],
+                optimizeIntermediates: true,
+                includeLegs: true,
+            ));
+
+        $this->assertCount(2, $rota->optimizedOrder);
+        $this->assertCount(3, $rota->legs);
+    }
+}
