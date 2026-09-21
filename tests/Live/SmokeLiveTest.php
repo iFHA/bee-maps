@@ -6,6 +6,7 @@ use BeeDelivery\BeeMaps\DTOs\Requests\AutocompleteRequest;
 use BeeDelivery\BeeMaps\DTOs\Requests\PlaceSearchRequest;
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteRequest;
 use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Enums\TravelMode;
 use BeeDelivery\BeeMaps\MapServiceFactory;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Tests\TestCase;
@@ -45,6 +46,10 @@ final class SmokeLiveTest extends TestCase
 
         $app['config']->set('bee-maps.google.key', $google);
         $app['config']->set('bee-maps.here.api_key', $here);
+
+        // O caso "sem coordenada" depende deste centro: o Autosuggest do HERE
+        // recusa a chamada sem foco espacial.
+        $app['config']->set('bee-maps.here.autosuggest_center', '-23.5615,-46.6562');
     }
 
     public static function providers(): array
@@ -56,7 +61,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_autocomplete_responde(Provider $provider): void
+    public function test_autocomplete_sem_coordenada_responde(Provider $provider): void
     {
         $colecao = $this->app->make(MapServiceFactory::class)
             ->autocomplete($provider)
@@ -64,6 +69,29 @@ final class SmokeLiveTest extends TestCase
 
         $this->assertGreaterThan(0, $colecao->count());
         $this->assertNotSame('', $colecao->first()->description);
+    }
+
+    #[DataProvider('providers')]
+    public function test_autocomplete_com_coordenada_e_raio_default_responde(Provider $provider): void
+    {
+        // Esta e a chamada que dava 400 no HERE: near presente e radiusMeters no
+        // default de 50000. Nenhum teste com Http::fake pega isso, porque o fake
+        // nao valida a query.
+        $colecao = $this->app->make(MapServiceFactory::class)
+            ->autocomplete($provider)
+            ->suggest(new AutocompleteRequest('Avenida Paulista', new Coordinates(-23.5615, -46.6562)));
+
+        $this->assertGreaterThan(0, $colecao->count());
+    }
+
+    #[DataProvider('providers')]
+    public function test_autocomplete_com_coordenada_e_sem_raio_responde(Provider $provider): void
+    {
+        $colecao = $this->app->make(MapServiceFactory::class)
+            ->autocomplete($provider)
+            ->suggest(new AutocompleteRequest('Avenida Paulista', new Coordinates(-23.5615, -46.6562), null));
+
+        $this->assertGreaterThan(0, $colecao->count());
     }
 
     #[DataProvider('providers')]
@@ -137,6 +165,23 @@ final class SmokeLiveTest extends TestCase
 
         $this->assertCount(2, $rota->optimizedOrder);
         $this->assertGreaterThan(0, $rota->distance->meters);
+    }
+
+    public function test_rota_otimizada_do_here_em_duas_rodas_responde(): void
+    {
+        // O smoke so exercitava Drive. O findsequence e um motor legado, e os
+        // quatro transport modes nao sao obviamente os mesmos do /v8/routes.
+        $rota = $this->app->make(MapServiceFactory::class)
+            ->routing(Provider::Here)
+            ->route(new RouteRequest(
+                origin: new Coordinates(-23.5615, -46.6562),
+                destination: new Coordinates(-23.5505, -46.6425),
+                intermediates: [new Coordinates(-23.5580, -46.6500), new Coordinates(-23.5540, -46.6470)],
+                mode: TravelMode::TwoWheeler,
+                optimizeIntermediates: true,
+            ));
+
+        $this->assertCount(2, $rota->optimizedOrder);
     }
 
     public function test_rota_otimizada_do_google_resolve_em_uma_chamada(): void

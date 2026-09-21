@@ -297,6 +297,21 @@ Todo endpoint é sobrescrevível por quem publica o config, o que permite aponta
 ]],
 ```
 
+O HERE tem uma chave a mais, que não é endpoint: o **foco espacial padrão do Autosuggest**, usado quando `AutocompleteRequest::$near` vem vazio. Sem ela e sem `near`, o autocomplete do HERE lança `InvalidRequestException` (ver [Limitações conhecidas](#limitações-conhecidas)). O formato é o mesmo de `Coordinates::toString()`:
+
+```dotenv
+BEE_MAPS_HERE_AUTOSUGGEST_CENTER="-23.5615,-46.6562"
+```
+
+```php
+'here' => [
+    // "latitude,longitude", ou null para exigir `near` em toda chamada.
+    'autosuggest_center' => env('BEE_MAPS_HERE_AUTOSUGGEST_CENTER'),
+],
+```
+
+Um valor malformado aqui é `ConfigurationException`, não `InvalidRequestException`: quem precisa agir é quem fez o deploy, não quem fez a chamada.
+
 ## Serviços disponíveis
 
 | Serviço | Google | HERE |
@@ -316,6 +331,8 @@ Matriz de rotas e otimização de frota **não existem neste pacote**. Não há 
 
 - O hífen do CEP é removido (`01310-100` → `01310100`). No Brasil ele é cosmético, mas em Portugal, Polônia e Japão faz parte do código.
 - No Google, `administrative_area_level_2` é mapeado para `city`. No Brasil esse nível é o município; nos Estados Unidos é o *county*, e o HERE devolveria a cidade — os dois provedores discordariam.
+
+**O autocomplete do HERE exige foco espacial.** O endpoint Autosuggest recusa a chamada sem um de `at`/`in=bbox`/`in=circle`/`in=ring` — filtro de país não conta. Informe `AutocompleteRequest::$near` ou configure `bee-maps.here.autosuggest_center`; sem nenhum dos dois, o pacote lança `InvalidRequestException` em vez de deixar o HTTP 400 vazar. O Google não tem essa exigência, então é uma diferença real de provider, não do pacote.
 
 **Uma resposta malformada do HERE devolve coleção vazia** em vez de erro de mapeamento, pela mesma regra de "nenhum resultado não é erro".
 
