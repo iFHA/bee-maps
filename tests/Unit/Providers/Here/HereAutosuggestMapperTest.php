@@ -21,7 +21,7 @@ final class HereAutosuggestMapperTest extends TestCase
         );
 
         $this->assertSame('Av Paulista', $query['q']);
-        $this->assertSame('-23.5,-46.6', $query['at']);
+        $this->assertSame('-23.5000000,-46.6000000', $query['at']);
         $this->assertSame('countryCode:BRA', $query['in']);
         $this->assertSame('pt-BR', $query['lang']);
     }

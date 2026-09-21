@@ -21,6 +21,11 @@ final readonly class Coordinates
 
     public function toString(): string
     {
-        return $this->latitude . ',' . $this->longitude;
+        // sprintf em vez de concatenacao direta: o cast padrao do PHP renderiza
+        // 0.0 como "0" e valores muito pequenos em notacao cientifica, formatos
+        // que HERE (at=) e Google (latlng=) rejeitam. 7 casas decimais ~ 1cm de
+        // precisao. %F (maiusculo) e locale-independent; %f nao e, e um consumidor
+        // com locale de virgula decimal geraria um par quebrado.
+        return sprintf('%.7F,%.7F', $this->latitude, $this->longitude);
     }
 }

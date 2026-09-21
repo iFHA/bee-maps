@@ -43,7 +43,7 @@ final class GoogleGeocodingTest extends TestCase
 
         $this->geocoding()->reverse(new Coordinates(-23.5615, -46.6562));
 
-        Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'latlng=-23.5615,-46.6562'));
+        Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'latlng=-23.5615000,-46.6562000'));
     }
 
     public function test_lookup_envia_place_id_e_devolve_um_resultado(): void
