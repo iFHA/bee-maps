@@ -1,0 +1,71 @@
+<?php
+
+namespace BeeDelivery\BeeMaps\Providers\Google\Mappers;
+
+use BeeDelivery\BeeMaps\DTOs\Responses\Route;
+use BeeDelivery\BeeMaps\DTOs\Responses\RouteLeg;
+use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
+use BeeDelivery\BeeMaps\Support\Polyline\GoogleEncodedPolylineDecoder;
+use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
+use BeeDelivery\BeeMaps\Support\ValueObjects\Distance;
+use BeeDelivery\BeeMaps\Support\ValueObjects\Duration;
+use BeeDelivery\BeeMaps\Support\ValueObjects\Polyline;
+
+final class GoogleRouteResponseMapper
+{
+    public function __construct(
+        private readonly GoogleEncodedPolylineDecoder $decoder = new GoogleEncodedPolylineDecoder(),
+    ) {
+    }
+
+    public function toRoute(array $resposta): Route
+    {
+        $rota = $resposta['routes'][0] ?? null;
+
+        if ($rota === null) {
+            throw new InvalidRequestException('O Google nao devolveu rota para os pontos informados.');
+        }
+
+        return new Route(
+            distance: new Distance((int) ($rota['distanceMeters'] ?? 0)),
+            duration: new Duration($this->segundos($rota['duration'] ?? null)),
+            polyline: $this->polyline($rota['polyline']['encodedPolyline'] ?? null),
+            legs: array_map($this->perna(...), $rota['legs'] ?? []),
+            optimizedOrder: array_map('intval', $rota['optimizedIntermediateWaypointIndex'] ?? []),
+        );
+    }
+
+    private function perna(array $perna): RouteLeg
+    {
+        return new RouteLeg(
+            origin: $this->ponto($perna['startLocation']['latLng'] ?? []),
+            destination: $this->ponto($perna['endLocation']['latLng'] ?? []),
+            distance: new Distance((int) ($perna['distanceMeters'] ?? 0)),
+            duration: new Duration($this->segundos($perna['duration'] ?? null)),
+            polyline: $this->polyline($perna['polyline']['encodedPolyline'] ?? null),
+        );
+    }
+
+    private function ponto(array $latLng): Coordinates
+    {
+        return new Coordinates((float) ($latLng['latitude'] ?? 0), (float) ($latLng['longitude'] ?? 0));
+    }
+
+    private function polyline(?string $codificada): ?Polyline
+    {
+        return $codificada !== null ? new Polyline($codificada, $this->decoder) : null;
+    }
+
+    /**
+     * O Google serializa duracao como string de protobuf ("1830s"); o HERE manda
+     * inteiro. A normalizacao acontece aqui, na fronteira do mapper.
+     */
+    private function segundos(string|int|null $valor): int
+    {
+        return match (true) {
+            $valor === null => 0,
+            is_int($valor) => $valor,
+            default => (int) rtrim($valor, 's'),
+        };
+    }
+}

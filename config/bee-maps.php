@@ -26,6 +26,7 @@ return [
             'autocomplete'  => 'https://places.googleapis.com/v1/places:autocomplete',
             'geocoding'     => 'https://maps.googleapis.com/maps/api/geocode/json',
             'place_search'  => 'https://places.googleapis.com/v1/places:searchText',
+            'routing'       => 'https://routes.googleapis.com/directions/v2:computeRoutes',
         ],
     ],
 

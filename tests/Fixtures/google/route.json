@@ -1,0 +1,26 @@
+{
+  "routes": [
+    {
+      "distanceMeters": 12400,
+      "duration": "1830s",
+      "polyline": { "encodedPolyline": "_p~iF~ps|U_ulLnnqC_mqNvxq`@" },
+      "optimizedIntermediateWaypointIndex": [1, 0],
+      "legs": [
+        {
+          "distanceMeters": 5200,
+          "duration": "780s",
+          "startLocation": { "latLng": { "latitude": 38.5, "longitude": -120.2 } },
+          "endLocation": { "latLng": { "latitude": 40.7, "longitude": -120.95 } },
+          "polyline": { "encodedPolyline": "_p~iF~ps|U_ulLnnqC" }
+        },
+        {
+          "distanceMeters": 7200,
+          "duration": "1050s",
+          "startLocation": { "latLng": { "latitude": 40.7, "longitude": -120.95 } },
+          "endLocation": { "latLng": { "latitude": 43.252, "longitude": -126.453 } },
+          "polyline": { "encodedPolyline": "_mqNvxq`@" }
+        }
+      ]
+    }
+  ]
+}
