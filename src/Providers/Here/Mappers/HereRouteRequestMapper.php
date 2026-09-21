@@ -4,6 +4,7 @@ namespace BeeDelivery\BeeMaps\Providers\Here\Mappers;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteRequest;
 use BeeDelivery\BeeMaps\Enums\TravelMode;
+use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
 
 final class HereRouteRequestMapper
 {
@@ -32,6 +33,15 @@ final class HereRouteRequestMapper
         $intermediarios = $request->intermediates;
 
         if ($ordemIntermediarios !== null) {
+            if (count($ordemIntermediarios) !== count($request->intermediates)) {
+                throw new InvalidRequestException(sprintf(
+                    'Ordem de intermediarios com %d itens para %d waypoints: montar a rota assim '
+                    . 'descartaria paradas em silencio.',
+                    count($ordemIntermediarios),
+                    count($request->intermediates),
+                ));
+            }
+
             $intermediarios = array_map(
                 fn (int $indice) => $request->intermediates[$indice],
                 $ordemIntermediarios,

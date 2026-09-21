@@ -38,9 +38,15 @@ final class HereFindSequenceMapper
     }
 
     /**
-     * @return list<int>
+     * @param int $totalIntermediarios Quantos waypoints intermediarios foram enviados.
+     *
+     * @return list<int> Permutacao completa de 0..N-1, na ordem de visita.
+     *
+     * @throws InvalidRequestException quando a resposta nao descreve uma ordem
+     *         completa e valida. Devolver ordem parcial e pior que falhar: o
+     *         request mapper montaria uma rota sem parte das paradas.
      */
-    public function toOrder(array $resposta): array
+    public function toOrder(array $resposta, int $totalIntermediarios): array
     {
         $waypoints = $resposta['results'][0]['waypoints'] ?? null;
 
@@ -53,9 +59,30 @@ final class HereFindSequenceMapper
         $ordem = [];
 
         foreach ($waypoints as $waypoint) {
-            if (preg_match('/^destination(\d+)$/', (string) ($waypoint['id'] ?? ''), $partes) === 1) {
-                $ordem[] = (int) $partes[1] - 1;
+            if (preg_match('/^destination(\d+)$/', (string) ($waypoint['id'] ?? ''), $partes) !== 1) {
+                continue;
             }
+
+            $indice = (int) $partes[1] - 1;
+
+            if ($indice < 0 || $indice >= $totalIntermediarios || in_array($indice, $ordem, true)) {
+                throw new InvalidRequestException(sprintf(
+                    'O findsequence do HERE devolveu o waypoint "%s", fora da faixa de %d intermediarios enviados.',
+                    (string) ($waypoint['id'] ?? ''),
+                    $totalIntermediarios,
+                ));
+            }
+
+            $ordem[] = $indice;
+        }
+
+        if (count($ordem) !== $totalIntermediarios) {
+            throw new InvalidRequestException(sprintf(
+                'O findsequence do HERE devolveu %d de %d waypoints intermediarios; '
+                . 'seguir com ordem incompleta apagaria paradas da rota.',
+                count($ordem),
+                $totalIntermediarios,
+            ));
         }
 
         return $ordem;

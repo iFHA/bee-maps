@@ -55,7 +55,42 @@ final class HereFindSequenceMapperTest extends TestCase
             ['id' => $id('end'), 'sequence' => 3],
         ]]]];
 
-        $this->assertSame([1, 0], $mapper->toOrder($respostaSimulada));
+        $this->assertSame([1, 0], $mapper->toOrder($respostaSimulada, 2));
+    }
+
+    public function test_ordem_incompleta_lanca_excecao_em_vez_de_devolver_lista_parcial(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessageMatches('/sequencia|ordem/i');
+
+        // Ids que o HERE nao ecoou como destinationN: sem validacao isto voltava
+        // [] e os waypoints desapareciam silenciosamente da rota.
+        (new HereFindSequenceMapper())->toOrder(['results' => [['waypoints' => [
+            ['id' => 'Waypoint0', 'sequence' => 0],
+            ['id' => 'Waypoint1', 'sequence' => 1],
+        ]]]], 2);
+    }
+
+    public function test_indice_fora_de_faixa_lanca_excecao_tipada(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+
+        // Antes: devolvia [4, 0] e o request mapper estourava com
+        // "Call to a member function toString() on null", fora do contrato.
+        (new HereFindSequenceMapper())->toOrder(['results' => [['waypoints' => [
+            ['id' => 'destination5', 'sequence' => 1],
+            ['id' => 'destination1', 'sequence' => 2],
+        ]]]], 2);
+    }
+
+    public function test_indice_repetido_lanca_excecao_tipada(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+
+        (new HereFindSequenceMapper())->toOrder(['results' => [['waypoints' => [
+            ['id' => 'destination1', 'sequence' => 1],
+            ['id' => 'destination1', 'sequence' => 2],
+        ]]]], 2);
     }
 
     public function test_ordem_devolvida_e_traduzida_para_indices_do_array_original(): void
@@ -64,13 +99,13 @@ final class HereFindSequenceMapperTest extends TestCase
 
         // destination2 veio antes de destination1: em indices 0-based do array
         // de intermediarios, isso e [1, 0].
-        $this->assertSame([1, 0], (new HereFindSequenceMapper())->toOrder($resposta));
+        $this->assertSame([1, 0], (new HereFindSequenceMapper())->toOrder($resposta, 2));
     }
 
     public function test_resposta_sem_resultado_vira_excecao_tipada(): void
     {
         $this->expectException(InvalidRequestException::class);
 
-        (new HereFindSequenceMapper())->toOrder(['results' => []]);
+        (new HereFindSequenceMapper())->toOrder(['results' => []], 2);
     }
 }

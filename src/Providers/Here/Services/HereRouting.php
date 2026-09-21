@@ -42,7 +42,7 @@ final class HereRouting implements Routing
                 $this->sequenceMapper->toQuery($request, $this->apiKey),
             );
 
-            return $this->calcular($request, $this->sequenceMapper->toOrder($sequencia));
+            return $this->calcular($request, $this->sequenceMapper->toOrder($sequencia, count($request->intermediates)));
         });
     }
 

@@ -101,6 +101,24 @@ final class HereRouteMapperTest extends TestCase
         );
     }
 
+    public function test_ordem_de_tamanho_divergente_lanca_excecao_em_vez_de_apagar_os_via(): void
+    {
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessageMatches('/ordem|intermediari/i');
+
+        // Antes: ordem [] fazia o guard `!== []` pular o `via` inteiro, e a rota
+        // voltava como viagem direta — plausivel e errada.
+        (new HereRouteRequestMapper())->toQuery(
+            new RouteRequest(
+                new Coordinates(-23.5, -46.6),
+                new Coordinates(-23.6, -46.7),
+                [new Coordinates(-23.55, -46.65), new Coordinates(-23.58, -46.68)],
+            ),
+            'pt-BR',
+            [],
+        );
+    }
+
     public function test_uma_secao_vira_rota_com_polyline_propria(): void
     {
         $rota = (new HereRouteResponseMapper())->toRoute($this->fixture('route-uma-secao.json'), true);
