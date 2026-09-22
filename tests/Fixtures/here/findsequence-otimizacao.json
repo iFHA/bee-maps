@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "waypoints": [
+        { "id": "start", "lat": -23.5615, "lng": -46.6562, "sequence": 0 },
+        { "id": "destination3", "lat": -23.532, "lng": -46.639, "sequence": 1 },
+        { "id": "destination1", "lat": -23.5505, "lng": -46.6333, "sequence": 2 },
+        { "id": "destination2", "lat": -23.587, "lng": -46.657, "sequence": 3 },
+        { "id": "end", "lat": -23.598, "lng": -46.686, "sequence": 4 }
+      ],
+      "distance": "23787",
+      "time": "3058"
+    }
+  ]
+}

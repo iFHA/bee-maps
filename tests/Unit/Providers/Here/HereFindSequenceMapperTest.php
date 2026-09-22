@@ -2,7 +2,7 @@
 
 namespace BeeDelivery\BeeMaps\Tests\Unit\Providers\Here;
 
-use BeeDelivery\BeeMaps\DTOs\Requests\RouteRequest;
+use BeeDelivery\BeeMaps\Enums\OptimizationObjective;
 use BeeDelivery\BeeMaps\Enums\TravelMode;
 use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereFindSequenceMapper;
@@ -11,20 +11,15 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class HereFindSequenceMapperTest extends TestCase
 {
-    private function requisicao(): RouteRequest
+    public function test_query_nomeia_os_waypoints_como_a_api_espera(): void
     {
-        return new RouteRequest(
+        $query = (new HereFindSequenceMapper())->toQuery(
             new Coordinates(50.10228, 8.69821),
             new Coordinates(50.09878, 8.68752),
             [new Coordinates(50.1001, 8.69), new Coordinates(50.10063, 8.6915)],
             TravelMode::Drive,
-            optimizeIntermediates: true,
+            'chave',
         );
-    }
-
-    public function test_query_nomeia_os_waypoints_como_a_api_espera(): void
-    {
-        $query = (new HereFindSequenceMapper())->toQuery($this->requisicao(), 'chave');
 
         // O formato e `WaypointId;lat,lng`: a API ecoa o id na resposta, e e por
         // ele que a ordem devolvida e reconciliada com o array de intermediarios.
@@ -40,7 +35,13 @@ final class HereFindSequenceMapperTest extends TestCase
     {
         $mapper = new HereFindSequenceMapper();
 
-        $query = $mapper->toQuery($this->requisicao(), 'chave');
+        $query = $mapper->toQuery(
+            new Coordinates(50.10228, 8.69821),
+            new Coordinates(50.09878, 8.68752),
+            [new Coordinates(50.1001, 8.69), new Coordinates(50.10063, 8.6915)],
+            TravelMode::Drive,
+            'chave',
+        );
 
         // Amarra os dois lados do mapper com os ids que ele proprio gerou, em vez
         // de com os ids escritos a mao na fixture. Sem isto, tirar o id do valor
@@ -107,5 +108,91 @@ final class HereFindSequenceMapperTest extends TestCase
         $this->expectException(InvalidRequestException::class);
 
         (new HereFindSequenceMapper())->toOrder(['results' => []], 2);
+    }
+
+    public function test_objetivo_de_distancia_vira_improveFor(): void
+    {
+        // Medido ao vivo em 22/09: improveFor aceita 'time' e 'distance', e o
+        // default da API e 'time'. Valor invalido responde 400.
+        $query = (new HereFindSequenceMapper())->toQuery(
+            new Coordinates(-23.5615, -46.6562),
+            new Coordinates(-23.598, -46.686),
+            [new Coordinates(-23.5505, -46.6333)],
+            TravelMode::Drive,
+            'chave',
+            OptimizationObjective::MinDistance,
+        );
+
+        $this->assertSame('distance', $query['improveFor']);
+        // mode continua `fastest`: `shortest` e alavanca separada, muda como cada
+        // perna e roteada e nao tem equivalente no Google. Ver D20 do spec.
+        $this->assertSame('fastest;car', $query['mode']);
+    }
+
+    public function test_objetivo_de_tempo_vira_improveFor(): void
+    {
+        $query = (new HereFindSequenceMapper())->toQuery(
+            new Coordinates(-23.5615, -46.6562),
+            new Coordinates(-23.598, -46.686),
+            [new Coordinates(-23.5505, -46.6333)],
+            TravelMode::Drive,
+            'chave',
+            OptimizationObjective::MinTravelTime,
+        );
+
+        $this->assertSame('time', $query['improveFor']);
+    }
+
+    public function test_tour_aberto_omite_end(): void
+    {
+        // Medido ao vivo: o findsequence2 aceita requisicao sem `end` e responde
+        // 200. Tour aberto e nativo no HERE — nada de emular ciclo e descontar.
+        $query = (new HereFindSequenceMapper())->toQuery(
+            new Coordinates(-23.5615, -46.6562),
+            null,
+            [new Coordinates(-23.5505, -46.6333)],
+            TravelMode::Drive,
+            'chave',
+        );
+
+        $this->assertArrayNotHasKey('end', $query);
+        $this->assertSame('start;-23.5615000,-46.6562000', $query['start']);
+    }
+
+    public function test_sem_objetivo_nao_manda_improveFor(): void
+    {
+        // O contrato Routing nao tem objetivo. Mandar improveFor ali mudaria o
+        // comportamento do HereRouting, que este refactor nao pode tocar.
+        $query = (new HereFindSequenceMapper())->toQuery(
+            new Coordinates(-23.5615, -46.6562),
+            new Coordinates(-23.598, -46.686),
+            [new Coordinates(-23.5505, -46.6333)],
+            TravelMode::Drive,
+            'chave',
+        );
+
+        $this->assertArrayNotHasKey('improveFor', $query);
+    }
+
+    public function test_totais_saem_da_resposta(): void
+    {
+        $resposta = json_decode(
+            file_get_contents(__DIR__ . '/../../../Fixtures/here/findsequence-otimizacao.json'),
+            true,
+        );
+
+        $totais = (new HereFindSequenceMapper())->toTotals($resposta);
+
+        $this->assertSame(23787, $totais['distance']);
+        $this->assertSame(3058, $totais['duration']);
+    }
+
+    public function test_totais_ausentes_sao_erro(): void
+    {
+        // O HERE manda distance e time explicitos — ausencia aqui e falha de
+        // verdade, nao omissao de valor zero como no proto3 do Google.
+        $this->expectException(InvalidRequestException::class);
+
+        (new HereFindSequenceMapper())->toTotals(['results' => [['waypoints' => []]]]);
     }
 }

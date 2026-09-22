@@ -39,7 +39,13 @@ final class HereRouting implements Routing
                 Provider::Here,
                 Service::Routing,
                 $this->findSequenceUrl,
-                $this->sequenceMapper->toQuery($request, $this->apiKey),
+                $this->sequenceMapper->toQuery(
+                    $request->origin,
+                    $request->destination,
+                    $request->intermediates,
+                    $request->mode,
+                    $this->apiKey,
+                ),
             );
 
             return $this->calcular($request, $this->sequenceMapper->toOrder($sequencia, count($request->intermediates)));
