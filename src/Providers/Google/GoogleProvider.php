@@ -6,12 +6,14 @@ use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesAutocomplete;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesGeocoding;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesPlaceSearch;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesRouteMatrix;
+use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesRouteOptimization;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesRouting;
 use BeeDelivery\BeeMaps\Contracts\MapProvider;
 use BeeDelivery\BeeMaps\Contracts\Services\Autocomplete;
 use BeeDelivery\BeeMaps\Contracts\Services\Geocoding;
 use BeeDelivery\BeeMaps\Contracts\Services\PlaceSearch;
 use BeeDelivery\BeeMaps\Contracts\Services\RouteMatrix;
+use BeeDelivery\BeeMaps\Contracts\Services\RouteOptimization;
 use BeeDelivery\BeeMaps\Contracts\Services\Routing;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Exceptions\MissingCredentialsException;
@@ -24,15 +26,20 @@ use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteMatrixRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteMatrixResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteResponseMapper;
+use BeeDelivery\BeeMaps\Providers\Google\Optimization\MatrixTspStrategy;
+use BeeDelivery\BeeMaps\Providers\Google\Optimization\OptimizationStrategy;
+use BeeDelivery\BeeMaps\Providers\Google\Optimization\RoutesStrategy;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleAutocomplete;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleGeocoding;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GooglePlaceSearch;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleRouteMatrix;
+use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleRouteOptimization;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleRouting;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use BeeDelivery\BeeMaps\Support\MatrixLimit;
+use BeeDelivery\BeeMaps\Support\Tsp\NearestNeighbourTour;
 
-final class GoogleProvider implements MapProvider, ProvidesAutocomplete, ProvidesGeocoding, ProvidesPlaceSearch, ProvidesRouteMatrix, ProvidesRouting
+final class GoogleProvider implements MapProvider, ProvidesAutocomplete, ProvidesGeocoding, ProvidesPlaceSearch, ProvidesRouteMatrix, ProvidesRouteOptimization, ProvidesRouting
 {
     public function __construct(
         private readonly MapsHttpClient $http,
@@ -106,6 +113,27 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
             $this->apiKey(),
             MatrixLimit::normalizar($this->config['matrix_max_elements'] ?? null),
         );
+    }
+
+    public function routeOptimization(): RouteOptimization
+    {
+        return new GoogleRouteOptimization($this->estrategiaPorTempo(), $this->estrategiaPorDistancia());
+    }
+
+    private function estrategiaPorTempo(): OptimizationStrategy
+    {
+        return new RoutesStrategy(
+            $this->http,
+            new GoogleRouteRequestMapper(),
+            $this->config['endpoints']['routing'],
+            $this->apiKey(),
+            $this->language,
+        );
+    }
+
+    private function estrategiaPorDistancia(): OptimizationStrategy
+    {
+        return new MatrixTspStrategy($this->routeMatrix(), new NearestNeighbourTour());
     }
 
     private function apiKey(): string

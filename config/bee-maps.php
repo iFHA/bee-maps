@@ -26,6 +26,14 @@ return [
         // and destinations must be <= 625" (HTTP 400). Verificado em 2026-09-22.
         // Vazio, ausente ou <= 0 desliga a guarda no cliente.
         'matrix_max_elements' => (int) env('BEE_MAPS_GOOGLE_MATRIX_MAX_ELEMENTS', 625),
+        'route_optimization' => [
+            // Qual API atende o objetivo MinDistance: 'matrix_tsp' (default,
+            // usa a matriz de rotas e resolve a ordem localmente) ou
+            // 'fleet_routing' (Cloud Fleet Routing, exige service account e o
+            // pacote google/apiclient, que e apenas sugerido). Valor
+            // desconhecido cai no default em vez de derrubar a chamada.
+            'min_distance_api' => env('BEE_MAPS_GOOGLE_MIN_DISTANCE_API', 'matrix_tsp'),
+        ],
         'endpoints' => [
             'autocomplete'  => 'https://places.googleapis.com/v1/places:autocomplete',
             'geocoding'     => 'https://maps.googleapis.com/maps/api/geocode/json',
