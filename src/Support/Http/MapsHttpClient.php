@@ -8,6 +8,7 @@ use BeeDelivery\BeeMaps\Exceptions\ProviderAuthenticationException;
 use BeeDelivery\BeeMaps\Exceptions\ProviderRateLimitException;
 use BeeDelivery\BeeMaps\Exceptions\ProviderRequestException;
 use BeeDelivery\BeeMaps\Exceptions\ProviderUnavailableException;
+use BeeDelivery\BeeMaps\Support\CredentialRedaction;
 use BeeDelivery\BeeMaps\Support\Events\MapRequestCompleted;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Client\ConnectionException;
@@ -198,23 +199,8 @@ final class MapsHttpClient
         };
     }
 
-    /**
-     * Redige valores de parâmetros de query que parecem credenciais (ex.: apiKey, token)
-     * em qualquer texto que possa conter a URL da requisição, mantendo o nome do
-     * parâmetro visível para não perder capacidade de diagnóstico.
-     *
-     * Guzzle só redige a senha em `user:pass@host` (Psr7\Utils::redactUserInfo); query
-     * strings com `apiKey=...` (HERE) ou `key=...` (Google) passam intactas para
-     * mensagens de exceção e, dali, para logs.
-     */
     private function redigirCredenciais(string $texto): string
     {
-        $parametrosCredencial = 'apiKey|api_key|key|token|access_token|signature|sig';
-
-        return preg_replace(
-            "/([?&])({$parametrosCredencial})=[^&\\s]*/i",
-            '$1$2=[REDACTED]',
-            $texto,
-        );
+        return CredentialRedaction::redigir($texto);
     }
 }
