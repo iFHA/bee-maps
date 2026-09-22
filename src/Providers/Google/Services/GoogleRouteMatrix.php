@@ -44,6 +44,10 @@ final class GoogleRouteMatrix implements RouteMatrix
             ],
         );
 
-        return $this->responseMapper->toCollection($resposta, $request->elements());
+        return $this->responseMapper->toCollection(
+            $resposta,
+            count($request->origins),
+            count($request->destinations),
+        );
     }
 }

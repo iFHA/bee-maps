@@ -50,7 +50,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
-        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 6);
+        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 2, 3);
 
         $this->assertCount(6, $colecao);
 
@@ -68,7 +68,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
-        $entrada = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 6)->entry(1, 0);
+        $entrada = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 2, 3)->entry(1, 0);
 
         $this->assertNotNull($entrada);
         $this->assertFalse($entrada->reachable);
@@ -78,7 +78,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
 
     public function test_resposta_vazia_vira_colecao_vazia(): void
     {
-        $this->assertTrue((new GoogleRouteMatrixResponseMapper())->toCollection([], 0)->isEmpty());
+        $this->assertTrue((new GoogleRouteMatrixResponseMapper())->toCollection([], 0, 0)->isEmpty());
     }
 
     public function test_elemento_de_erro_no_stream_vira_excecao_em_vez_de_par_falso(): void
@@ -93,7 +93,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         (new GoogleRouteMatrixResponseMapper())->toCollection([
             ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 974, 'duration' => '271s', 'condition' => 'ROUTE_EXISTS'],
             ['error' => ['code' => 500, 'message' => 'internal']],
-        ], 2);
+        ], 1, 2);
     }
 
     public function test_condition_ausente_nao_conta_como_alcancavel(): void
@@ -103,7 +103,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         // "indefinido", nao "tem rota".
         $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection([
             ['originIndex' => 0, 'destinationIndex' => 0],
-        ], 1);
+        ], 1, 1);
 
         $this->assertFalse($colecao->entry(0, 0)->reachable);
     }
@@ -115,6 +115,43 @@ final class GoogleRouteMatrixMapperTest extends TestCase
 
         (new GoogleRouteMatrixResponseMapper())->toCollection([
             ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 974, 'duration' => '271s', 'condition' => 'ROUTE_EXISTS'],
-        ], 4);
+        ], 2, 2);
+    }
+
+    public function test_par_duplicado_vira_excecao_mesmo_com_a_contagem_certa(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/duplicad|repetid/i');
+
+        // Contar elementos nao basta: dois elementos para (0,0) somam 2 e
+        // deixam (0,1) sem nenhum. A colecao indexa por par, entao o duplicado
+        // sobrescreve o primeiro e o par pedido vira null.
+        (new GoogleRouteMatrixResponseMapper())->toCollection([
+            ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 10, 'duration' => '1s', 'condition' => 'ROUTE_EXISTS'],
+            ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 20, 'duration' => '2s', 'condition' => 'ROUTE_EXISTS'],
+        ], 1, 2);
+    }
+
+    public function test_indice_fora_da_faixa_pedida_vira_excecao(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/fora da faixa|indice/i');
+
+        (new GoogleRouteMatrixResponseMapper())->toCollection([
+            ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 10, 'duration' => '1s', 'condition' => 'ROUTE_EXISTS'],
+            ['originIndex' => 5, 'destinationIndex' => 0, 'distanceMeters' => 20, 'duration' => '2s', 'condition' => 'ROUTE_EXISTS'],
+        ], 1, 2);
+    }
+
+    public function test_grade_completa_passa(): void
+    {
+        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection([
+            ['originIndex' => 0, 'destinationIndex' => 1, 'distanceMeters' => 20, 'duration' => '2s', 'condition' => 'ROUTE_EXISTS'],
+            ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 10, 'duration' => '1s', 'condition' => 'ROUTE_EXISTS'],
+        ], 1, 2);
+
+        $this->assertCount(2, $colecao);
+        $this->assertSame(10, $colecao->entry(0, 0)->distance->meters);
+        $this->assertSame(20, $colecao->entry(0, 1)->distance->meters);
     }
 }

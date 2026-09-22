@@ -13,13 +13,15 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\Duration;
 final class GoogleRouteMatrixResponseMapper
 {
     /**
-     * @param int $esperados Quantos pares a requisicao pediu (origens x destinos).
+     * @param int $origens  Quantas origens a requisicao pediu.
+     * @param int $destinos Quantos destinos a requisicao pediu.
      *
-     * @throws ProviderRequestException quando a resposta nao descreve a matriz inteira
+     * @throws ProviderRequestException quando a resposta nao descreve a grade inteira
      */
-    public function toCollection(array $resposta, int $esperados): RouteMatrixEntryCollection
+    public function toCollection(array $resposta, int $origens, int $destinos): RouteMatrixEntryCollection
     {
         $entradas = [];
+        $vistos = [];
 
         foreach ($resposta as $elemento) {
             if (! is_array($elemento)) {
@@ -41,32 +43,64 @@ final class GoogleRouteMatrixResponseMapper
                 );
             }
 
-            // A API devolve os elementos FORA DE ORDEM — numa matriz 2x2 real,
-            // (0,1) veio antes de (0,0). Os indices sao a unica fonte de verdade;
-            // a posicao no array nao significa nada.
-            //
+            $origem = (int) ($elemento['originIndex'] ?? 0);
+            $destino = (int) ($elemento['destinationIndex'] ?? 0);
+
+            // Contar elementos nao prova que a grade esta completa: indice fora
+            // da faixa pedida e par repetido somam certo e deixam buraco, porque
+            // a colecao indexa por par e o repetido sobrescreve o anterior.
+            if ($origem < 0 || $origem >= $origens || $destino < 0 || $destino >= $destinos) {
+                throw new ProviderRequestException(
+                    Provider::Google,
+                    Service::RouteMatrix,
+                    sprintf(
+                        'O Google devolveu o par (%d,%d), fora da faixa pedida de %d origens por %d destinos.',
+                        $origem,
+                        $destino,
+                        $origens,
+                        $destinos,
+                    ),
+                    200,
+                );
+            }
+
+            $par = $origem . ':' . $destino;
+
+            if (isset($vistos[$par])) {
+                throw new ProviderRequestException(
+                    Provider::Google,
+                    Service::RouteMatrix,
+                    sprintf('O Google devolveu o par (%d,%d) duplicado.', $origem, $destino),
+                    200,
+                );
+            }
+
+            $vistos[$par] = true;
+
             // So ROUTE_EXISTS explicito conta como alcancavel: proto3 omite o
             // default do enum, e o default aqui e UNSPECIFIED, nao ROUTE_EXISTS.
             $alcancavel = ($elemento['condition'] ?? null) === 'ROUTE_EXISTS';
 
             $entradas[] = new RouteMatrixEntry(
-                originIndex: (int) ($elemento['originIndex'] ?? 0),
-                destinationIndex: (int) ($elemento['destinationIndex'] ?? 0),
+                originIndex: $origem,
+                destinationIndex: $destino,
                 distance: new Distance($alcancavel ? (int) ($elemento['distanceMeters'] ?? 0) : 0),
                 duration: new Duration($alcancavel ? $this->segundos($elemento['duration'] ?? null) : 0),
                 reachable: $alcancavel,
             );
         }
 
-        if (count($entradas) !== $esperados) {
+        // Com todos os pares distintos e dentro da faixa, a contagem certa passa
+        // a significar grade completa — e so agora ela prova alguma coisa.
+        if (count($entradas) !== $origens * $destinos) {
             throw new ProviderRequestException(
                 Provider::Google,
                 Service::RouteMatrix,
                 sprintf(
-                    'Matriz incompleta: o Google devolveu %d de %d elementos. '
+                    'Matriz incompleta: o Google devolveu %d de %d pares. '
                     . 'Entregar a matriz parcial esconderia pares que o chamador pediu.',
                     count($entradas),
-                    $esperados,
+                    $origens * $destinos,
                 ),
                 200,
             );
