@@ -22,11 +22,15 @@ return [
 
     'google' => [
         'key' => env('GOOGLE_MAPS_KEY'),
+        // Limite imposto pela propria API: "The product of the number of origins
+        // and destinations must be <= 625" (HTTP 400). Verificado em 2026-09-22.
+        'matrix_max_elements' => (int) env('BEE_MAPS_GOOGLE_MATRIX_MAX_ELEMENTS', 625),
         'endpoints' => [
             'autocomplete'  => 'https://places.googleapis.com/v1/places:autocomplete',
             'geocoding'     => 'https://maps.googleapis.com/maps/api/geocode/json',
             'place_search'  => 'https://places.googleapis.com/v1/places:searchText',
             'routing'       => 'https://routes.googleapis.com/directions/v2:computeRoutes',
+            'route_matrix'  => 'https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix',
         ],
     ],
 

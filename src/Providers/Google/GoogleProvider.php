@@ -5,11 +5,13 @@ namespace BeeDelivery\BeeMaps\Providers\Google;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesAutocomplete;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesGeocoding;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesPlaceSearch;
+use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesRouteMatrix;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesRouting;
 use BeeDelivery\BeeMaps\Contracts\MapProvider;
 use BeeDelivery\BeeMaps\Contracts\Services\Autocomplete;
 use BeeDelivery\BeeMaps\Contracts\Services\Geocoding;
 use BeeDelivery\BeeMaps\Contracts\Services\PlaceSearch;
+use BeeDelivery\BeeMaps\Contracts\Services\RouteMatrix;
 use BeeDelivery\BeeMaps\Contracts\Services\Routing;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Exceptions\MissingCredentialsException;
@@ -18,15 +20,18 @@ use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleAutocompleteResponseMappe
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleGeocodeResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GooglePlaceSearchRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GooglePlaceSearchResponseMapper;
+use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteMatrixRequestMapper;
+use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteMatrixResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleAutocomplete;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleGeocoding;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GooglePlaceSearch;
+use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleRouteMatrix;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleRouting;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 
-final class GoogleProvider implements MapProvider, ProvidesAutocomplete, ProvidesGeocoding, ProvidesPlaceSearch, ProvidesRouting
+final class GoogleProvider implements MapProvider, ProvidesAutocomplete, ProvidesGeocoding, ProvidesPlaceSearch, ProvidesRouteMatrix, ProvidesRouting
 {
     public function __construct(
         private readonly MapsHttpClient $http,
@@ -87,6 +92,18 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
             $this->config['endpoints']['routing'],
             $this->apiKey(),
             $this->language,
+        );
+    }
+
+    public function routeMatrix(): RouteMatrix
+    {
+        return new GoogleRouteMatrix(
+            $this->http,
+            new GoogleRouteMatrixRequestMapper(),
+            new GoogleRouteMatrixResponseMapper(),
+            $this->config['endpoints']['route_matrix'],
+            $this->apiKey(),
+            $this->config['matrix_max_elements'] ?? null,
         );
     }
 
