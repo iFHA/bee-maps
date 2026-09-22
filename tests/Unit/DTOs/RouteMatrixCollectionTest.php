@@ -72,4 +72,26 @@ final class RouteMatrixCollectionTest extends TestCase
         $this->assertStringContainsString('900', $excecao->getMessage());
         $this->assertStringContainsString('625', $excecao->getMessage());
     }
+
+    public function test_pontos_com_chaves_nao_sequenciais_sao_reindexados(): void
+    {
+        $pontos = [
+            new Coordinates(-23.5, -46.6),
+            new Coordinates(-23.6, -46.7),
+            new Coordinates(-23.7, -46.8),
+        ];
+
+        // array_filter preserva as chaves originais: [0, 2]. Sem reindexar, o
+        // json_encode do payload vira objeto ({"0":...,"2":...}) em vez de array
+        // e os dois providers respondem 400 com mensagem opaca — e os indices do
+        // resultado deixam de casar com as chaves que o chamador enxerga.
+        $filtrados = array_filter($pontos, fn (Coordinates $p) => $p->latitude !== -23.6);
+
+        $request = new RouteMatrixRequest($filtrados, [new Coordinates(-23.55, -46.65)]);
+
+        $this->assertSame([0, 1], array_keys($request->origins));
+        $this->assertTrue(array_is_list($request->origins));
+        $this->assertTrue(array_is_list($request->destinations));
+        $this->assertSame(-23.7, $request->origins[1]->latitude);
+    }
 }
