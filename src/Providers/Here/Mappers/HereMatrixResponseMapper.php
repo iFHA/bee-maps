@@ -56,48 +56,15 @@ final class HereMatrixResponseMapper
         }
 
         $total = $origens * $destinos;
-
-        // array_values porque o acesso adiante e por posicao row-major: uma lista
-        // com chaves nao sequenciais teria a contagem certa e o indice errado.
-        $distancias = array_values($matriz['distances'] ?? []);
-        $tempos = array_values($matriz['travelTimes'] ?? []);
-
-        // Medida tem que VIR da resposta. Completar com `?? 0` transformava uma
-        // resposta sem `distances` numa matriz inteira de 0 metros marcada como
-        // alcancavel — numero inventado que o consumidor nao tem como desconfiar.
-        foreach (['distances' => $distancias, 'travelTimes' => $tempos] as $campo => $valores) {
-            if (count($valores) !== $total) {
-                throw new ProviderRequestException(
-                    Provider::Here,
-                    Service::RouteMatrix,
-                    sprintf(
-                        'O HERE devolveu %d medidas em "%s" para uma grade de %d pares.',
-                        count($valores),
-                        $campo,
-                        $total,
-                    ),
-                    200,
-                );
-            }
-        }
+        $distancias = $this->medidas($matriz, 'distances', $total);
+        $tempos = $this->medidas($matriz, 'travelTimes', $total);
 
         // O campo errorCodes NAO vem quando todos os pares sao alcancaveis —
         // verificado contra a API. Ausente significa "tudo alcancavel"; presente
-        // e incompleto e outra coisa, e nao pode ser completado com `?? 0`.
-        $erros = array_values($matriz['errorCodes'] ?? []);
-
-        if ($erros !== [] && count($erros) !== $total) {
-            throw new ProviderRequestException(
-                Provider::Here,
-                Service::RouteMatrix,
-                sprintf(
-                    'O HERE devolveu %d codigos de erro para uma grade de %d pares.',
-                    count($erros),
-                    $total,
-                ),
-                200,
-            );
-        }
+        // passa pela mesma validacao dos demais.
+        $erros = array_key_exists('errorCodes', $matriz)
+            ? $this->medidas($matriz, 'errorCodes', $total)
+            : [];
 
         $entradas = [];
 
@@ -122,5 +89,66 @@ final class HereMatrixResponseMapper
         }
 
         return new RouteMatrixEntryCollection(...$entradas);
+    }
+
+    /**
+     * Valida um array de medidas pelo VALOR, nao so pela quantidade: contar
+     * elementos deixava passar escalar (TypeError no array_values) e null no
+     * meio da lista (que virava 0 metros num par marcado como alcancavel).
+     *
+     * @return list<int|float>
+     */
+    private function medidas(array $matriz, string $campo, int $total): array
+    {
+        $valores = $matriz[$campo] ?? [];
+
+        if (! is_array($valores)) {
+            throw new ProviderRequestException(
+                Provider::Here,
+                Service::RouteMatrix,
+                sprintf(
+                    'O HERE devolveu "%s" como %s, e nao como lista de medidas.',
+                    $campo,
+                    get_debug_type($valores),
+                ),
+                200,
+            );
+        }
+
+        // array_values porque o acesso adiante e por posicao row-major: uma lista
+        // com chaves nao sequenciais teria a contagem certa e o indice errado.
+        $valores = array_values($valores);
+
+        if (count($valores) !== $total) {
+            throw new ProviderRequestException(
+                Provider::Here,
+                Service::RouteMatrix,
+                sprintf(
+                    'O HERE devolveu %d medidas em "%s" para uma grade de %d pares.',
+                    count($valores),
+                    $campo,
+                    $total,
+                ),
+                200,
+            );
+        }
+
+        foreach ($valores as $posicao => $valor) {
+            if (! is_numeric($valor)) {
+                throw new ProviderRequestException(
+                    Provider::Here,
+                    Service::RouteMatrix,
+                    sprintf(
+                        'O HERE devolveu a medida %d de "%s" como %s, e nao como numero.',
+                        $posicao,
+                        $campo,
+                        get_debug_type($valor),
+                    ),
+                    200,
+                );
+            }
+        }
+
+        return $valores;
     }
 }

@@ -179,4 +179,49 @@ final class HereMatrixMapperTest extends TestCase
             'errorCodes' => [0, 0],
         ]], 2, 3);
     }
+
+    public function test_campo_de_medida_escalar_vira_excecao_tipada_e_nao_type_error(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/lista|distances/i');
+
+        // `??` so absorve null: sem is_array(), array_values() estoura TypeError,
+        // que escapa do contrato de excecoes tipadas do pacote.
+        (new HereMatrixResponseMapper())->toCollection(['matrix' => [
+            'numOrigins' => 1,
+            'numDestinations' => 1,
+            'distances' => 123,
+            'travelTimes' => [1],
+        ]], 1, 1);
+    }
+
+    public function test_medida_nao_numerica_vira_excecao_em_vez_de_zero_inventado(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/numero|numeric/i');
+
+        // Contar nao basta: um null no meio de um array do tamanho certo passava
+        // pela guarda e virava (int) null = 0 metros num par marcado como
+        // alcancavel — exatamente a medida inventada que a rodada anterior
+        // queria eliminar.
+        (new HereMatrixResponseMapper())->toCollection(['matrix' => [
+            'numOrigins' => 1,
+            'numDestinations' => 2,
+            'distances' => [100, null],
+            'travelTimes' => [10, 20],
+        ]], 1, 2);
+    }
+
+    public function test_error_codes_escalar_vira_excecao_tipada(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+
+        (new HereMatrixResponseMapper())->toCollection(['matrix' => [
+            'numOrigins' => 1,
+            'numDestinations' => 1,
+            'distances' => [100],
+            'travelTimes' => [10],
+            'errorCodes' => 'nenhum',
+        ]], 1, 1);
+    }
 }
