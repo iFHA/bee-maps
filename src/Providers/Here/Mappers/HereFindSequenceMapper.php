@@ -3,8 +3,8 @@
 namespace BeeDelivery\BeeMaps\Providers\Here\Mappers;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteRequest;
-use BeeDelivery\BeeMaps\Enums\TravelMode;
 use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
+use BeeDelivery\BeeMaps\Providers\Here\HereTransportMode;
 
 /**
  * Waypoints Sequence API: resolve a ordem de visita (TSP) mas nao devolve a
@@ -24,7 +24,7 @@ final class HereFindSequenceMapper
         $query = [
             'start' => 'start;' . $request->origin->toString(),
             'end' => 'end;' . $request->destination->toString(),
-            'mode' => 'fastest;' . $this->modo($request->mode),
+            'mode' => 'fastest;' . HereTransportMode::from($request->mode),
             'apiKey' => $apiKey,
         ];
 
@@ -86,15 +86,5 @@ final class HereFindSequenceMapper
         }
 
         return $ordem;
-    }
-
-    private function modo(TravelMode $modo): string
-    {
-        return match ($modo) {
-            TravelMode::Drive => 'car',
-            TravelMode::TwoWheeler => 'scooter',
-            TravelMode::Bicycle => 'bicycle',
-            TravelMode::Walk => 'pedestrian',
-        };
     }
 }

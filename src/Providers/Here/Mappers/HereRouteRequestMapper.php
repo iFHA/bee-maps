@@ -3,8 +3,8 @@
 namespace BeeDelivery\BeeMaps\Providers\Here\Mappers;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteRequest;
-use BeeDelivery\BeeMaps\Enums\TravelMode;
 use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
+use BeeDelivery\BeeMaps\Providers\Here\HereTransportMode;
 
 final class HereRouteRequestMapper
 {
@@ -25,7 +25,7 @@ final class HereRouteRequestMapper
         $query = [
             'origin' => $request->origin->toString(),
             'destination' => $request->destination->toString(),
-            'transportMode' => $this->modo($request->mode),
+            'transportMode' => HereTransportMode::from($request->mode),
             'return' => implode(',', $retorno),
             'lang' => $language,
         ];
@@ -55,15 +55,5 @@ final class HereRouteRequestMapper
         }
 
         return $query;
-    }
-
-    private function modo(TravelMode $modo): string
-    {
-        return match ($modo) {
-            TravelMode::Drive => 'car',
-            TravelMode::TwoWheeler => 'scooter',
-            TravelMode::Bicycle => 'bicycle',
-            TravelMode::Walk => 'pedestrian',
-        };
     }
 }

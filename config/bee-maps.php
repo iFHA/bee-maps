@@ -36,6 +36,11 @@ return [
 
     'here' => [
         'api_key' => env('HERE_API_KEY'),
+        // Null = sem guarda no cliente. O sincrono do HERE aguenta bem mais que o
+        // Google: 250x100 (25.000 elementos) respondeu 200 em 2026-09-22. Como o
+        // teto real nao esta documentado de forma confiavel, deixar o proprio
+        // provider recusar e melhor do que inventar um limite aqui.
+        'matrix_max_elements' => env('BEE_MAPS_HERE_MATRIX_MAX_ELEMENTS'),
         // Converte o scoring.queryScore do HERE (0 a 1) no booleano `partial`:
         // abaixo deste limiar, o resultado é marcado como parcial. O default de
         // 1.0 é deliberadamente conservador e não foi calibrado contra dados
@@ -57,6 +62,7 @@ return [
             'lookup'      => 'https://lookup.search.hereapi.com/v1/lookup',
             'discover'    => 'https://discover.search.hereapi.com/v1/discover',
             'routing'     => 'https://router.hereapi.com/v8/routes',
+            'matrix'      => 'https://matrix.router.hereapi.com/v8/matrix',
             // Waypoints Sequence API: resolve a ordem de visita, nao a rota.
             // O host diverge do que a secao 8 do spec registra (router.hereapi.com,
             // que responde 404) — ver D18. Fica em config porque a doc do HERE
