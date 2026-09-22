@@ -5,6 +5,7 @@ namespace BeeDelivery\BeeMaps;
 use BeeDelivery\BeeMaps\Providers\Google\GoogleProvider;
 use BeeDelivery\BeeMaps\Providers\Here\HereProvider;
 use BeeDelivery\BeeMaps\Providers\ProviderRegistry;
+use BeeDelivery\BeeMaps\Support\ConfigMerge;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Client\Factory;
@@ -14,7 +15,7 @@ final class BeeMapsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/bee-maps.php', 'bee-maps');
+        $this->mergeConfigProfundo(__DIR__ . '/../config/bee-maps.php', 'bee-maps');
 
         $this->app->singleton(MapsHttpClient::class, fn ($app) => new MapsHttpClient(
             $app->make(Factory::class),
@@ -52,5 +53,15 @@ final class BeeMapsServiceProvider extends ServiceProvider
                 __DIR__ . '/../config/bee-maps.php' => config_path('bee-maps.php'),
             ], 'bee-maps-config');
         }
+    }
+
+    /**
+     * Equivalente ao mergeConfigFrom, mas recursivo — ver ConfigMerge.
+     */
+    private function mergeConfigProfundo(string $caminho, string $chave): void
+    {
+        $config = $this->app->make('config');
+
+        $config->set($chave, ConfigMerge::deep(require $caminho, $config->get($chave, [])));
     }
 }
