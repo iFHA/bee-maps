@@ -25,6 +25,9 @@
         "orchestra/testbench": "^8.0|^9.0|^10.0",
         "phpunit/phpunit": "^10.5|^11.0"
     },
+    "suggest": {
+        "google/apiclient": "Necessario apenas para a estrategia fleet_routing de RouteOptimization (OAuth de service account). A estrategia default, matrix_tsp, nao precisa dela."
+    },
     "autoload": {
         "psr-4": { "BeeDelivery\\BeeMaps\\": "src/" }
     },

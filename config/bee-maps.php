@@ -33,6 +33,24 @@ return [
             // pacote google/apiclient, que e apenas sugerido). Valor
             // desconhecido cai no default em vez de derrubar a chamada.
             'min_distance_api' => env('BEE_MAPS_GOOGLE_MIN_DISTANCE_API', 'matrix_tsp'),
+            'url' => 'https://routeoptimization.googleapis.com/v1/projects/{projectId}:optimizeTours',
+            'scope' => 'https://www.googleapis.com/auth/cloud-platform',
+            // Conteudo do JSON de service account. E o unico ponto do pacote com
+            // chave privada em config — so e lido quando min_distance_api vale
+            // 'fleet_routing'.
+            'service_account' => [
+                'type' => 'service_account',
+                'project_id' => env('BEE_MAPS_GOOGLE_PROJECT_ID'),
+                'private_key_id' => env('BEE_MAPS_GOOGLE_RO_PRIVATE_KEY_ID'),
+                'private_key' => env('BEE_MAPS_GOOGLE_RO_PRIVATE_KEY'),
+                'client_email' => env('BEE_MAPS_GOOGLE_RO_CLIENT_EMAIL'),
+                'client_id' => env('BEE_MAPS_GOOGLE_RO_CLIENT_ID'),
+                'auth_uri' => 'https://accounts.google.com/o/oauth2/auth',
+                'token_uri' => 'https://oauth2.googleapis.com/token',
+                'auth_provider_x509_cert_url' => 'https://www.googleapis.com/oauth2/v1/certs',
+                'client_x509_cert_url' => env('BEE_MAPS_GOOGLE_RO_CLIENT_X509_CERT_URL'),
+                'universe_domain' => 'googleapis.com',
+            ],
         ],
         'endpoints' => [
             'autocomplete'  => 'https://places.googleapis.com/v1/places:autocomplete',

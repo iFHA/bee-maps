@@ -26,9 +26,11 @@ use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteMatrixRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteMatrixResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteResponseMapper;
+use BeeDelivery\BeeMaps\Providers\Google\Optimization\FleetRoutingStrategy;
 use BeeDelivery\BeeMaps\Providers\Google\Optimization\MatrixTspStrategy;
 use BeeDelivery\BeeMaps\Providers\Google\Optimization\OptimizationStrategy;
 use BeeDelivery\BeeMaps\Providers\Google\Optimization\RoutesStrategy;
+use BeeDelivery\BeeMaps\Providers\Google\Optimization\ServiceAccountToken;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleAutocomplete;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleGeocoding;
 use BeeDelivery\BeeMaps\Providers\Google\Services\GooglePlaceSearch;
@@ -133,7 +135,22 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
 
     private function estrategiaPorDistancia(): OptimizationStrategy
     {
-        return new MatrixTspStrategy($this->routeMatrix(), new NearestNeighbourTour());
+        $config = $this->config['route_optimization'] ?? [];
+
+        // Valor desconhecido cai no default: derrubar toda otimizacao por causa
+        // de um typo no .env e pior do que usar a estrategia que nao precisa de
+        // credencial extra.
+        if (($config['min_distance_api'] ?? 'matrix_tsp') !== 'fleet_routing') {
+            return new MatrixTspStrategy($this->routeMatrix(), new NearestNeighbourTour());
+        }
+
+        $credenciais = $config['service_account'] ?? [];
+
+        return new FleetRoutingStrategy(
+            $this->http,
+            new ServiceAccountToken($credenciais, $config['scope'] ?? ''),
+            str_replace('{projectId}', (string) ($credenciais['project_id'] ?? ''), $config['url'] ?? ''),
+        );
     }
 
     private function apiKey(): string

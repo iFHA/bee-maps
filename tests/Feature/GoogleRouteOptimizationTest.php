@@ -5,6 +5,7 @@ namespace BeeDelivery\BeeMaps\Tests\Feature;
 use BeeDelivery\BeeMaps\DTOs\Requests\OptimizeWaypointsRequest;
 use BeeDelivery\BeeMaps\Enums\OptimizationObjective;
 use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Exceptions\ConfigurationException;
 use BeeDelivery\BeeMaps\MapServiceFactory;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Tests\TestCase;
@@ -57,6 +58,36 @@ final class GoogleRouteOptimizationTest extends TestCase
 
         $this->assertSame('google.matrix_tsp', $resultado->strategy);
         $this->assertCount(3, $resultado->order);
+    }
+
+    public function test_fleet_routing_sem_a_dependencia_diz_o_comando_exato(): void
+    {
+        // Sem google/apiclient instalado (o pacote so o sugere), pedir a
+        // estrategia tem que falhar dizendo a saida — inclusive a de nao trocar.
+        if (class_exists(\Google\Client::class)) {
+            $this->markTestSkipped('google/apiclient esta instalado neste ambiente.');
+        }
+
+        $this->app['config']->set('bee-maps.google.route_optimization.min_distance_api', 'fleet_routing');
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessageMatches('/composer require google\/apiclient/');
+        $this->expectExceptionMessageMatches('/matrix_tsp/');
+
+        $this->app->make(MapServiceFactory::class)->routeOptimization(Provider::Google);
+    }
+
+    public function test_min_distance_api_desconhecido_cai_no_default(): void
+    {
+        $this->app['config']->set('bee-maps.google.route_optimization.min_distance_api', 'banana');
+
+        Http::fake(['routes.googleapis.com/distanceMatrix/*' => Http::response($this->matrizQuadrada(5), 200)]);
+
+        $resultado = $this->app->make(MapServiceFactory::class)
+            ->routeOptimization(Provider::Google)
+            ->optimize($this->requisicao(OptimizationObjective::MinDistance));
+
+        $this->assertSame('google.matrix_tsp', $resultado->strategy);
     }
 
     /**
