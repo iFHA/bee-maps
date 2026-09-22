@@ -6,6 +6,7 @@ use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Enums\Service;
 use BeeDelivery\BeeMaps\Exceptions\ProviderAuthenticationException;
 use BeeDelivery\BeeMaps\Exceptions\ProviderRateLimitException;
+use BeeDelivery\BeeMaps\Exceptions\ProviderRequestException;
 use BeeDelivery\BeeMaps\Exceptions\ProviderUnavailableException;
 use BeeDelivery\BeeMaps\Support\Events\MapRequestCompleted;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
@@ -187,6 +188,32 @@ final class MapsHttpClientTest extends TestCase
             $this->fail('Esperava ProviderUnavailableException');
         } catch (ProviderUnavailableException $e) {
             $this->assertStringContainsString('monkey=banana', $e->getMessage());
+        }
+    }
+
+    public function test_erro_do_google_embrulhado_em_array_preserva_mensagem_e_codigo(): void
+    {
+        // Corpo real do computeRouteMatrix quando a matriz passa de 625 elementos.
+        Http::fake(['matriz.exemplo.test/*' => Http::response([[
+            'error' => [
+                'code' => 400,
+                'message' => 'Request exceeded the maximum number of elements.',
+                'status' => 'INVALID_ARGUMENT',
+            ],
+        ]], 400)]);
+
+        try {
+            $this->app->make(MapsHttpClient::class)->post(
+                Provider::Google,
+                Service::RouteMatrix,
+                'https://matriz.exemplo.test/x',
+                [],
+            );
+
+            $this->fail('Esperava ProviderRequestException.');
+        } catch (ProviderRequestException $e) {
+            $this->assertStringContainsString('maximum number of elements', $e->getMessage());
+            $this->assertSame('INVALID_ARGUMENT', $e->providerCode());
         }
     }
 }

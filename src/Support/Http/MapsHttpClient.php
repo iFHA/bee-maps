@@ -174,8 +174,16 @@ final class MapsHttpClient
     {
         $status = $resposta->status();
         $corpo = $resposta->json();
-        $codigo = $corpo['error']['status'] ?? $corpo['error']['code'] ?? null;
-        $mensagem = $this->redigirCredenciais($corpo['error']['message'] ?? $resposta->reason() ?? 'falha na chamada ao provider');
+
+        // O computeRouteMatrix do Google embrulha o erro num array
+        // ([{"error": {...}}]), diferente de todos os outros endpoints. Sem este
+        // fallback a mensagem que explica a falha — "the product of the number of
+        // origins and destinations must be <= 625" — se perde, e o consumidor
+        // recebe um "Bad Request" sem causa.
+        $erro = $corpo['error'] ?? $corpo[0]['error'] ?? null;
+
+        $codigo = $erro['status'] ?? $erro['code'] ?? null;
+        $mensagem = $this->redigirCredenciais($erro['message'] ?? $resposta->reason() ?? 'falha na chamada ao provider');
 
         // Preserva null: providerCode() é ?string justamente para distinguir
         // "o provider não mandou código" de "mandou um código". Um (string) aqui
