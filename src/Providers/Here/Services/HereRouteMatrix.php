@@ -39,6 +39,6 @@ final class HereRouteMatrix implements RouteMatrix
             $this->requestMapper->toPayload($request),
         );
 
-        return $this->responseMapper->toCollection($resposta);
+        return $this->responseMapper->toCollection($resposta, $request->elements());
     }
 }

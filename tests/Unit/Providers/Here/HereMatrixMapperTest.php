@@ -4,6 +4,7 @@ namespace BeeDelivery\BeeMaps\Tests\Unit\Providers\Here;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteMatrixRequest;
 use BeeDelivery\BeeMaps\Enums\TravelMode;
+use BeeDelivery\BeeMaps\Exceptions\ProviderRequestException;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereMatrixRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereMatrixResponseMapper;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
@@ -37,7 +38,7 @@ final class HereMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta);
+        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 4);
 
         $this->assertCount(4, $colecao);
 
@@ -56,7 +57,7 @@ final class HereMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta);
+        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 4);
 
         $this->assertFalse($colecao->entry(1, 0)->reachable);
         // A fixture traz 1511 metros nessa posicao, mas o errorCode 3 diz que
@@ -81,7 +82,7 @@ final class HereMatrixMapperTest extends TestCase
             ],
         ];
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta);
+        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 4);
 
         $this->assertCount(4, $colecao);
 
@@ -90,8 +91,30 @@ final class HereMatrixMapperTest extends TestCase
         }
     }
 
-    public function test_resposta_sem_matriz_vira_colecao_vazia(): void
+    public function test_resposta_sem_matriz_vira_excecao(): void
     {
-        $this->assertTrue((new HereMatrixResponseMapper())->toCollection([])->isEmpty());
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/matriz/i');
+
+        // Envelope de job em vez de matriz: acontece se o async=false se perder
+        // ou o HERE degradar uma requisicao grande. Devolver colecao vazia aqui
+        // contraria o contrato — pares sem rota vem com reachable=false, nunca
+        // ausentes — e o chamador nao distingue "sem matriz" de "matriz de nada".
+        (new HereMatrixResponseMapper())->toCollection(['matrixId' => 'abc', 'status' => 'pending'], 4);
+    }
+
+    public function test_matriz_menor_que_o_pedido_vira_excecao(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/2 de 4|incompleta/i');
+
+        (new HereMatrixResponseMapper())->toCollection([
+            'matrix' => [
+                'numOrigins' => 1,
+                'numDestinations' => 2,
+                'distances' => [100, 200],
+                'travelTimes' => [10, 20],
+            ],
+        ], 4);
     }
 }
