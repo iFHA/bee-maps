@@ -38,9 +38,9 @@ final class HereMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 4);
+        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 6);
 
-        $this->assertCount(4, $colecao);
+        $this->assertCount(6, $colecao);
 
         // Row-major: indice = origem * numDestinations + destino. O par (1,0)
         // fica de fora aqui de proposito: a fixture o marca como inalcancavel, e
@@ -49,18 +49,22 @@ final class HereMatrixMapperTest extends TestCase
         $this->assertSame(262, $colecao->entry(0, 0)->duration->seconds);
         $this->assertSame(1629, $colecao->entry(0, 1)->distance->meters);
         $this->assertSame(300, $colecao->entry(0, 1)->duration->seconds);
-        $this->assertSame(1915, $colecao->entry(1, 1)->distance->meters);
-        $this->assertSame(466, $colecao->entry(1, 1)->duration->seconds);
+        $this->assertSame(2594, $colecao->entry(0, 2)->distance->meters);
+        $this->assertSame(428, $colecao->entry(0, 2)->duration->seconds);
+        $this->assertSame(26031, $colecao->entry(1, 1)->distance->meters);
+        $this->assertSame(2290, $colecao->entry(1, 1)->duration->seconds);
+        $this->assertSame(25021, $colecao->entry(1, 2)->distance->meters);
+        $this->assertSame(2201, $colecao->entry(1, 2)->duration->seconds);
     }
 
     public function test_error_code_diferente_de_zero_marca_par_inalcancavel(): void
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 4);
+        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 6);
 
         $this->assertFalse($colecao->entry(1, 0)->reachable);
-        // A fixture traz 1511 metros nessa posicao, mas o errorCode 3 diz que
+        // A fixture traz 26089 metros nessa posicao, mas o errorCode 3 diz que
         // nao ha rota: o contrato zera a medida em vez de propagar um numero
         // que nao corresponde a percurso nenhum.
         $this->assertSame(0, $colecao->entry(1, 0)->distance->meters);
@@ -76,15 +80,15 @@ final class HereMatrixMapperTest extends TestCase
         $resposta = [
             'matrix' => [
                 'numOrigins' => 2,
-                'numDestinations' => 2,
-                'travelTimes' => [262, 300, 428, 466],
-                'distances' => [1225, 1629, 1511, 1915],
+                'numDestinations' => 3,
+                'travelTimes' => [262, 300, 428, 2317, 2290, 2201],
+                'distances' => [1225, 1629, 2594, 26089, 26031, 25021],
             ],
         ];
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 4);
+        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 6);
 
-        $this->assertCount(4, $colecao);
+        $this->assertCount(6, $colecao);
 
         foreach ($colecao as $entrada) {
             $this->assertTrue($entrada->reachable);

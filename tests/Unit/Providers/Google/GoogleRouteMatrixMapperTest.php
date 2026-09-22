@@ -50,23 +50,25 @@ final class GoogleRouteMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
-        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 4);
+        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 6);
 
-        $this->assertCount(4, $colecao);
+        $this->assertCount(6, $colecao);
 
         // A fixture esta na ordem que a API devolveu: (0,1) antes de (0,0).
         // Se o mapper indexasse por posicao, estes valores sairiam trocados.
-        $this->assertSame(974, $colecao->entry(0, 0)->distance->meters);
-        $this->assertSame(271, $colecao->entry(0, 0)->duration->seconds);
-        $this->assertSame(1807, $colecao->entry(0, 1)->distance->meters);
-        $this->assertSame(646, $colecao->entry(1, 1)->distance->meters);
+        $this->assertSame(1225, $colecao->entry(0, 0)->distance->meters);
+        $this->assertSame(262, $colecao->entry(0, 0)->duration->seconds);
+        $this->assertSame(1629, $colecao->entry(0, 1)->distance->meters);
+        $this->assertSame(2594, $colecao->entry(0, 2)->distance->meters);
+        $this->assertSame(26031, $colecao->entry(1, 1)->distance->meters);
+        $this->assertSame(25021, $colecao->entry(1, 2)->distance->meters);
     }
 
     public function test_par_sem_rota_vira_entrada_inalcancavel_e_nao_some(): void
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
-        $entrada = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 4)->entry(1, 0);
+        $entrada = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 6)->entry(1, 0);
 
         $this->assertNotNull($entrada);
         $this->assertFalse($entrada->reachable);

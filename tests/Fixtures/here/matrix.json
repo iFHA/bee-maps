@@ -2,10 +2,10 @@
   "matrixId": "723f244d-9264-4024-a82f-3052f41ee6e0",
   "matrix": {
     "numOrigins": 2,
-    "numDestinations": 2,
-    "travelTimes": [262, 300, 428, 466],
-    "distances": [1225, 1629, 1511, 1915],
-    "errorCodes": [0, 0, 3, 0]
+    "numDestinations": 3,
+    "travelTimes": [262, 300, 428, 2317, 2290, 2201],
+    "distances": [1225, 1629, 2594, 26089, 26031, 25021],
+    "errorCodes": [0, 0, 0, 3, 0, 0]
   },
-  "regionDefinition": { "type": "circle", "center": { "lat": -23.556, "lng": -46.64935 }, "radius": 10925 }
+  "regionDefinition": { "type": "circle", "center": { "lat": -23.5, "lng": -46.6 }, "radius": 26089 }
 }

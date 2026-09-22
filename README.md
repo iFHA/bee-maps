@@ -371,8 +371,20 @@ A otimização de frota **não existe neste pacote**. Não há contrato, não h�
   matriz com buracos é mais difícil de consumir do que uma completa.
 - **Só o modo síncrono.** O modo assíncrono do HERE (submit → poll → download) depende de
   job e não cabe dentro de uma request HTTP.
+- **Matriz incompleta é erro, não resultado parcial.** Se o provider interromper o cálculo
+  no meio (o `computeRouteMatrix` do Google faz isso com HTTP 200, anexando o erro ao
+  final do stream) ou responder sem a matriz, o pacote lança `ProviderRequestException`
+  em vez de devolver uma coleção com buracos.
 
 **A suíte não roda contra Laravel 10.** O `orchestra/testbench ^8.0` só casa com versões pontuais do Laravel 10 bloqueadas por advisories de segurança. Isso afeta só o desenvolvimento do pacote — **consumidores em Laravel 10 instalam normalmente** (verificado por resolução do Composer com plataforma forçada).
+
+## Atualizando o pacote
+
+Se você **publicou** `config/bee-maps.php`, saiba que o pacote mescla o config dele com o
+seu **em profundidade**: chaves novas (endpoints de serviços novos, limites) aparecem
+automaticamente, e o que você definiu continua valendo. A única exceção são listas — como
+`providers` —, que são substituídas inteiras pela sua versão, para que um item removido de
+propósito não volte sozinho.
 
 ## Migrando do `beedelivery/google-maps`
 

@@ -32,10 +32,10 @@ final class GoogleRouteMatrixTest extends TestCase
 
         $matriz = $this->app->make(MapServiceFactory::class)
             ->routeMatrix(Provider::Google)
-            ->matrix(new RouteMatrixRequest($this->pontos(2), $this->pontos(2)));
+            ->matrix(new RouteMatrixRequest($this->pontos(2), $this->pontos(3)));
 
-        $this->assertCount(4, $matriz);
-        $this->assertSame(974, $matriz->entry(0, 0)->distance->meters);
+        $this->assertCount(6, $matriz);
+        $this->assertSame(1225, $matriz->entry(0, 0)->distance->meters);
         $this->assertFalse($matriz->entry(1, 0)->reachable);
 
         Http::assertSent(function ($request): bool {
@@ -72,8 +72,8 @@ final class GoogleRouteMatrixTest extends TestCase
 
         $matriz = $this->app->make(MapServiceFactory::class)
             ->routeMatrix(Provider::Google)
-            ->matrix(new RouteMatrixRequest($this->pontos(2), $this->pontos(2)));
+            ->matrix(new RouteMatrixRequest($this->pontos(2), $this->pontos(3)));
 
-        $this->assertCount(4, $matriz);
+        $this->assertCount(6, $matriz);
     }
 }
