@@ -3,9 +3,11 @@
 namespace BeeDelivery\BeeMaps\Tests\Live;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\AutocompleteRequest;
+use BeeDelivery\BeeMaps\DTOs\Requests\OptimizeWaypointsRequest;
 use BeeDelivery\BeeMaps\DTOs\Requests\PlaceSearchRequest;
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteMatrixRequest;
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteRequest;
+use BeeDelivery\BeeMaps\Enums\OptimizationObjective;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Enums\TravelMode;
 use BeeDelivery\BeeMaps\MapServiceFactory;
@@ -242,5 +244,79 @@ final class SmokeLiveTest extends TestCase
         $this->app->make(MapServiceFactory::class)
             ->routeMatrix(Provider::Google)
             ->matrix(new RouteMatrixRequest($pontos, $pontos));
+    }
+
+    /** @return list<Coordinates> */
+    private function paradasReais(): array
+    {
+        return [
+            new Coordinates(-23.5505, -46.6333),
+            new Coordinates(-23.5870, -46.6570),
+            new Coordinates(-23.5320, -46.6390),
+        ];
+    }
+
+    #[DataProvider('providers')]
+    public function test_live_otimiza_com_fim_fixo(Provider $provider): void
+    {
+        $resultado = $this->app->make(MapServiceFactory::class)
+            ->routeOptimization($provider)
+            ->optimize(new OptimizeWaypointsRequest(
+                origin: new Coordinates(-23.5615, -46.6562),
+                destination: new Coordinates(-23.5980, -46.6860),
+                intermediates: $this->paradasReais(),
+            ));
+
+        $this->assertCount(3, $resultado->order);
+        $this->assertGreaterThan(0, $resultado->distance->meters);
+    }
+
+    #[DataProvider('providers')]
+    public function test_live_otimiza_tour_aberto(Provider $provider): void
+    {
+        $resultado = $this->app->make(MapServiceFactory::class)
+            ->routeOptimization($provider)
+            ->optimize(new OptimizeWaypointsRequest(
+                origin: new Coordinates(-23.5615, -46.6562),
+                intermediates: $this->paradasReais(),
+            ));
+
+        $this->assertCount(3, $resultado->order);
+        $this->assertGreaterThan(0, $resultado->distance->meters);
+    }
+
+    #[DataProvider('providers')]
+    public function test_live_otimiza_com_volta_a_origem(Provider $provider): void
+    {
+        $origem = new Coordinates(-23.5615, -46.6562);
+
+        $resultado = $this->app->make(MapServiceFactory::class)
+            ->routeOptimization($provider)
+            ->optimize(new OptimizeWaypointsRequest(
+                origin: $origem,
+                destination: $origem,
+                intermediates: $this->paradasReais(),
+            ));
+
+        $this->assertCount(3, $resultado->order);
+    }
+
+    #[DataProvider('providers')]
+    public function test_live_objetivo_de_distancia_e_aceito(Provider $provider): void
+    {
+        // No HERE vira improveFor=distance; no Google, a matriz + TSP local.
+        // A estrategia fleet_routing NAO entra no smoke: a service account nao
+        // existe neste ambiente.
+        $resultado = $this->app->make(MapServiceFactory::class)
+            ->routeOptimization($provider)
+            ->optimize(new OptimizeWaypointsRequest(
+                origin: new Coordinates(-23.5615, -46.6562),
+                destination: new Coordinates(-23.5980, -46.6860),
+                intermediates: $this->paradasReais(),
+                objective: OptimizationObjective::MinDistance,
+            ));
+
+        $this->assertCount(3, $resultado->order);
+        $this->assertGreaterThan(0, $resultado->distance->meters);
     }
 }

@@ -2,7 +2,7 @@
 
 SDK Laravel multi-provider de geolocalização. Google Maps e HERE atrás dos mesmos contratos, com respostas tipadas — trocar de provedor não muda o código que consome.
 
-> **Status:** `0.x`. Autocomplete, geocoding, busca de lugares, rotas e matriz de rotas estão implementados nos dois provedores. Otimização de frota ainda não existe (ver [Ainda não implementado](#ainda-não-implementado)). A API pública pode mudar antes do `1.0.0`.
+> **Status:** `0.x`. Os seis contratos da Fase 1 estão implementados nos dois provedores: autocomplete, geocoding, busca de lugares, rotas, matriz de rotas e otimização de paradas. A API pública pode mudar antes do `1.0.0`.
 
 ## Requisitos
 
@@ -192,6 +192,81 @@ if ($entrada->reachable) {
 }
 ```
 
+## Otimização de paradas
+
+Este contrato responde **em que ordem visitar as paradas** — não o traçado. Para geometria, use [Rota](#rota).
+
+```php
+use BeeDelivery\BeeMaps\DTOs\Requests\OptimizeWaypointsRequest;
+use BeeDelivery\BeeMaps\Enums\OptimizationObjective;
+
+$resultado = BeeMaps::routeOptimization(Provider::Here)->optimize(
+    new OptimizeWaypointsRequest($origem, $destino, $paradas),
+);
+
+// $order indexa $paradas, e é sempre permutação completa dela.
+$reordenadas = array_map(fn (int $i) => $paradas[$i], $resultado->order);
+
+echo $resultado->distance->kilometers(), ' km em ', $resultado->duration->minutes(), ' min', PHP_EOL;
+```
+
+### Os três formatos de tour saem do campo `destination`
+
+```php
+// Fim fixo: sai da origem, passa pelas paradas, termina em $destino.
+new OptimizeWaypointsRequest($origem, $destino, $paradas);
+
+// Volta ao ponto de partida: basta o destino ser a origem.
+new OptimizeWaypointsRequest($origem, $origem, $paradas);
+
+// Tour aberto: termina na ultima parada que a otimizacao escolher.
+new OptimizeWaypointsRequest($origem, null, $paradas);
+```
+
+**`$order` nunca contém origem nem destino** — são pontos fixos, não resultado da otimização. E nunca vem parcial: uma ordem com buraco apagaria paradas no `array_map` acima, então índice repetido, fora de faixa ou contagem errada viram `ProviderRequestException`.
+
+### Objetivo e estratégia
+
+O chamador pede **o quê**; o provedor decide **como** e informa o caminho em `strategy`:
+
+```php
+new OptimizeWaypointsRequest($origem, $destino, $paradas, objective: OptimizationObjective::MinDistance);
+
+$resultado->strategy;   // 'google.matrix_tsp'
+```
+
+| `strategy` | Quando | O que usa |
+|---|---|---|
+| `google.routes` | `MinTravelTime` | `computeRoutes` com `optimizeWaypointOrder` |
+| `google.matrix_tsp` | `MinDistance` (default) | matriz de rotas + TSP local |
+| `google.fleet_routing` | `MinDistance`, se configurado | Cloud Fleet Routing (`optimizeTours`) |
+| `here.findsequence` | sempre | `/v8/findsequence2` com `improveFor` |
+
+`MinTravelTime` é o default. Qual API atende o `MinDistance` no Google sai de:
+
+```dotenv
+BEE_MAPS_GOOGLE_MIN_DISTANCE_API=matrix_tsp   # ou fleet_routing
+```
+
+Um valor desconhecido cai no default em vez de derrubar a chamada — um typo no `.env` não deve tirar a otimização do ar.
+
+### `fleet_routing` exige dependência e credencial a mais
+
+A Cloud Fleet Routing é o único endpoint do pacote que não aceita chave de API: precisa de OAuth de service account. Por isso o `google/apiclient` é **sugerido, não exigido** — ele arrasta `google/auth`, `firebase/php-jwt` e Guzzle, e a estratégia default não usa nada disso.
+
+```bash
+composer require google/apiclient
+```
+
+```dotenv
+BEE_MAPS_GOOGLE_MIN_DISTANCE_API=fleet_routing
+BEE_MAPS_GOOGLE_PROJECT_ID=
+BEE_MAPS_GOOGLE_RO_PRIVATE_KEY=
+BEE_MAPS_GOOGLE_RO_CLIENT_EMAIL=
+```
+
+Pedir `fleet_routing` sem o pacote instalado lança `ConfigurationException` dizendo o comando **e** que o default `matrix_tsp` não precisa dele. Credencial incompleta lança `MissingCredentialsException` nomeando a chave que falta.
+
 ## Códigos de país
 
 O pacote aceita ISO 3166-1 **alpha-2** (`BR`) ou **alpha-3** (`BRA`) e converte para o formato que cada API exige — o Google quer alpha-2, o HERE quer alpha-3. Um código inválido lança `InvalidRequestException` em vez de produzir um filtro que a API ignora em silêncio.
@@ -339,10 +414,7 @@ Um valor malformado aqui é `ConfigurationException`, não `InvalidRequestExcept
 | PlaceSearch | `places:searchText` | `/v1/discover` |
 | Routing | `directions/v2:computeRoutes` | `/v8/routes` (+ `/v8/findsequence2` quando otimiza) |
 | RouteMatrix | `distanceMatrix/v2:computeRouteMatrix` | `/v8/matrix?async=false` |
-
-### Ainda não implementado
-
-A otimização de frota **não existe neste pacote**. Não há contrato, não há classe, e chamar não é possível.
+| RouteOptimization | `computeRoutes`, `computeRouteMatrix` + TSP local, ou `optimizeTours` | `/v8/findsequence2` |
 
 ## Limitações conhecidas
 
@@ -375,6 +447,18 @@ A otimização de frota **não existe neste pacote**. Não há contrato, não h�
   no meio (o `computeRouteMatrix` do Google faz isso com HTTP 200, anexando o erro ao
   final do stream) ou responder sem a matriz, o pacote lança `ProviderRequestException`
   em vez de devolver uma coleção com buracos.
+
+**Sobre a otimização de paradas:**
+
+- **O TSP local é vizinho-mais-próximo, uma heurística.** A `google.matrix_tsp` devolve uma
+  boa rota, não a ótima. Trocar por 2-opt ou Held-Karp mudaria os números de toda
+  otimização por distância no mesmo deploy que troca o pacote, então fica para depois da
+  migração, com A/B contra o algoritmo atual sobre a mesma matriz.
+- **No HERE o `mode` é sempre `fastest`**, nunca `shortest`. O `shortest` muda como cada
+  perna é roteada e não tem equivalente no `computeRouteMatrix` do Google — usá-lo faria a
+  comparação entre provedores medir perguntas diferentes. O objetivo entra por `improveFor`.
+- **Uma parada só não é erro.** A ordem é trivialmente `[0]`, mas os totais não são, e
+  recusar quebraria quem itera sobre pedidos e às vezes encontra um de uma parada só.
 
 **A suíte não roda contra Laravel 10.** O `orchestra/testbench ^8.0` só casa com versões pontuais do Laravel 10 bloqueadas por advisories de segurança. Isso afeta só o desenvolvimento do pacote — **consumidores em Laravel 10 instalam normalmente** (verificado por resolução do Composer com plataforma forçada).
 
