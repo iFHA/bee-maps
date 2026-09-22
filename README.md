@@ -2,7 +2,7 @@
 
 SDK Laravel multi-provider de geolocalização. Google Maps e HERE atrás dos mesmos contratos, com respostas tipadas — trocar de provedor não muda o código que consome.
 
-> **Status:** `0.x`. Autocomplete, geocoding, busca de lugares e rotas estão implementados nos dois provedores. Matriz de rotas e otimização de frota ainda não existem (ver [Ainda não implementado](#ainda-não-implementado)). A API pública pode mudar antes do `1.0.0`.
+> **Status:** `0.x`. Autocomplete, geocoding, busca de lugares, rotas e matriz de rotas estão implementados nos dois provedores. Otimização de frota ainda não existe (ver [Ainda não implementado](#ainda-não-implementado)). A API pública pode mudar antes do `1.0.0`.
 
 ## Requisitos
 
@@ -174,6 +174,24 @@ $pontos = $rota->polyline?->coordinates() ?? $rota->legs[0]->polyline->coordinat
 | `Bicycle` | `BICYCLE` | `bicycle` |
 | `Walk` | `WALK` | `pedestrian` |
 
+## Matriz de rotas
+
+```php
+use BeeDelivery\BeeMaps\DTOs\Requests\RouteMatrixRequest;
+
+$matriz = BeeMaps::routeMatrix(Provider::Google)->matrix(new RouteMatrixRequest(
+    origins: [$origemA, $origemB],
+    destinations: [$destinoA, $destinoB],
+));
+
+// Busque por par — nunca por posição: o Google devolve os elementos fora de ordem.
+$entrada = $matriz->entry(originIndex: 0, destinationIndex: 1);
+
+if ($entrada->reachable) {
+    echo $entrada->distance->kilometers(), ' km', PHP_EOL;
+}
+```
+
 ## Códigos de país
 
 O pacote aceita ISO 3166-1 **alpha-2** (`BR`) ou **alpha-3** (`BRA`) e converte para o formato que cada API exige — o Google quer alpha-2, o HERE quer alpha-3. Um código inválido lança `InvalidRequestException` em vez de produzir um filtro que a API ignora em silêncio.
@@ -320,10 +338,11 @@ Um valor malformado aqui é `ConfigurationException`, não `InvalidRequestExcept
 | Geocoding | Geocoding API | `/v1/geocode`, `/v1/revgeocode`, `/v1/lookup` |
 | PlaceSearch | `places:searchText` | `/v1/discover` |
 | Routing | `directions/v2:computeRoutes` | `/v8/routes` (+ `/v8/findsequence2` quando otimiza) |
+| RouteMatrix | `distanceMatrix/v2:computeRouteMatrix` | `/v8/matrix?async=false` |
 
 ### Ainda não implementado
 
-Matriz de rotas e otimização de frota **não existem neste pacote**. Não há contrato, não há classe, e chamar não é possível.
+A otimização de frota **não existe neste pacote**. Não há contrato, não há classe, e chamar não é possível.
 
 ## Limitações conhecidas
 
@@ -341,6 +360,17 @@ Matriz de rotas e otimização de frota **não existem neste pacote**. Não há 
 **`PlaceSearch` no Google usa o SKU Enterprise do Text Search.** O field mask pede `places.addressComponents` para que `Place::address` venha estruturado como no HERE. Quem preferir o SKU Basic remove o campo do `GooglePlaceSearchRequestMapper::fieldMask()` e passa a receber `Address` apenas com `formatted`.
 
 **Rota otimizada no HERE custa duas chamadas upstream.** O `/v8/routes` não reordena waypoints; a ordem vem da Waypoints Sequence API (`/v8/findsequence2`). As duas chamadas são agrupadas em um único `MapRequestCompleted` com `upstreamCalls: 2`, para que a comparação de latência contra o Google não atribua ao HERE uma lentidão sem causa visível. O endpoint fica em `bee-maps.here.endpoints.findsequence` porque a documentação do HERE é ambígua entre `findsequence2` e `findsequence.json`.
+
+**Sobre a matriz de rotas:**
+
+- **O Google limita a matriz a 625 elementos** (origens × destinos); o pacote lança
+  `MatrixTooLargeException` antes da chamada, com o tamanho pedido e o limite. O HERE
+  síncrono aguenta muito mais (25.000 elementos verificados), então uma matriz que
+  funciona no HERE pode ser recusada no Google — divida em lotes se precisar de paridade.
+- **Pares sem rota vêm com `reachable = false` e medidas zeradas**, nunca ausentes. Uma
+  matriz com buracos é mais difícil de consumir do que uma completa.
+- **Só o modo síncrono.** O modo assíncrono do HERE (submit → poll → download) depende de
+  job e não cabe dentro de uma request HTTP.
 
 **A suíte não roda contra Laravel 10.** O `orchestra/testbench ^8.0` só casa com versões pontuais do Laravel 10 bloqueadas por advisories de segurança. Isso afeta só o desenvolvimento do pacote — **consumidores em Laravel 10 instalam normalmente** (verificado por resolução do Composer com plataforma forçada).
 

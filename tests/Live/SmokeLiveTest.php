@@ -4,6 +4,7 @@ namespace BeeDelivery\BeeMaps\Tests\Live;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\AutocompleteRequest;
 use BeeDelivery\BeeMaps\DTOs\Requests\PlaceSearchRequest;
+use BeeDelivery\BeeMaps\DTOs\Requests\RouteMatrixRequest;
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteRequest;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Enums\TravelMode;
@@ -201,5 +202,45 @@ final class SmokeLiveTest extends TestCase
 
         $this->assertCount(2, $rota->optimizedOrder);
         $this->assertCount(3, $rota->legs);
+    }
+
+    #[DataProvider('providers')]
+    public function test_matriz_2x2_responde(Provider $provider): void
+    {
+        $matriz = $this->app->make(MapServiceFactory::class)
+            ->routeMatrix($provider)
+            ->matrix(new RouteMatrixRequest(
+                [new Coordinates(-23.5615, -46.6562), new Coordinates(-23.5505, -46.6425)],
+                [new Coordinates(-23.5580, -46.6500), new Coordinates(-23.5540, -46.6470)],
+            ));
+
+        $this->assertCount(4, $matriz);
+
+        // Todos os quatro pares tem que existir e ser alcancaveis: sao pontos a
+        // poucos quilometros um do outro em Sao Paulo.
+        foreach ([0, 1] as $origem) {
+            foreach ([0, 1] as $destino) {
+                $entrada = $matriz->entry($origem, $destino);
+
+                $this->assertNotNull($entrada, "Faltou a entrada ({$origem},{$destino}).");
+                $this->assertTrue($entrada->reachable);
+                $this->assertGreaterThan(0, $entrada->distance->meters);
+            }
+        }
+    }
+
+    public function test_matriz_acima_de_625_elementos_e_recusada_pelo_google(): void
+    {
+        $this->expectException(\BeeDelivery\BeeMaps\Exceptions\MatrixTooLargeException::class);
+
+        $pontos = [];
+
+        for ($i = 0; $i < 26; $i++) {
+            $pontos[] = new Coordinates(-23.5 - ($i / 10000), -46.6 - ($i / 10000));
+        }
+
+        $this->app->make(MapServiceFactory::class)
+            ->routeMatrix(Provider::Google)
+            ->matrix(new RouteMatrixRequest($pontos, $pontos));
     }
 }
