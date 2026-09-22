@@ -4,6 +4,7 @@ namespace BeeDelivery\BeeMaps\Tests\Unit\Providers\Google;
 
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteMatrixRequest;
 use BeeDelivery\BeeMaps\Enums\TravelMode;
+use BeeDelivery\BeeMaps\Exceptions\ProviderRequestException;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteMatrixRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Google\Mappers\GoogleRouteMatrixResponseMapper;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
@@ -49,7 +50,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
-        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta);
+        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 4);
 
         $this->assertCount(4, $colecao);
 
@@ -65,7 +66,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
-        $entrada = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta)->entry(1, 0);
+        $entrada = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 4)->entry(1, 0);
 
         $this->assertNotNull($entrada);
         $this->assertFalse($entrada->reachable);
@@ -75,6 +76,43 @@ final class GoogleRouteMatrixMapperTest extends TestCase
 
     public function test_resposta_vazia_vira_colecao_vazia(): void
     {
-        $this->assertTrue((new GoogleRouteMatrixResponseMapper())->toCollection([])->isEmpty());
+        $this->assertTrue((new GoogleRouteMatrixResponseMapper())->toCollection([], 0)->isEmpty());
+    }
+
+    public function test_elemento_de_erro_no_stream_vira_excecao_em_vez_de_par_falso(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/internal|erro/i');
+
+        // O computeRouteMatrix e server-streaming: quando falha DEPOIS do stream
+        // comecar, o Google anexa o erro como ultimo elemento com HTTP 200. Sem
+        // este tratamento o elemento virava um par (0,0) de 0 metros alcancavel,
+        // sobrescrevendo a entrada verdadeira.
+        (new GoogleRouteMatrixResponseMapper())->toCollection([
+            ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 974, 'duration' => '271s', 'condition' => 'ROUTE_EXISTS'],
+            ['error' => ['code' => 500, 'message' => 'internal']],
+        ], 2);
+    }
+
+    public function test_condition_ausente_nao_conta_como_alcancavel(): void
+    {
+        // proto3 omite o valor default do enum, e
+        // ROUTE_MATRIX_ELEMENT_CONDITION_UNSPECIFIED vale 0: ausencia significa
+        // "indefinido", nao "tem rota".
+        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection([
+            ['originIndex' => 0, 'destinationIndex' => 0],
+        ], 1);
+
+        $this->assertFalse($colecao->entry(0, 0)->reachable);
+    }
+
+    public function test_stream_truncado_vira_excecao(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/incompleta|1 de 4|elementos/i');
+
+        (new GoogleRouteMatrixResponseMapper())->toCollection([
+            ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 974, 'duration' => '271s', 'condition' => 'ROUTE_EXISTS'],
+        ], 4);
     }
 }
