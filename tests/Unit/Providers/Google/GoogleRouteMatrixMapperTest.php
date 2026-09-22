@@ -179,4 +179,57 @@ final class GoogleRouteMatrixMapperTest extends TestCase
 
         $this->assertSame(10, $colecao->entry(0, 0)->distance->meters);
     }
+
+    public function test_error_de_tipo_inesperado_tambem_vira_excecao(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/boom/');
+
+        // Exigir array aqui estreitava a guarda: um `error` de outro tipo voltava
+        // a ser lido como elemento de matriz e virava par fantasma em (0,0).
+        (new GoogleRouteMatrixResponseMapper())->toCollection([['error' => 'boom']], 1, 1);
+    }
+
+    public function test_erro_no_topo_com_tipo_inesperado_tambem_vira_excecao(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+
+        (new GoogleRouteMatrixResponseMapper())->toCollection(['error' => 'boom'], 1, 1);
+    }
+
+    public function test_credencial_na_mensagem_do_provider_e_redigida(): void
+    {
+        try {
+            (new GoogleRouteMatrixResponseMapper())->toCollection(
+                ['error' => ['code' => 400, 'message' => 'falha em https://x/y?key=SEGREDO&a=1']],
+                1,
+                1,
+            );
+
+            $this->fail('Esperava ProviderRequestException.');
+        } catch (ProviderRequestException $e) {
+            // Texto cru de provider pode ecoar a URL, e a query do Google leva
+            // `key=`. Sem redigir aqui a chave vaza para o log por um caminho
+            // que nao passa pelo MapsHttpClient.
+            $this->assertStringNotContainsString('SEGREDO', $e->getMessage());
+            $this->assertStringContainsString('key=[REDACTED]', $e->getMessage());
+            // Mesmo fallback do MapsHttpClient: sem `status`, usa `code`.
+            $this->assertSame('400', $e->providerCode());
+        }
+    }
+
+    public function test_status_tem_precedencia_sobre_code_no_provider_code(): void
+    {
+        try {
+            (new GoogleRouteMatrixResponseMapper())->toCollection(
+                ['error' => ['code' => 400, 'status' => 'INVALID_ARGUMENT', 'message' => 'm']],
+                1,
+                1,
+            );
+
+            $this->fail('Esperava ProviderRequestException.');
+        } catch (ProviderRequestException $e) {
+            $this->assertSame('INVALID_ARGUMENT', $e->providerCode());
+        }
+    }
 }

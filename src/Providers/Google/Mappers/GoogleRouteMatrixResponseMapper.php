@@ -7,6 +7,7 @@ use BeeDelivery\BeeMaps\DTOs\Responses\RouteMatrixEntryCollection;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Enums\Service;
 use BeeDelivery\BeeMaps\Exceptions\ProviderRequestException;
+use BeeDelivery\BeeMaps\Support\CredentialRedaction;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Distance;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Duration;
 
@@ -27,7 +28,7 @@ final class GoogleRouteMatrixResponseMapper
         // o traduzirErro do MapsHttpClient nunca roda — e sem isto o corpo inteiro
         // e iterado como se fosse elemento de matriz. O MapsHttpClient ja trata as
         // duas formas (`$corpo['error'] ?? $corpo[0]['error']`); aqui e o espelho.
-        if (isset($resposta['error']) && is_array($resposta['error'])) {
+        if (isset($resposta['error'])) {
             throw $this->erroDaApi($resposta['error'], 'O Google devolveu erro no corpo da matriz com HTTP 200');
         }
 
@@ -40,7 +41,7 @@ final class GoogleRouteMatrixResponseMapper
             // comecar chega como elemento de erro no meio do array, com HTTP 200.
             // Sem isto o elemento cai em (0,0) — sem indices, com 0 metros e
             // marcado como alcancavel — e a colecao sobrescreve o par verdadeiro.
-            if (isset($elemento['error']) && is_array($elemento['error'])) {
+            if (isset($elemento['error'])) {
                 throw $this->erroDaApi($elemento['error'], 'O Google interrompeu a matriz no meio do stream');
             }
 
@@ -113,14 +114,27 @@ final class GoogleRouteMatrixResponseMapper
     /**
      * @param array<string, mixed> $erro
      */
-    private function erroDaApi(array $erro, string $contexto): ProviderRequestException
+    /**
+     * O erro do Google costuma ser um objeto, mas nao ha garantia: aceitar so
+     * array fazia a guarda pular um `error` de outro tipo, e o corpo voltava a
+     * ser lido como elemento de matriz — o par fantasma que a guarda impede.
+     */
+    private function erroDaApi(mixed $erro, string $contexto): ProviderRequestException
     {
+        $detalhe = is_array($erro) ? $erro : ['message' => (string) $erro];
+
         return new ProviderRequestException(
             Provider::Google,
             Service::RouteMatrix,
-            $contexto . ': ' . ($erro['message'] ?? 'erro sem mensagem'),
+            // Texto cru de provider pode ecoar a URL da requisicao, e a query do
+            // Google leva `key=`. Sem redigir aqui, a chave vaza para o log pelo
+            // caminho que nao passa pelo MapsHttpClient.
+            CredentialRedaction::redigir($contexto . ': ' . ($detalhe['message'] ?? 'erro sem mensagem')),
             200,
-            isset($erro['status']) ? (string) $erro['status'] : null,
+            // Mesmo fallback do MapsHttpClient: sem ele, o mesmo erro upstream
+            // produz providerCode diferente conforme o status HTTP.
+            isset($detalhe['status']) ? (string) $detalhe['status']
+                : (isset($detalhe['code']) ? (string) $detalhe['code'] : null),
         );
     }
 
