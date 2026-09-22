@@ -8,6 +8,7 @@ use BeeDelivery\BeeMaps\Providers\ProviderRegistry;
 use BeeDelivery\BeeMaps\Support\ConfigMerge;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Contracts\Foundation\CachesConfiguration;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
 
@@ -57,11 +58,25 @@ final class BeeMapsServiceProvider extends ServiceProvider
 
     /**
      * Equivalente ao mergeConfigFrom, mas recursivo — ver ConfigMerge.
+     *
+     * A checagem de config cacheado e a mesma do Laravel, e nao e cosmetica: com
+     * `php artisan config:cache` o .env nao e carregado, entao dar require no
+     * arquivo reavaliaria todo env() dele e preencheria com null as chaves que o
+     * operador definiu — trocando "Undefined array key" por credencial nula.
      */
     private function mergeConfigProfundo(string $caminho, string $chave): void
     {
+        if ($this->configuracaoEstaCacheada()) {
+            return;
+        }
+
         $config = $this->app->make('config');
 
         $config->set($chave, ConfigMerge::deep(require $caminho, $config->get($chave, [])));
+    }
+
+    private function configuracaoEstaCacheada(): bool
+    {
+        return $this->app instanceof CachesConfiguration && $this->app->configurationIsCached();
     }
 }
