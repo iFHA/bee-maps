@@ -6,11 +6,13 @@ use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesAutocomplete;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesGeocoding;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesPlaceSearch;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesRouteMatrix;
+use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesRouteOptimization;
 use BeeDelivery\BeeMaps\Contracts\Capabilities\ProvidesRouting;
 use BeeDelivery\BeeMaps\Contracts\Services\Autocomplete;
 use BeeDelivery\BeeMaps\Contracts\Services\Geocoding;
 use BeeDelivery\BeeMaps\Contracts\Services\PlaceSearch;
 use BeeDelivery\BeeMaps\Contracts\Services\RouteMatrix;
+use BeeDelivery\BeeMaps\Contracts\Services\RouteOptimization;
 use BeeDelivery\BeeMaps\Contracts\Services\Routing;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Enums\Service;
@@ -57,6 +59,15 @@ final class MapServiceFactory
         return $mapProvider instanceof ProvidesRouteMatrix
             ? $mapProvider->routeMatrix()
             : throw ServiceNotSupportedByProviderException::make($provider, Service::RouteMatrix);
+    }
+
+    public function routeOptimization(Provider $provider): RouteOptimization
+    {
+        $mapProvider = $this->registry->get($provider);
+
+        return $mapProvider instanceof ProvidesRouteOptimization
+            ? $mapProvider->routeOptimization()
+            : throw ServiceNotSupportedByProviderException::make($provider, Service::RouteOptimization);
     }
 
     public function routing(Provider $provider): Routing

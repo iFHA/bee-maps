@@ -44,4 +44,12 @@ final class MapServiceFactoryTest extends TestCase
 
         $fabrica->autocomplete(Provider::Google);
     }
+
+    public function test_route_optimization_falha_em_provider_sem_a_capacidade(): void
+    {
+        $this->expectException(ServiceNotSupportedByProviderException::class);
+
+        (new MapServiceFactory(new ProviderRegistry([new ProviderSemCapacidades()])))
+            ->routeOptimization(Provider::Google);
+    }
 }
