@@ -103,16 +103,30 @@ final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesG
 
     public function routeMatrix(): RouteMatrix
     {
-        $limite = $this->config['matrix_max_elements'] ?? null;
-
         return new HereRouteMatrix(
             $this->http,
             new HereMatrixRequestMapper(),
             new HereMatrixResponseMapper(),
             $this->config['endpoints']['matrix'],
             $this->apiKey(),
-            $limite !== null ? (int) $limite : null,
+            $this->limiteDeMatriz(),
         );
+    }
+
+    /**
+     * Config ausente, vazio ou nao-positivo significa "sem guarda no cliente".
+     * Uma variavel declarada sem valor no .env chega como '' — e (int) '' e 0,
+     * o que transformaria a guarda em "recuse toda requisicao".
+     */
+    private function limiteDeMatriz(): ?int
+    {
+        $limite = $this->config['matrix_max_elements'] ?? null;
+
+        if ($limite === null || $limite === '') {
+            return null;
+        }
+
+        return (int) $limite > 0 ? (int) $limite : null;
     }
 
     /**

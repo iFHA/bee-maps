@@ -57,4 +57,23 @@ final class GoogleRouteMatrixTest extends TestCase
             ->routeMatrix(Provider::Google)
             ->matrix(new RouteMatrixRequest($this->pontos(26), $this->pontos(26)));
     }
+
+    public function test_limite_vazio_no_config_significa_sem_guarda(): void
+    {
+        // `BEE_MAPS_GOOGLE_MATRIX_MAX_ELEMENTS=` no .env faz env() devolver ''
+        // (o default so vale quando a variavel nao existe), e (int) '' e 0 — o
+        // que transformava a guarda em "recuse toda requisicao".
+        $this->app['config']->set('bee-maps.google.matrix_max_elements', '');
+
+        Http::fake(['routes.googleapis.com/distanceMatrix/*' => Http::response(
+            json_decode(file_get_contents(__DIR__ . '/../Fixtures/google/route-matrix.json'), true),
+            200,
+        )]);
+
+        $matriz = $this->app->make(MapServiceFactory::class)
+            ->routeMatrix(Provider::Google)
+            ->matrix(new RouteMatrixRequest($this->pontos(2), $this->pontos(2)));
+
+        $this->assertCount(4, $matriz);
+    }
 }

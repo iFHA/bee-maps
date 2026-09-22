@@ -24,6 +24,7 @@ return [
         'key' => env('GOOGLE_MAPS_KEY'),
         // Limite imposto pela propria API: "The product of the number of origins
         // and destinations must be <= 625" (HTTP 400). Verificado em 2026-09-22.
+        // Vazio, ausente ou <= 0 desliga a guarda no cliente.
         'matrix_max_elements' => (int) env('BEE_MAPS_GOOGLE_MATRIX_MAX_ELEMENTS', 625),
         'endpoints' => [
             'autocomplete'  => 'https://places.googleapis.com/v1/places:autocomplete',
@@ -36,7 +37,8 @@ return [
 
     'here' => [
         'api_key' => env('HERE_API_KEY'),
-        // Null = sem guarda no cliente. O sincrono do HERE aguenta bem mais que o
+        // Vazio, ausente ou <= 0 = sem guarda no cliente. O sincrono do HERE
+        // aguenta bem mais que o
         // Google: 250x100 (25.000 elementos) respondeu 200 em 2026-09-22. Como o
         // teto real nao esta documentado de forma confiavel, deixar o proprio
         // provider recusar e melhor do que inventar um limite aqui.
