@@ -5,6 +5,8 @@ namespace BeeDelivery\BeeMaps\Tests\Contract;
 use BeeDelivery\BeeMaps\DTOs\Requests\OptimizeWaypointsRequest;
 use BeeDelivery\BeeMaps\Enums\OptimizationObjective;
 use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Enums\Service;
+use BeeDelivery\BeeMaps\Exceptions\ProviderRequestException;
 use BeeDelivery\BeeMaps\MapServiceFactory;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Tests\TestCase;
@@ -149,5 +151,55 @@ final class ParidadeRouteOptimizationTest extends TestCase
             $this->assertGreaterThanOrEqual(0, $indice);
             $this->assertLessThan(4, $indice);
         }
+    }
+
+    #[DataProvider('providers')]
+    public function test_resposta_inutilizavel_lanca_a_mesma_excecao_nos_dois(Provider $provider): void
+    {
+        // O portao so cobria o caminho feliz, e era exatamente ai que os dois
+        // divergiam: Google lancava ProviderRequestException e HERE
+        // InvalidRequestException para o MESMO evento.
+        Http::fake([
+            'routes.googleapis.com/directions/*' => Http::response(['routes' => []], 200),
+            'wps.hereapi.com/*' => Http::response(['results' => []], 200),
+        ]);
+
+        try {
+            $this->app->make(MapServiceFactory::class)
+                ->routeOptimization($provider)
+                ->optimize($this->requisicao(new Coordinates(-23.598, -46.686)));
+
+            $this->fail('corpo sem resposta usavel devia ter lancado');
+        } catch (ProviderRequestException $e) {
+            $this->assertSame($provider, $e->provider());
+            $this->assertSame(Service::RouteOptimization, $e->service());
+        }
+    }
+
+    #[DataProvider('providers')]
+    public function test_ordem_incompleta_lanca_a_mesma_excecao_nos_dois(Provider $provider): void
+    {
+        Http::fake([
+            'routes.googleapis.com/directions/*' => Http::response(['routes' => [[
+                'optimizedIntermediateWaypointIndex' => [0, 1],
+                'legs' => array_fill(0, 5, ['distanceMeters' => 1, 'duration' => '1s']),
+            ]]], 200),
+            'wps.hereapi.com/*' => Http::response(['results' => [[
+                'waypoints' => [
+                    ['id' => 'start', 'sequence' => 0],
+                    ['id' => 'destination1', 'sequence' => 1],
+                    ['id' => 'destination2', 'sequence' => 2],
+                    ['id' => 'end', 'sequence' => 3],
+                ],
+                'distance' => '1000',
+                'time' => '100',
+            ]]], 200),
+        ]);
+
+        $this->expectException(ProviderRequestException::class);
+
+        $this->app->make(MapServiceFactory::class)
+            ->routeOptimization($provider)
+            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686)));
     }
 }

@@ -5,6 +5,8 @@ namespace BeeDelivery\BeeMaps\Tests\Feature;
 use BeeDelivery\BeeMaps\DTOs\Requests\OptimizeWaypointsRequest;
 use BeeDelivery\BeeMaps\Enums\OptimizationObjective;
 use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Enums\Service;
+use BeeDelivery\BeeMaps\Exceptions\ProviderRequestException;
 use BeeDelivery\BeeMaps\MapServiceFactory;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Tests\TestCase;
@@ -82,5 +84,65 @@ final class HereRouteOptimizationTest extends TestCase
 
             return true;
         });
+    }
+
+    public function test_resposta_inutilizavel_vira_excecao_de_provider(): void
+    {
+        // Mesmo evento do lado Google: 200 com corpo que nao descreve resposta
+        // usavel. Tem que ser a MESMA classe de excecao nos dois, senao quem
+        // escreve `catch (ProviderRequestException)` pega um provider e deixa o
+        // outro escapar.
+        Http::fake(['wps.hereapi.com/*' => Http::response(['results' => []], 200)]);
+
+        try {
+            $this->app->make(MapServiceFactory::class)
+                ->routeOptimization(Provider::Here)
+                ->optimize($this->requisicao(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
+
+            $this->fail('resposta sem resultado devia ter lancado');
+        } catch (ProviderRequestException $e) {
+            $this->assertSame(Provider::Here, $e->provider());
+            $this->assertSame(Service::RouteOptimization, $e->service());
+        }
+    }
+
+    public function test_ordem_incompleta_vira_excecao_de_provider(): void
+    {
+        Http::fake(['wps.hereapi.com/*' => Http::response(['results' => [[
+            'waypoints' => [
+                ['id' => 'start', 'sequence' => 0],
+                ['id' => 'destination1', 'sequence' => 1],
+                ['id' => 'destination2', 'sequence' => 2],
+                ['id' => 'end', 'sequence' => 3],
+            ],
+            'distance' => '1000',
+            'time' => '100',
+        ]]], 200)]);
+
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/2 de 3/');
+
+        $this->app->make(MapServiceFactory::class)
+            ->routeOptimization(Provider::Here)
+            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
+    }
+
+    public function test_totais_ausentes_viram_excecao_de_provider(): void
+    {
+        Http::fake(['wps.hereapi.com/*' => Http::response(['results' => [[
+            'waypoints' => [
+                ['id' => 'start', 'sequence' => 0],
+                ['id' => 'destination1', 'sequence' => 1],
+                ['id' => 'destination2', 'sequence' => 2],
+                ['id' => 'destination3', 'sequence' => 3],
+                ['id' => 'end', 'sequence' => 4],
+            ],
+        ]]], 200)]);
+
+        $this->expectException(ProviderRequestException::class);
+
+        $this->app->make(MapServiceFactory::class)
+            ->routeOptimization(Provider::Here)
+            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
     }
 }

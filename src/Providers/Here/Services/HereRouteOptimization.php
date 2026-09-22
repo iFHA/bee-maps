@@ -7,6 +7,8 @@ use BeeDelivery\BeeMaps\DTOs\Requests\OptimizeWaypointsRequest;
 use BeeDelivery\BeeMaps\DTOs\Responses\OptimizedWaypoints;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Enums\Service;
+use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
+use BeeDelivery\BeeMaps\Exceptions\ProviderRequestException;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereFindSequenceMapper;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Distance;
@@ -43,10 +45,26 @@ final class HereRouteOptimization implements RouteOptimization
             ),
         );
 
-        $totais = $this->mapper->toTotals($resposta);
+        // O mapper lanca InvalidRequestException porque tambem serve ao contrato
+        // Routing, onde essa e a classe usada desde o Plano 2. Aqui o evento e
+        // outro: o provider respondeu 200 com corpo que nao descreve resposta
+        // usavel — o mesmo que o lado Google reporta como ProviderRequestException.
+        // Sem traduzir, `catch (ProviderRequestException)` pega o Google e deixa
+        // o HERE escapar, e o contrato deixa de ser o mesmo nos dois.
+        try {
+            $totais = $this->mapper->toTotals($resposta);
+            $ordem = $this->mapper->toOrder($resposta, count($request->intermediates));
+        } catch (InvalidRequestException $e) {
+            throw new ProviderRequestException(
+                Provider::Here,
+                Service::RouteOptimization,
+                $e->getMessage(),
+                200,
+            );
+        }
 
         return new OptimizedWaypoints(
-            order: $this->mapper->toOrder($resposta, count($request->intermediates)),
+            order: $ordem,
             distance: new Distance($totais['distance']),
             duration: new Duration($totais['duration']),
             objective: $request->objective,
