@@ -38,7 +38,7 @@ final class HereMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 6);
+        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 2, 3);
 
         $this->assertCount(6, $colecao);
 
@@ -61,7 +61,7 @@ final class HereMatrixMapperTest extends TestCase
     {
         $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 6);
+        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 2, 3);
 
         $this->assertFalse($colecao->entry(1, 0)->reachable);
         // A fixture traz 26089 metros nessa posicao, mas o errorCode 3 diz que
@@ -86,7 +86,7 @@ final class HereMatrixMapperTest extends TestCase
             ],
         ];
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 6);
+        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 2, 3);
 
         $this->assertCount(6, $colecao);
 
@@ -104,13 +104,13 @@ final class HereMatrixMapperTest extends TestCase
         // ou o HERE degradar uma requisicao grande. Devolver colecao vazia aqui
         // contraria o contrato — pares sem rota vem com reachable=false, nunca
         // ausentes — e o chamador nao distingue "sem matriz" de "matriz de nada".
-        (new HereMatrixResponseMapper())->toCollection(['matrixId' => 'abc', 'status' => 'pending'], 4);
+        (new HereMatrixResponseMapper())->toCollection(['matrixId' => 'abc', 'status' => 'pending'], 2, 2);
     }
 
     public function test_matriz_menor_que_o_pedido_vira_excecao(): void
     {
         $this->expectException(ProviderRequestException::class);
-        $this->expectExceptionMessageMatches('/2 de 4|incompleta/i');
+        $this->expectExceptionMessageMatches('/1x2|incompleta|dimens/i');
 
         (new HereMatrixResponseMapper())->toCollection([
             'matrix' => [
@@ -119,6 +119,64 @@ final class HereMatrixMapperTest extends TestCase
                 'distances' => [100, 200],
                 'travelTimes' => [10, 20],
             ],
-        ], 4);
+        ], 2, 2);
+    }
+
+    public function test_dimensoes_trocadas_viram_excecao_mesmo_com_o_produto_certo(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/3x2|2x3|dimens/i');
+
+        // 3x2 e 2x3 tem o mesmo produto: a guarda por contagem deixava passar,
+        // e o resultado tinha origem fantasma (2,0) e par pedido faltando (0,2).
+        (new HereMatrixResponseMapper())->toCollection(['matrix' => [
+            'numOrigins' => 3,
+            'numDestinations' => 2,
+            'distances' => [1, 2, 3, 4, 5, 6],
+            'travelTimes' => [1, 2, 3, 4, 5, 6],
+        ]], 2, 3);
+    }
+
+    public function test_distances_ausente_vira_excecao_em_vez_de_matriz_de_zero_metros(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/distances|medida/i');
+
+        // Sem esta guarda o `?? 0` fabricava a matriz inteira como alcancavel
+        // com 0 metros — a versao HERE do defeito que a correcao anterior
+        // consertou no Google.
+        (new HereMatrixResponseMapper())->toCollection(['matrix' => [
+            'numOrigins' => 2,
+            'numDestinations' => 3,
+            'travelTimes' => [1, 2, 3, 4, 5, 6],
+        ]], 2, 3);
+    }
+
+    public function test_array_de_medida_mais_curto_que_a_grade_vira_excecao(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+
+        (new HereMatrixResponseMapper())->toCollection(['matrix' => [
+            'numOrigins' => 2,
+            'numDestinations' => 3,
+            'distances' => [1, 2, 3],
+            'travelTimes' => [1, 2, 3, 4, 5, 6],
+        ]], 2, 3);
+    }
+
+    public function test_error_codes_presente_e_curto_vira_excecao(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+
+        // errorCodes ausente significa "tudo alcancavel" e continua valendo;
+        // errorCodes presente e curto faria o `?? 0` marcar como alcancavel
+        // pares sobre os quais o HERE nao disse nada.
+        (new HereMatrixResponseMapper())->toCollection(['matrix' => [
+            'numOrigins' => 2,
+            'numDestinations' => 3,
+            'distances' => [1, 2, 3, 4, 5, 6],
+            'travelTimes' => [1, 2, 3, 4, 5, 6],
+            'errorCodes' => [0, 0],
+        ]], 2, 3);
     }
 }
