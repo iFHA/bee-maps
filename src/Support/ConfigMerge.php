@@ -19,11 +19,13 @@ final class ConfigMerge
      */
     public static function deep(array $padroes, array $publicado): array
     {
-        // Lista publicada substitui a do pacote por inteiro. Mesclar listas
-        // ressuscitaria itens que o consumidor removeu de proposito — o caso
-        // concreto e alguem tirar um provider de `providers`.
-        if (array_is_list($padroes) && array_is_list($publicado)) {
-            return $publicado;
+        // Quando o PADRAO do pacote e uma lista, o publicado substitui por
+        // inteiro — e reindexado. Exigir que o publicado tambem fosse lista
+        // fazia a regra falhar justamente no caso que ela existe para cobrir:
+        // quem removeu um item com unset/array_filter fica com chaves nao
+        // sequenciais, cai no merge por chave e ve o item removido ressuscitar.
+        if (array_is_list($padroes)) {
+            return array_values($publicado);
         }
 
         foreach ($padroes as $chave => $valor) {

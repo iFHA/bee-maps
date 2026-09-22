@@ -61,4 +61,27 @@ final class ConfigMergeTest extends TestCase
 
         $this->assertNull($resultado['here']['api_key']);
     }
+
+    public function test_lista_publicada_com_buraco_ainda_vence_inteira(): void
+    {
+        $padroes = ['providers' => ['GoogleProvider', 'HereProvider']];
+
+        // Consumidor removeu o indice 0 (unset ou array_filter sem array_values):
+        // sobra [1 => Here], que NAO e lista. Sem normalizar, o merge caia no
+        // laco por chave e o GoogleProvider ressuscitava no indice 0 — a mesma
+        // armadilha de array_filter que o RouteMatrixRequest ja documenta.
+        $publicado = ['providers' => [1 => 'HereProvider']];
+
+        $resultado = ConfigMerge::deep($padroes, $publicado);
+
+        $this->assertSame(['HereProvider'], $resultado['providers']);
+        $this->assertNotContains('GoogleProvider', $resultado['providers']);
+    }
+
+    public function test_lista_publicada_vazia_e_respeitada(): void
+    {
+        $resultado = ConfigMerge::deep(['providers' => ['GoogleProvider']], ['providers' => []]);
+
+        $this->assertSame([], $resultado['providers']);
+    }
 }
