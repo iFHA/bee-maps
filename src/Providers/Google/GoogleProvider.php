@@ -119,7 +119,8 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
 
     public function routeOptimization(): RouteOptimization
     {
-        return new GoogleRouteOptimization($this->estrategiaPorTempo(), $this->estrategiaPorDistancia());
+        // Callables, nao instancias: ver o porque no GoogleRouteOptimization.
+        return new GoogleRouteOptimization($this->estrategiaPorTempo(...), $this->estrategiaPorDistancia(...));
     }
 
     private function estrategiaPorTempo(): OptimizationStrategy
@@ -141,7 +142,7 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
         // de um typo no .env e pior do que usar a estrategia que nao precisa de
         // credencial extra.
         if (($config['min_distance_api'] ?? 'matrix_tsp') !== 'fleet_routing') {
-            return new MatrixTspStrategy($this->routeMatrix(), new NearestNeighbourTour());
+            return new MatrixTspStrategy($this->http, $this->routeMatrix(), new NearestNeighbourTour());
         }
 
         $credenciais = $config['service_account'] ?? [];

@@ -5,6 +5,7 @@ namespace BeeDelivery\BeeMaps\Tests\Unit\Providers\Google;
 use BeeDelivery\BeeMaps\DTOs\Requests\OptimizeWaypointsRequest;
 use BeeDelivery\BeeMaps\Enums\OptimizationObjective;
 use BeeDelivery\BeeMaps\Providers\Google\Optimization\MatrixTspStrategy;
+use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use BeeDelivery\BeeMaps\Support\Tsp\NearestNeighbourTour;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Tests\Doubles\RouteMatrixFalso;
@@ -24,7 +25,7 @@ final class MatrixTspStrategyTest extends TestCase
         // Em indices de intermediarios: 1, 2, 0.
         $matriz = new RouteMatrixFalso([0, 300, 100, 200]);
 
-        $resultado = (new MatrixTspStrategy($matriz, new NearestNeighbourTour()))->optimize(
+        $resultado = (new MatrixTspStrategy($this->app->make(MapsHttpClient::class), $matriz, new NearestNeighbourTour()))->optimize(
             new OptimizeWaypointsRequest(
                 origin: $this->ponto(0),
                 intermediates: [$this->ponto(0.3), $this->ponto(0.1), $this->ponto(0.2)],
@@ -43,7 +44,7 @@ final class MatrixTspStrategyTest extends TestCase
     {
         $matriz = new RouteMatrixFalso([0, 100, 200]);
 
-        (new MatrixTspStrategy($matriz, new NearestNeighbourTour()))->optimize(
+        (new MatrixTspStrategy($this->app->make(MapsHttpClient::class), $matriz, new NearestNeighbourTour()))->optimize(
             new OptimizeWaypointsRequest(
                 origin: $this->ponto(0),
                 intermediates: [$this->ponto(0.1), $this->ponto(0.2)],
@@ -63,7 +64,7 @@ final class MatrixTspStrategyTest extends TestCase
     {
         $matriz = new RouteMatrixFalso([0, 100, 200, 500]);
 
-        $resultado = (new MatrixTspStrategy($matriz, new NearestNeighbourTour()))->optimize(
+        $resultado = (new MatrixTspStrategy($this->app->make(MapsHttpClient::class), $matriz, new NearestNeighbourTour()))->optimize(
             new OptimizeWaypointsRequest(
                 origin: $this->ponto(0),
                 destination: $this->ponto(0.5),
@@ -86,7 +87,7 @@ final class MatrixTspStrategyTest extends TestCase
 
         $origem = $this->ponto(0);
 
-        $resultado = (new MatrixTspStrategy($matriz, new NearestNeighbourTour()))->optimize(
+        $resultado = (new MatrixTspStrategy($this->app->make(MapsHttpClient::class), $matriz, new NearestNeighbourTour()))->optimize(
             new OptimizeWaypointsRequest(
                 origin: $origem,
                 destination: $origem,

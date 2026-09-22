@@ -6,6 +6,9 @@ use BeeDelivery\BeeMaps\Contracts\Services\RouteMatrix;
 use BeeDelivery\BeeMaps\DTOs\Requests\OptimizeWaypointsRequest;
 use BeeDelivery\BeeMaps\DTOs\Requests\RouteMatrixRequest;
 use BeeDelivery\BeeMaps\DTOs\Responses\OptimizedWaypoints;
+use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Enums\Service;
+use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use BeeDelivery\BeeMaps\Support\Tsp\NearestNeighbourTour;
 
 /**
@@ -19,12 +22,27 @@ use BeeDelivery\BeeMaps\Support\Tsp\NearestNeighbourTour;
 final class MatrixTspStrategy implements OptimizationStrategy
 {
     public function __construct(
+        private readonly MapsHttpClient $http,
         private readonly RouteMatrix $matrix,
         private readonly NearestNeighbourTour $tsp,
     ) {
     }
 
     public function optimize(OptimizeWaypointsRequest $request): OptimizedWaypoints
+    {
+        // A chamada sai pelo contrato RouteMatrix, que emite o evento em nome
+        // DELE. Sem agrupar, uma otimizacao por distancia no Google nao aparece
+        // nas metricas de RouteOptimization e infla as de RouteMatrix — e a
+        // comparacao de latencia entre providers le isso como se o Google nao
+        // tivesse otimizado nada. Mesmo motivo do agrupamento no HereRouting.
+        return $this->http->operacao(
+            Provider::Google,
+            Service::RouteOptimization,
+            fn (): OptimizedWaypoints => $this->resolver($request),
+        );
+    }
+
+    private function resolver(OptimizeWaypointsRequest $request): OptimizedWaypoints
     {
         $pontos = [$request->origin, ...$request->intermediates];
         $fim = null;
