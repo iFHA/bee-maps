@@ -154,4 +154,29 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         $this->assertSame(10, $colecao->entry(0, 0)->distance->meters);
         $this->assertSame(20, $colecao->entry(0, 1)->distance->meters);
     }
+
+    public function test_erro_no_topo_do_corpo_vira_excecao_e_nao_par_sem_rota(): void
+    {
+        $this->expectException(ProviderRequestException::class);
+        $this->expectExceptionMessageMatches('/internal/i');
+
+        // Com HTTP 200 o traduzirErro do MapsHttpClient nunca roda, e sem esta
+        // guarda o corpo era iterado como se fosse elemento de matriz: as chaves
+        // viram code/message/status, os indices caem em (0,0) e a grade 1x1 fica
+        // "completa" — o erro da API virava um fato de roteirizacao.
+        (new GoogleRouteMatrixResponseMapper())->toCollection(
+            ['error' => ['code' => 500, 'message' => 'internal', 'status' => 'INTERNAL']],
+            1,
+            1,
+        );
+    }
+
+    public function test_matriz_normal_continua_passando(): void
+    {
+        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection([
+            ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 10, 'duration' => '1s', 'condition' => 'ROUTE_EXISTS'],
+        ], 1, 1);
+
+        $this->assertSame(10, $colecao->entry(0, 0)->distance->meters);
+    }
 }

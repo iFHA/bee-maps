@@ -23,6 +23,14 @@ final class GoogleRouteMatrixResponseMapper
         $entradas = [];
         $vistos = [];
 
+        // Erro no topo do corpo, sem embrulho de array. Chega com HTTP 200, entao
+        // o traduzirErro do MapsHttpClient nunca roda — e sem isto o corpo inteiro
+        // e iterado como se fosse elemento de matriz. O MapsHttpClient ja trata as
+        // duas formas (`$corpo['error'] ?? $corpo[0]['error']`); aqui e o espelho.
+        if (isset($resposta['error']) && is_array($resposta['error'])) {
+            throw $this->erroDaApi($resposta['error'], 'O Google devolveu erro no corpo da matriz com HTTP 200');
+        }
+
         foreach ($resposta as $elemento) {
             if (! is_array($elemento)) {
                 continue;
@@ -32,15 +40,8 @@ final class GoogleRouteMatrixResponseMapper
             // comecar chega como elemento de erro no meio do array, com HTTP 200.
             // Sem isto o elemento cai em (0,0) — sem indices, com 0 metros e
             // marcado como alcancavel — e a colecao sobrescreve o par verdadeiro.
-            if (isset($elemento['error'])) {
-                throw new ProviderRequestException(
-                    Provider::Google,
-                    Service::RouteMatrix,
-                    'O Google interrompeu a matriz no meio do stream: '
-                        . ($elemento['error']['message'] ?? 'erro sem mensagem'),
-                    200,
-                    isset($elemento['error']['status']) ? (string) $elemento['error']['status'] : null,
-                );
+            if (isset($elemento['error']) && is_array($elemento['error'])) {
+                throw $this->erroDaApi($elemento['error'], 'O Google interrompeu a matriz no meio do stream');
             }
 
             $origem = (int) ($elemento['originIndex'] ?? 0);
@@ -107,6 +108,20 @@ final class GoogleRouteMatrixResponseMapper
         }
 
         return new RouteMatrixEntryCollection(...$entradas);
+    }
+
+    /**
+     * @param array<string, mixed> $erro
+     */
+    private function erroDaApi(array $erro, string $contexto): ProviderRequestException
+    {
+        return new ProviderRequestException(
+            Provider::Google,
+            Service::RouteMatrix,
+            $contexto . ': ' . ($erro['message'] ?? 'erro sem mensagem'),
+            200,
+            isset($erro['status']) ? (string) $erro['status'] : null,
+        );
     }
 
     /**
