@@ -386,6 +386,11 @@ automaticamente, e o que você definiu continua valendo. A única exceção são
 `providers` —, que são substituídas inteiras pela sua versão, para que um item removido de
 propósito não volte sozinho.
 
+> **Se você usa `php artisan config:cache`, reconstrua o cache depois de atualizar o pacote.**
+> Com a configuração cacheada o pacote não mescla nada — é o mesmo comportamento do
+> `mergeConfigFrom` do Laravel, e existe porque nesse modo o `.env` não é carregado —, então
+> chaves novas só aparecem depois de rodar `php artisan config:cache` de novo.
+
 ## Migrando do `beedelivery/google-maps`
 
 Três mudanças observáveis, além dos tipos:

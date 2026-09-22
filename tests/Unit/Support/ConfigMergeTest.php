@@ -84,4 +84,23 @@ final class ConfigMergeTest extends TestCase
 
         $this->assertSame([], $resultado['providers']);
     }
+
+    public function test_padrao_de_array_vazio_nao_descarta_chaves_do_publicado(): void
+    {
+        // array_is_list([]) e true, entao um padrao vazio caia na regra de lista
+        // e rodava array_values() sobre o mapa publicado, perdendo as chaves.
+        $resultado = ConfigMerge::deep(
+            ['http' => ['headers' => []]],
+            ['http' => ['headers' => ['X-Trace' => 'abc']]],
+        );
+
+        $this->assertSame(['X-Trace' => 'abc'], $resultado['http']['headers']);
+    }
+
+    public function test_padrao_de_array_vazio_com_lista_publicada_tambem_e_preservado(): void
+    {
+        $resultado = ConfigMerge::deep(['tags' => []], ['tags' => ['a', 'b']]);
+
+        $this->assertSame(['a', 'b'], $resultado['tags']);
+    }
 }

@@ -19,12 +19,16 @@ final class ConfigMerge
      */
     public static function deep(array $padroes, array $publicado): array
     {
-        // Quando o PADRAO do pacote e uma lista, o publicado substitui por
-        // inteiro — e reindexado. Exigir que o publicado tambem fosse lista
-        // fazia a regra falhar justamente no caso que ela existe para cobrir:
-        // quem removeu um item com unset/array_filter fica com chaves nao
-        // sequenciais, cai no merge por chave e ve o item removido ressuscitar.
-        if (array_is_list($padroes)) {
+        // Quando o PADRAO do pacote e uma lista NAO VAZIA, o publicado substitui
+        // por inteiro — e reindexado. Basta o padrao ser lista: exigir que o
+        // publicado tambem fosse fazia a regra falhar justamente no caso que ela
+        // existe para cobrir, o de quem removeu um item com unset/array_filter e
+        // ficou com chaves nao sequenciais.
+        //
+        // Ja a checagem de vazio nao e detalhe: array_is_list([]) e true, entao um
+        // padrao `[]` cairia aqui e rodaria array_values() sobre o mapa publicado,
+        // descartando as chaves dele.
+        if (array_is_list($padroes) && $padroes !== []) {
             return array_values($publicado);
         }
 
