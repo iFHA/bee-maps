@@ -9,6 +9,7 @@ use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereMatrixRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereMatrixResponseMapper;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class HereMatrixMapperTest extends TestCase
 {
@@ -223,5 +224,34 @@ final class HereMatrixMapperTest extends TestCase
             'travelTimes' => [10],
             'errorCodes' => 'nenhum',
         ]], 1, 1);
+    }
+
+    public static function erroCodesInofensivos(): array
+    {
+        // As tres formas carregam a mesma informacao: nenhum par com erro.
+        return ['ausente' => [null], 'lista vazia' => [[]], 'nulo' => ['NULO']];
+    }
+
+    #[DataProvider('erroCodesInofensivos')]
+    public function test_error_codes_vazio_ou_nulo_equivale_a_ausente(mixed $valor): void
+    {
+        $matriz = [
+            'numOrigins' => 1,
+            'numDestinations' => 2,
+            'distances' => [10, 20],
+            'travelTimes' => [1, 2],
+        ];
+
+        if ($valor !== null) {
+            $matriz['errorCodes'] = $valor === 'NULO' ? null : $valor;
+        }
+
+        $colecao = (new HereMatrixResponseMapper())->toCollection(['matrix' => $matriz], 1, 2);
+
+        // Recusar `[]` seria rejeitar uma matriz completa e valida so porque o
+        // HERE serializou o caso vazio em vez de omitir o campo.
+        $this->assertCount(2, $colecao);
+        $this->assertTrue($colecao->entry(0, 0)->reachable);
+        $this->assertTrue($colecao->entry(0, 1)->reachable);
     }
 }

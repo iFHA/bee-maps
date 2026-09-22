@@ -60,11 +60,13 @@ final class HereMatrixResponseMapper
         $tempos = $this->medidas($matriz, 'travelTimes', $total);
 
         // O campo errorCodes NAO vem quando todos os pares sao alcancaveis —
-        // verificado contra a API. Ausente significa "tudo alcancavel"; presente
-        // passa pela mesma validacao dos demais.
-        $erros = array_key_exists('errorCodes', $matriz)
-            ? $this->medidas($matriz, 'errorCodes', $total)
-            : [];
+        // verificado contra a API. Lista vazia e null carregam a MESMA informacao
+        // que a ausencia: recusa-los seria rejeitar uma matriz completa so porque
+        // o HERE serializou o caso vazio em vez de omitir o campo. Qualquer outro
+        // valor passa pela mesma validacao dos demais.
+        $erros = ($matriz['errorCodes'] ?? []) === []
+            ? []
+            : $this->medidas($matriz, 'errorCodes', $total);
 
         $entradas = [];
 
@@ -107,7 +109,7 @@ final class HereMatrixResponseMapper
                 Provider::Here,
                 Service::RouteMatrix,
                 sprintf(
-                    'O HERE devolveu "%s" como %s, e nao como lista de medidas.',
+                    'O HERE devolveu "%s" como %s, e nao como lista.',
                     $campo,
                     get_debug_type($valores),
                 ),
@@ -124,7 +126,7 @@ final class HereMatrixResponseMapper
                 Provider::Here,
                 Service::RouteMatrix,
                 sprintf(
-                    'O HERE devolveu %d medidas em "%s" para uma grade de %d pares.',
+                    'O HERE devolveu %d valores em "%s" para uma grade de %d pares.',
                     count($valores),
                     $campo,
                     $total,
@@ -139,7 +141,7 @@ final class HereMatrixResponseMapper
                     Provider::Here,
                     Service::RouteMatrix,
                     sprintf(
-                        'O HERE devolveu a medida %d de "%s" como %s, e nao como numero.',
+                        'O HERE devolveu o valor %d de "%s" como %s, e nao como numero.',
                         $posicao,
                         $campo,
                         get_debug_type($valor),
