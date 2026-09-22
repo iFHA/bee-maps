@@ -33,6 +33,7 @@ use BeeDelivery\BeeMaps\Providers\Here\Services\HerePlaceSearch;
 use BeeDelivery\BeeMaps\Providers\Here\Services\HereRouteMatrix;
 use BeeDelivery\BeeMaps\Providers\Here\Services\HereRouting;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
+use BeeDelivery\BeeMaps\Support\MatrixLimit;
 use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 
 final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesGeocoding, ProvidesPlaceSearch, ProvidesRouteMatrix, ProvidesRouting
@@ -109,24 +110,8 @@ final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesG
             new HereMatrixResponseMapper(),
             $this->config['endpoints']['matrix'],
             $this->apiKey(),
-            $this->limiteDeMatriz(),
+            MatrixLimit::normalizar($this->config['matrix_max_elements'] ?? null),
         );
-    }
-
-    /**
-     * Config ausente, vazio ou nao-positivo significa "sem guarda no cliente".
-     * Uma variavel declarada sem valor no .env chega como '' — e (int) '' e 0,
-     * o que transformaria a guarda em "recuse toda requisicao".
-     */
-    private function limiteDeMatriz(): ?int
-    {
-        $limite = $this->config['matrix_max_elements'] ?? null;
-
-        if ($limite === null || $limite === '') {
-            return null;
-        }
-
-        return (int) $limite > 0 ? (int) $limite : null;
     }
 
     /**
