@@ -6,13 +6,13 @@ SDK Laravel multi-provider de geolocalização. Google Maps e HERE atrás dos me
 
 ## Requisitos
 
-- PHP >= 8.2
+- PHP >= 8.3
 - Laravel 10, 11 ou 12
 
 ## Instalação
 
 ```bash
-composer require beedelivery/bee-maps
+composer require ifha/bee-maps
 php artisan vendor:publish --tag=bee-maps-config
 ```
 
