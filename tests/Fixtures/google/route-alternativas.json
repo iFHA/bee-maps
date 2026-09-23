@@ -1,0 +1,16 @@
+{
+  "routes": [
+    {
+      "distanceMeters": 3530,
+      "duration": "578s"
+    },
+    {
+      "distanceMeters": 3601,
+      "duration": "526s"
+    },
+    {
+      "distanceMeters": 3410,
+      "duration": "640s"
+    }
+  ]
+}

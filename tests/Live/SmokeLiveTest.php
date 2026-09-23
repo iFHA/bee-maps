@@ -256,6 +256,41 @@ final class SmokeLiveTest extends TestCase
         ];
     }
 
+    /**
+     * Alternativas so existem se o provider de fato devolver mais de uma rota —
+     * e isso nenhum Http::fake responde.
+     */
+    #[DataProvider('providers')]
+    public function test_live_rota_com_alternativas_devolve_mais_de_uma(Provider $provider): void
+    {
+        $rota = $this->app->make(MapServiceFactory::class)
+            ->routing($provider)
+            ->route(new RouteRequest(
+                origin: new Coordinates(-23.5615, -46.6562),
+                destination: new Coordinates(-23.5505, -46.6333),
+                alternatives: 3,
+            ));
+
+        $this->assertNotSame([], $rota->alternatives, 'Nenhuma alternativa: o parametro nao chegou no provider.');
+
+        foreach ($rota->alternatives as $alternativa) {
+            $this->assertGreaterThan(0, $alternativa->distance->meters);
+        }
+    }
+
+    #[DataProvider('providers')]
+    public function test_live_sem_pedir_alternativas_vem_rota_unica(Provider $provider): void
+    {
+        $rota = $this->app->make(MapServiceFactory::class)
+            ->routing($provider)
+            ->route(new RouteRequest(
+                origin: new Coordinates(-23.5615, -46.6562),
+                destination: new Coordinates(-23.5505, -46.6333),
+            ));
+
+        $this->assertSame([], $rota->alternatives);
+    }
+
     #[DataProvider('providers')]
     public function test_live_otimiza_com_fim_fixo(Provider $provider): void
     {

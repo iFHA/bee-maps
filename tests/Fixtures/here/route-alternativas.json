@@ -1,0 +1,139 @@
+{
+  "routes": [
+    {
+      "id": "r0",
+      "sections": [
+        {
+          "id": "s",
+          "type": "vehicle",
+          "departure": {
+            "place": {
+              "type": "place",
+              "location": {
+                "lat": -23.5,
+                "lng": -46.6
+              }
+            }
+          },
+          "arrival": {
+            "place": {
+              "type": "place",
+              "location": {
+                "lat": -23.6,
+                "lng": -46.7
+              }
+            }
+          },
+          "summary": {
+            "duration": 562,
+            "length": 3777
+          },
+          "transport": {
+            "mode": "car"
+          }
+        }
+      ]
+    },
+    {
+      "id": "r1",
+      "sections": [
+        {
+          "id": "s",
+          "type": "vehicle",
+          "departure": {
+            "place": {
+              "type": "place",
+              "location": {
+                "lat": -23.5,
+                "lng": -46.6
+              }
+            }
+          },
+          "arrival": {
+            "place": {
+              "type": "place",
+              "location": {
+                "lat": -23.6,
+                "lng": -46.7
+              }
+            }
+          },
+          "summary": {
+            "duration": 624,
+            "length": 3536
+          },
+          "transport": {
+            "mode": "car"
+          }
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "sections": [
+        {
+          "id": "s",
+          "type": "vehicle",
+          "departure": {
+            "place": {
+              "type": "place",
+              "location": {
+                "lat": -23.5,
+                "lng": -46.6
+              }
+            }
+          },
+          "arrival": {
+            "place": {
+              "type": "place",
+              "location": {
+                "lat": -23.6,
+                "lng": -46.7
+              }
+            }
+          },
+          "summary": {
+            "duration": 300,
+            "length": 1800
+          },
+          "transport": {
+            "mode": "car"
+          }
+        },
+        {
+          "id": "s",
+          "type": "vehicle",
+          "departure": {
+            "place": {
+              "type": "place",
+              "location": {
+                "lat": -23.5,
+                "lng": -46.6
+              }
+            }
+          },
+          "arrival": {
+            "place": {
+              "type": "place",
+              "location": {
+                "lat": -23.6,
+                "lng": -46.7
+              }
+            }
+          },
+          "summary": {
+            "duration": 324,
+            "length": 1852
+          },
+          "transport": {
+            "mode": "car"
+          }
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "sections": []
+    }
+  ]
+}
