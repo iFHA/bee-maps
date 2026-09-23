@@ -165,6 +165,35 @@ $pontos = $rota->polyline?->coordinates() ?? $rota->legs[0]->polyline->coordinat
 
 `polyline`, `legs` e `optimizedOrder` são **opt-in**: sem `includePolyline`, `includeLegs` e `optimizeIntermediates`, os dois provedores devolvem `null`, `[]` e `[]`. Pedir geometria encarece o field mask do Google e infla a resposta do HERE, então nada disso vem sem você pedir.
 
+### Rotas alternativas
+
+`alternatives` pede rotas adicionais para o mesmo trajeto, de 0 a 6. O padrão é 0 — uma rota só, como antes.
+
+```php
+$rota = BeeMaps::routing($provider)->route(new RouteRequest(
+    origin: new Coordinates(-23.5615, -46.6562),
+    destination: new Coordinates(-23.5505, -46.6333),
+    alternatives: 3,
+));
+
+// A rota devolvida é a preferida do provedor; as outras vêm em `alternatives`.
+$maisCurta = min(array_map(
+    fn (Route $r) => $r->distance->meters,
+    [$rota, ...$rota->alternatives],
+));
+```
+
+**O pacote não escolhe entre elas.** "Mais curta" ou "mais rápida" é regra de quem chama, e as duas respostas são legítimas: a preferida é a que o motorista provavelmente fará, a mais curta é a de menor distância cobrada. Escolher aqui dentro seria decidir política de cobrança pelo consumidor.
+
+É **um pedido, não uma garantia**, e a assimetria é do upstream, não do pacote:
+
+| | parâmetro | quantidade |
+|---|---|---|
+| Google | `computeAlternativeRoutes: true` | a critério dele — o número que você passou é ignorado |
+| HERE | `alternatives=N` | honra o `N`, devolve até `N+1` rotas |
+
+O teto de 6 vem do HERE (`alternatives=7` responde 400) e é validado no `RouteRequest`, para que o mesmo valor seja recusado do mesmo jeito nos dois provedores, antes de qualquer chamada. Custa **uma** chamada upstream, não N. Alternativas não aninham alternativas.
+
 `TravelMode` tem quatro casos, traduzidos para o vocabulário de cada API:
 
 | `TravelMode` | Google | HERE |
