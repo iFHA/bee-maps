@@ -65,6 +65,11 @@ final class HereRouting implements Routing
                 + ['apiKey' => $this->apiKey],
         );
 
-        return $this->responseMapper->toRoute($resposta, $request->includeLegs, $ordemIntermediarios ?? []);
+        return $this->responseMapper->toRoute(
+            $resposta,
+            $request->includeLegs,
+            $ordemIntermediarios ?? [],
+            $request->alternatives > 0,
+        );
     }
 }

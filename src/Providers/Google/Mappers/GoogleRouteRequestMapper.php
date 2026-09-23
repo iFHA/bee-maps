@@ -25,6 +25,15 @@ final class GoogleRouteRequestMapper
             $payload['optimizeWaypointOrder'] = true;
         }
 
+        if ($request->alternatives > 0) {
+            // O computeRoutes so aceita liga/desliga: a QUANTIDADE fica a
+            // criterio dele. O numero do request e honrado no HERE, que tem
+            // parametro proprio. Verificado em 2026-09-23: com intermediarios
+            // o Google TAMBEM devolve alternativas, ao contrario do que a
+            // documentacao dele afirma.
+            $payload['computeAlternativeRoutes'] = true;
+        }
+
         return $payload;
     }
 

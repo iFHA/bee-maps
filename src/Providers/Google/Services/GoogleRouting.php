@@ -36,6 +36,11 @@ final class GoogleRouting implements Routing
             ],
         );
 
-        return $this->responseMapper->toRoute($resposta, $request->includeLegs, $request->optimizeIntermediates);
+        return $this->responseMapper->toRoute(
+            $resposta,
+            $request->includeLegs,
+            $request->optimizeIntermediates,
+            $request->alternatives > 0,
+        );
     }
 }

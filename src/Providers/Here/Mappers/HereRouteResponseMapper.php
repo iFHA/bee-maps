@@ -20,15 +20,52 @@ final class HereRouteResponseMapper
 
     /**
      * @param list<int> $ordemOtimizada
+     * @param bool      $pediuAlternativas Mesma razao de `incluirPernas`: sem pedido,
+     *                                     NENHUM provider devolve alternativas, ainda que
+     *                                     a resposta traga — simetria antes de generosidade.
      */
-    public function toRoute(array $resposta, bool $incluirPernas, array $ordemOtimizada = []): Route
-    {
-        $secoes = $resposta['routes'][0]['sections'] ?? null;
+    public function toRoute(
+        array $resposta,
+        bool $incluirPernas,
+        array $ordemOtimizada = [],
+        bool $pediuAlternativas = false,
+    ): Route {
+        $rotas = $resposta['routes'] ?? [];
+        $secoes = $rotas[0]['sections'] ?? null;
 
         if ($secoes === null || $secoes === []) {
             throw new InvalidRequestException('O HERE nao devolveu rota para os pontos informados.');
         }
 
+        return $this->rota($secoes, $incluirPernas, $ordemOtimizada, $pediuAlternativas
+            ? array_values(array_filter(array_map(
+                fn (array $outra) => $this->rotaAlternativa($outra, $incluirPernas),
+                array_slice($rotas, 1),
+            )))
+            : []);
+    }
+
+    /**
+     * Alternativa sem secoes e resposta incompleta do provider, nao alternativa
+     * vazia: descartamos em vez de fabricar uma rota de zero metros.
+     */
+    private function rotaAlternativa(array $rota, bool $incluirPernas): ?Route
+    {
+        $secoes = $rota['sections'] ?? null;
+
+        if ($secoes === null || $secoes === []) {
+            return null;
+        }
+
+        return $this->rota($secoes, $incluirPernas, [], []);
+    }
+
+    /**
+     * @param list<int>   $ordemOtimizada
+     * @param list<Route> $alternativas
+     */
+    private function rota(array $secoes, bool $incluirPernas, array $ordemOtimizada, array $alternativas): Route
+    {
         $metros = 0;
         $segundos = 0;
 
@@ -45,6 +82,7 @@ final class HereRouteResponseMapper
             polyline: count($secoes) === 1 ? $this->polyline($secoes[0]['polyline'] ?? null) : null,
             legs: $incluirPernas ? array_map($this->perna(...), $secoes) : [],
             optimizedOrder: $ordemOtimizada,
+            alternatives: $alternativas,
         );
     }
 

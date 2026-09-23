@@ -30,6 +30,12 @@ final class HereRouteRequestMapper
             'lang' => $language,
         ];
 
+        if ($request->alternatives > 0) {
+            // Aqui o numero e honrado: o /v8/routes tem parametro proprio e
+            // devolve ate N+1 rotas. Teto de 6 validado no RouteRequest.
+            $query['alternatives'] = $request->alternatives;
+        }
+
         $intermediarios = $request->intermediates;
 
         if ($ordemIntermediarios !== null) {

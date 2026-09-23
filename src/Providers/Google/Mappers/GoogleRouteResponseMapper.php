@@ -28,9 +28,19 @@ final class GoogleRouteResponseMapper
      * @param bool $otimizouIntermediarios  Mesma razao para optimizedOrder, que o DTO Route
      *                                      documenta como "vazio sem otimizacao".
      */
-    public function toRoute(array $resposta, bool $incluirPernas, bool $otimizouIntermediarios = false): Route
-    {
-        $rota = $resposta['routes'][0] ?? null;
+    /**
+     * @param bool $pediuAlternativas Mesma razao de `incluirPernas`: sem pedido, NENHUM
+     *                                provider devolve alternativas, ainda que a resposta
+     *                                traga — simetria antes de generosidade.
+     */
+    public function toRoute(
+        array $resposta,
+        bool $incluirPernas,
+        bool $otimizouIntermediarios = false,
+        bool $pediuAlternativas = false,
+    ): Route {
+        $rotas = $resposta['routes'] ?? [];
+        $rota = $rotas[0] ?? null;
 
         if ($rota === null) {
             throw new InvalidRequestException('O Google nao devolveu rota para os pontos informados.');
@@ -44,6 +54,26 @@ final class GoogleRouteResponseMapper
             optimizedOrder: $otimizouIntermediarios
                 ? array_map('intval', $rota['optimizedIntermediateWaypointIndex'] ?? [])
                 : [],
+            alternatives: $pediuAlternativas
+                ? array_map(
+                    fn (array $outra) => $this->rotaSimples($outra, $incluirPernas),
+                    array_values(array_slice($rotas, 1)),
+                )
+                : [],
+        );
+    }
+
+    /**
+     * Alternativa nao carrega alternativas proprias nem ordem otimizada: a ordem
+     * dos intermediarios e uma so para a requisicao inteira.
+     */
+    private function rotaSimples(array $rota, bool $incluirPernas): Route
+    {
+        return new Route(
+            distance: new Distance((int) ($rota['distanceMeters'] ?? 0)),
+            duration: new Duration($this->segundos($rota['duration'] ?? null)),
+            polyline: $this->polyline($rota['polyline']['encodedPolyline'] ?? null),
+            legs: $incluirPernas ? array_map($this->perna(...), $rota['legs'] ?? []) : [],
         );
     }
 
