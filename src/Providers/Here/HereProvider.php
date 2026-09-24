@@ -19,6 +19,8 @@ use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\Exceptions\ConfigurationException;
 use BeeDelivery\BeeMaps\Exceptions\InvalidRequestException;
 use BeeDelivery\BeeMaps\Exceptions\MissingCredentialsException;
+use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutocompleteRequestMapper;
+use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutocompleteResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutosuggestRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereAutosuggestResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereDiscoverRequestMapper;
@@ -29,7 +31,9 @@ use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereMatrixRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereMatrixResponseMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereRouteRequestMapper;
 use BeeDelivery\BeeMaps\Providers\Here\Mappers\HereRouteResponseMapper;
+use BeeDelivery\BeeMaps\Providers\Here\Services\HereAddressAutocomplete;
 use BeeDelivery\BeeMaps\Providers\Here\Services\HereAutocomplete;
+use BeeDelivery\BeeMaps\Providers\Here\Services\HereAutosuggest;
 use BeeDelivery\BeeMaps\Providers\Here\Services\HereGeocoding;
 use BeeDelivery\BeeMaps\Providers\Here\Services\HerePlaceSearch;
 use BeeDelivery\BeeMaps\Providers\Here\Services\HereRouteMatrix;
@@ -41,6 +45,8 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 
 final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesGeocoding, ProvidesPlaceSearch, ProvidesRouteMatrix, ProvidesRouteOptimization, ProvidesRouting
 {
+    private const AUTOCOMPLETE_URL = 'https://autocomplete.search.hereapi.com/v1/autocomplete';
+
     public function __construct(
         private readonly MapsHttpClient $http,
         private readonly array $config,
@@ -57,13 +63,28 @@ final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesG
     public function autocomplete(): Autocomplete
     {
         return new HereAutocomplete(
-            $this->http,
-            new HereAutosuggestRequestMapper($this->centroDoAutosuggest()),
-            new HereAutosuggestResponseMapper(),
-            $this->config['endpoints']['autosuggest'],
-            $this->apiKey(),
-            $this->language,
-            $this->region,
+            HereAutocompleteStrategy::fromConfig($this->config['autocomplete_strategy'] ?? null),
+            new HereAutosuggest(
+                $this->http,
+                new HereAutosuggestRequestMapper($this->centroDoAutosuggest()),
+                new HereAutosuggestResponseMapper(),
+                $this->config['endpoints']['autosuggest'],
+                $this->apiKey(),
+                $this->language,
+                $this->region,
+            ),
+            new HereAddressAutocomplete(
+                $this->http,
+                new HereAutocompleteRequestMapper(),
+                new HereAutocompleteResponseMapper(),
+                // Fallback porque o pacote ja foi publicado sem esta chave: um
+                // config publicado na v0.1/v0.2 nao tem o endpoint novo, e nao
+                // deve quebrar so por nao ter sido republicado.
+                $this->config['endpoints']['autocomplete'] ?? self::AUTOCOMPLETE_URL,
+                $this->apiKey(),
+                $this->language,
+                $this->region,
+            ),
         );
     }
 

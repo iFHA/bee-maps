@@ -5,6 +5,7 @@ namespace BeeDelivery\BeeMaps\Providers\Here\Mappers;
 use BeeDelivery\BeeMaps\DTOs\Responses\Suggestion;
 use BeeDelivery\BeeMaps\DTOs\Responses\SuggestionCollection;
 use BeeDelivery\BeeMaps\Enums\Provider;
+use BeeDelivery\BeeMaps\Providers\Here\HereAddressLabel;
 use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
 
 final class HereAutosuggestResponseMapper
@@ -31,18 +32,11 @@ final class HereAutosuggestResponseMapper
                 place: $resolvivel ? new PlaceReference(Provider::Here, $item['id']) : null,
                 description: $label,
                 mainText: $titulo,
-                secondaryText: $this->secondaryText($titulo, $label),
+                secondaryText: HereAddressLabel::complemento($titulo, $label),
                 isEstablishment: $tipo === 'place',
             );
         }
 
         return new SuggestionCollection(...$sugestoes);
-    }
-
-    private function secondaryText(string $titulo, string $label): string
-    {
-        return str_starts_with($label, $titulo . ', ')
-            ? substr($label, strlen($titulo) + 2)
-            : ($label === $titulo ? '' : $label);
     }
 }

@@ -7,6 +7,7 @@ use BeeDelivery\BeeMaps\DTOs\Responses\GeocodeResultCollection;
 use BeeDelivery\BeeMaps\DTOs\Responses\SuggestionCollection;
 use BeeDelivery\BeeMaps\Enums\Provider;
 use BeeDelivery\BeeMaps\MapServiceFactory;
+use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 use BeeDelivery\BeeMaps\Tests\TestCase;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -28,6 +29,7 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
             'places.googleapis.com/*' => Http::response($fixture('google/autocomplete.json'), 200),
             'maps.googleapis.com/*' => Http::response($fixture('google/geocode.json'), 200),
             'autosuggest.search.hereapi.com/*' => Http::response($fixture('here/autosuggest.json'), 200),
+            'autocomplete.search.hereapi.com/*' => Http::response($fixture('here/autocomplete.json'), 200),
             'geocode.search.hereapi.com/*' => Http::response($fixture('here/geocode.json'), 200),
         ]);
     }
@@ -45,9 +47,12 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
     {
         $this->fakeTudo();
 
+        // Com `near` o HERE vai para o /autosuggest, que e o caminho com POI e
+        // com itens nao resolviveis — as duas divergencias fixadas abaixo. O
+        // caminho sem foco tem teste proprio logo a seguir.
         $colecao = $this->app->make(MapServiceFactory::class)
             ->autocomplete($provider)
-            ->suggest(new AutocompleteRequest('Av Paulista'));
+            ->suggest(new AutocompleteRequest('Av Paulista', new Coordinates(-23.5615, -46.6562)));
 
         $this->assertInstanceOf(SuggestionCollection::class, $colecao);
         $this->assertGreaterThan(0, $colecao->count());
@@ -106,6 +111,48 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
         } else {
             foreach ($colecao as $sugestao) {
                 $this->assertNotNull($sugestao->place);
+            }
+        }
+    }
+
+    /**
+     * A busca sem ponto de referencia (cadastro de empresa, endereco em outro
+     * estado) troca de endpoint no HERE — /autocomplete em vez de /autosuggest
+     * — e o contrato tem que sobreviver a essa troca.
+     */
+    #[DataProvider('providers')]
+    public function test_autocomplete_sem_foco_devolve_o_mesmo_contrato(Provider $provider): void
+    {
+        $this->fakeTudo();
+
+        $colecao = $this->app->make(MapServiceFactory::class)
+            ->autocomplete($provider)
+            ->suggest(new AutocompleteRequest('Av Paulista'));
+
+        $this->assertInstanceOf(SuggestionCollection::class, $colecao);
+        $this->assertGreaterThan(0, $colecao->count());
+
+        foreach ($colecao as $sugestao) {
+            $this->assertNotSame('', $sugestao->description);
+            $this->assertNotSame('', $sugestao->mainText);
+            $this->assertIsBool($sugestao->isEstablishment);
+            $this->assertNotSame($sugestao->description, $sugestao->mainText);
+
+            // Aqui os dois providers convergem no que o /autosuggest diverge:
+            // sem chainQuery/categoryQuery, toda sugestao resolve no lookup.
+            $this->assertNotNull($sugestao->place);
+            $this->assertSame($provider, $sugestao->place->provider);
+            $this->assertNotSame('', $sugestao->place->id);
+        }
+
+        $this->assertSame('Avenida Paulista, 1000', $colecao->first()->mainText);
+
+        // Divergencia assumida: o /autocomplete do HERE nao tem resultType de
+        // lugar, entao nunca marca estabelecimento. O Google marca nos dois
+        // caminhos. Quem ramifica em isEstablishment precisa saber disso.
+        if ($provider === Provider::Here) {
+            foreach ($colecao as $sugestao) {
+                $this->assertFalse($sugestao->isEstablishment);
             }
         }
     }

@@ -56,7 +56,7 @@ return [
             'autocomplete'  => 'https://places.googleapis.com/v1/places:autocomplete',
             'geocoding'     => 'https://maps.googleapis.com/maps/api/geocode/json',
             'place_search'  => 'https://places.googleapis.com/v1/places:searchText',
-            'routing'       => 'https://routes.googleapis.com/directions/v2:computeRoutes',
+            'routing'      => 'https://routes.googleapis.com/directions/v2:computeRoutes',
             'route_matrix'  => 'https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix',
         ],
     ],
@@ -76,21 +76,37 @@ return [
         // calibre este valor contra o seu próprio corpus de endereços antes
         // de trocar de provider.
         'partial_threshold' => (float) env('BEE_MAPS_HERE_PARTIAL_THRESHOLD', 1.0),
-        // Foco espacial usado pelo Autosuggest quando a requisicao nao traz
-        // coordenada. O endpoint exige um de `at`/`in=bbox`/`in=circle`/`in=ring`
-        // e responde 400 sem nenhum deles — `in=countryCode` NAO conta como foco.
-        // Sem esta chave e sem AutocompleteRequest::$near, o pacote lanca
-        // InvalidRequestException em vez de deixar o 400 vazar do provider.
+        // Qual endpoint do HERE atende o autocomplete. Os dois existem porque
+        // nenhum faz o que o outro faz:
+        //
+        //   'auto'          (padrao) /autosuggest quando a requisicao traz
+        //                   `near`, /autocomplete quando nao traz.
+        //   'autosuggest'   sempre /autosuggest. Devolve POI alem de endereco,
+        //                   mas EXIGE foco espacial: sem `near` cai no
+        //                   autosuggest_center abaixo, e sem ele tambem lanca
+        //                   InvalidRequestException.
+        //   'autocomplete'  sempre /autocomplete. So endereco e area
+        //                   administrativa (`isEstablishment` sempre false),
+        //                   mas aceita `in=countryCode` sozinho — e o unico
+        //                   caminho para busca no pais inteiro.
+        'autocomplete_strategy' => env('BEE_MAPS_HERE_AUTOCOMPLETE_STRATEGY', 'auto'),
+        // Foco espacial de fallback do /autosuggest, usado quando a requisicao
+        // nao traz coordenada. O endpoint exige um de `at`/`in=bbox`/`in=circle`/
+        // `in=ring` e responde 400 sem nenhum deles — `in=countryCode` NAO conta
+        // como foco. So tem efeito na estrategia 'autosuggest': em 'auto' uma
+        // busca sem `near` vai para o /autocomplete, e um centro esquecido aqui
+        // nao pode encolher em silencio uma busca de alcance nacional.
         // Formato: "latitude,longitude" (ex.: "-23.5615,-46.6562").
         'autosuggest_center' => env('BEE_MAPS_HERE_AUTOSUGGEST_CENTER'),
         'endpoints' => [
-            'autosuggest' => 'https://autosuggest.search.hereapi.com/v1/autosuggest',
-            'geocode'     => 'https://geocode.search.hereapi.com/v1/geocode',
-            'revgeocode'  => 'https://revgeocode.search.hereapi.com/v1/revgeocode',
-            'lookup'      => 'https://lookup.search.hereapi.com/v1/lookup',
-            'discover'    => 'https://discover.search.hereapi.com/v1/discover',
-            'routing'     => 'https://router.hereapi.com/v8/routes',
-            'matrix'      => 'https://matrix.router.hereapi.com/v8/matrix',
+            'autosuggest'  => 'https://autosuggest.search.hereapi.com/v1/autosuggest',
+            'autocomplete' => 'https://autocomplete.search.hereapi.com/v1/autocomplete',
+            'geocode'      => 'https://geocode.search.hereapi.com/v1/geocode',
+            'revgeocode'   => 'https://revgeocode.search.hereapi.com/v1/revgeocode',
+            'lookup'       => 'https://lookup.search.hereapi.com/v1/lookup',
+            'discover'     => 'https://discover.search.hereapi.com/v1/discover',
+            'routing'      => 'https://router.hereapi.com/v8/routes',
+            'matrix'       => 'https://matrix.router.hereapi.com/v8/matrix',
             // Waypoints Sequence API: resolve a ordem de visita, nao a rota.
             // O host diverge do que a secao 8 do spec registra (router.hereapi.com,
             // que responde 404) — ver D18. Fica em config porque a doc do HERE

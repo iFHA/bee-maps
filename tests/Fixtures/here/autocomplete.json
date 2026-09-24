@@ -1,0 +1,57 @@
+{
+  "items": [
+    {
+      "title": "Brasil, Sao Paulo - SP, 01310-100, Avenida Paulista, 1000",
+      "id": "here:af:streetsection:HGkDGxvQXcBcOPSQhBbMPB:CggIBCD",
+      "language": "pt",
+      "resultType": "houseNumber",
+      "houseNumberType": "PA",
+      "address": {
+        "label": "Avenida Paulista, 1000, Sao Paulo - SP, 01310-100, Brasil",
+        "countryCode": "BRA",
+        "countryName": "Brasil",
+        "stateCode": "SP",
+        "state": "Sao Paulo",
+        "city": "Sao Paulo",
+        "district": "Bela Vista",
+        "street": "Avenida Paulista",
+        "postalCode": "01310-100",
+        "houseNumber": "1000"
+      },
+      "highlights": { "title": [{ "start": 41, "end": 57 }] }
+    },
+    {
+      "title": "Brasil, Joinville - SC, 89201-000, Rua Blumenau",
+      "id": "here:af:streetsection:ZqkDGxvQXcBcOPSQhBbMPB",
+      "language": "pt",
+      "resultType": "street",
+      "address": {
+        "label": "Rua Blumenau, Joinville - SC, 89201-000, Brasil",
+        "countryCode": "BRA",
+        "countryName": "Brasil",
+        "stateCode": "SC",
+        "state": "Santa Catarina",
+        "city": "Joinville",
+        "street": "Rua Blumenau",
+        "postalCode": "89201-000"
+      },
+      "highlights": { "title": [{ "start": 35, "end": 47 }] }
+    },
+    {
+      "title": "Brasil, Minas Gerais, Belo Horizonte",
+      "id": "here:cm:namedplace:21027142",
+      "language": "pt",
+      "resultType": "locality",
+      "localityType": "city",
+      "address": {
+        "label": "Belo Horizonte - MG, Brasil",
+        "countryCode": "BRA",
+        "countryName": "Brasil",
+        "stateCode": "MG",
+        "state": "Minas Gerais",
+        "city": "Belo Horizonte"
+      },
+      "highlights": { "title": [{ "start": 22, "end": 36 }] }
+    }
+  ]
+}
