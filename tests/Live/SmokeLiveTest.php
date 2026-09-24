@@ -38,29 +38,59 @@ final class SmokeLiveTest extends TestCase
         Http::allowStrayRequests();
     }
 
+    private static function chave(Provider $provider): ?string
+    {
+        return getenv($provider === Provider::Google ? 'GOOGLE_MAPS_KEY' : 'HERE_API_KEY') ?: null;
+    }
+
+    /**
+     * O gate e por provedor, nao por suite: ter so uma das duas chaves e comum
+     * — investigar um comportamento do HERE, por exemplo — e nao deveria pular
+     * o smoke inteiro. Testes de um provedor so chamam isto; os parametrizados
+     * ganham o recorte pelo proprio dataProvider.
+     */
+    private function exigirChave(Provider $provider): void
+    {
+        if (self::chave($provider) === null) {
+            $this->markTestSkipped(sprintf(
+                'Defina %s para rodar o smoke live do %s.',
+                $provider === Provider::Google ? 'GOOGLE_MAPS_KEY' : 'HERE_API_KEY',
+                $provider->value,
+            ));
+        }
+    }
+
     protected function defineEnvironment($app): void
     {
-        $google = getenv('GOOGLE_MAPS_KEY') ?: null;
-        $here = getenv('HERE_API_KEY') ?: null;
+        $google = self::chave(Provider::Google);
+        $here = self::chave(Provider::Here);
 
-        if ($google === null || $here === null) {
-            $this->markTestSkipped('Defina GOOGLE_MAPS_KEY e HERE_API_KEY para rodar o smoke live.');
+        if ($google === null && $here === null) {
+            $this->markTestSkipped('Defina GOOGLE_MAPS_KEY e/ou HERE_API_KEY para rodar o smoke live.');
         }
 
         $app['config']->set('bee-maps.google.key', $google);
         $app['config']->set('bee-maps.here.api_key', $here);
 
-        // O caso "sem coordenada" depende deste centro: o Autosuggest do HERE
-        // recusa a chamada sem foco espacial.
+        // So a estrategia `autosuggest` forcada usa este centro; no modo `auto`
+        // uma busca sem coordenada vai para o /autocomplete, que nao precisa de
+        // foco. Fica setado para o teste que exercita essa estrategia.
         $app['config']->set('bee-maps.here.autosuggest_center', '-23.5615,-46.6562');
     }
 
+    /**
+     * So os provedores com chave no ambiente. Rodar o smoke com uma chave so
+     * exercita aquele provedor em vez de pular tudo — e o testdox mostra quais
+     * casos correram, entao a cobertura parcial fica visivel.
+     */
     public static function providers(): array
     {
-        return [
+        $todos = [
             'google' => [Provider::Google],
             'here' => [Provider::Here],
         ];
+
+        return array_filter($todos, fn (array $caso) => self::chave($caso[0]) !== null);
     }
 
     #[DataProvider('providers')]
@@ -72,6 +102,39 @@ final class SmokeLiveTest extends TestCase
 
         $this->assertGreaterThan(0, $colecao->count());
         $this->assertNotSame('', $colecao->first()->description);
+    }
+
+    /**
+     * A busca nacional do HERE: sem foco espacial nenhum, so `in=countryCode`.
+     * E a combinacao que o /autosuggest recusa com 400, e por isso a unica
+     * prova de que o /autocomplete aceita — o Http::fake nao valida query.
+     */
+    public function test_autocomplete_nacional_do_here_responde_sem_foco_espacial(): void
+    {
+        $this->exigirChave(Provider::Here);
+
+        $this->app['config']->set('bee-maps.here.autocomplete_strategy', 'autocomplete');
+        $this->app['config']->set('bee-maps.here.autosuggest_center', null);
+
+        $colecao = $this->app->make(MapServiceFactory::class)
+            ->autocomplete(Provider::Here)
+            ->suggest(new AutocompleteRequest('Rua Blumenau'));
+
+        $this->assertGreaterThan(0, $colecao->count());
+        $this->assertNotNull($colecao->first()->place);
+    }
+
+    public function test_autosuggest_forcado_do_here_responde_com_o_centro_configurado(): void
+    {
+        $this->exigirChave(Provider::Here);
+
+        $this->app['config']->set('bee-maps.here.autocomplete_strategy', 'autosuggest');
+
+        $colecao = $this->app->make(MapServiceFactory::class)
+            ->autocomplete(Provider::Here)
+            ->suggest(new AutocompleteRequest('Avenida Paulista'));
+
+        $this->assertGreaterThan(0, $colecao->count());
     }
 
     #[DataProvider('providers')]
@@ -153,6 +216,8 @@ final class SmokeLiveTest extends TestCase
      */
     public function test_rota_otimizada_do_here_usa_o_endpoint_de_sequencia_configurado(): void
     {
+        $this->exigirChave(Provider::Here);
+
         $rota = $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Here)
             ->route(new RouteRequest(
@@ -172,6 +237,8 @@ final class SmokeLiveTest extends TestCase
 
     public function test_rota_otimizada_do_here_em_duas_rodas_responde(): void
     {
+        $this->exigirChave(Provider::Here);
+
         // O smoke so exercitava Drive. O findsequence e um motor legado, e os
         // quatro transport modes nao sao obviamente os mesmos do /v8/routes.
         $rota = $this->app->make(MapServiceFactory::class)
@@ -189,6 +256,8 @@ final class SmokeLiveTest extends TestCase
 
     public function test_rota_otimizada_do_google_resolve_em_uma_chamada(): void
     {
+        $this->exigirChave(Provider::Google);
+
         $rota = $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Google)
             ->route(new RouteRequest(
