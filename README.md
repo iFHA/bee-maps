@@ -82,13 +82,41 @@ Cada `Suggestion` traz:
 |---|---|---|
 | `place` | `?PlaceReference` | **pode ser nulo** — ver abaixo |
 | `description` | `string` | endereço completo |
-| `mainText` | `string` | linha principal |
-| `secondaryText` | `string` | complemento |
+| `mainText` | `string` | linha principal — rua e número, ou o nome do lugar |
+| `secondaryText` | `string` | complemento (bairro, cidade, UF, CEP) |
 | `isEstablishment` | `bool` | é estabelecimento, não endereço |
+
+### O HERE tem dois endpoints de autocomplete, e a escolha depende do `near`
+
+O Google resolve autocomplete com um endpoint só. O HERE tem dois, e nenhum faz o que o outro faz:
+
+| | `/autosuggest` | `/autocomplete` |
+|---|---|---|
+| Devolve POI | sim | **não** — só endereço e área administrativa |
+| Busca sem foco espacial | **não** — 400 sem `at`/`in=circle`/`in=bbox`/`in=ring` | sim |
+| `in=countryCode` sozinho | recusado | aceito |
+| `isEstablishment` | reflete o resultado | sempre `false` |
+| `place` nulo | acontece (`chainQuery`) | nunca |
+
+A restrição que separa os dois está no spec do GS7: em `/autosuggest` (e em `/discover`) o `in=countryCode` *"must be accompanied by exactly one of `at`, `in=circle` or `in=bbox`"*. Ou seja, **só o `/autocomplete` consegue buscar no país inteiro** — o caso de quem cadastra um endereço em outro estado e não tem ponto de referência nenhum.
+
+Por isso o default é `autocomplete_strategy = 'auto'`, que escolhe pela requisição:
+
+```php
+// tem referência (a loja, o cliente) → /autosuggest, com POI
+$maps->autocomplete(Provider::Here)
+    ->suggest(new AutocompleteRequest('Av Paulista', new Coordinates(-23.5615, -46.6562)));
+
+// não tem referência → /autocomplete, Brasil inteiro
+$maps->autocomplete(Provider::Here)
+    ->suggest(new AutocompleteRequest('Rua Blumenau'));
+```
+
+Para fixar um dos dois, veja [`autocomplete_strategy`](#estratégia-de-autocomplete-do-here). O `bee-maps.here.autosuggest_center` **não influencia o modo `auto`**: se influenciasse, um centro esquecido no config viraria um recorte de 50 km em volta dele numa busca que pediu alcance nacional.
 
 ### `place` pode ser nulo — verifique antes do `lookup()`
 
-O Autosuggest do HERE devolve também itens `chainQuery` e `categoryQuery` (ex.: "Postos Shell"), que são **refinamentos de busca, não lugares**, e não podem ser resolvidos. No Google todo resultado tem identificador, então lá o campo nunca é nulo.
+O Autosuggest do HERE devolve também itens `chainQuery` e `categoryQuery` (ex.: "Postos Shell"), que são **refinamentos de busca, não lugares**, e não podem ser resolvidos. No Google todo resultado tem identificador, então lá o campo nunca é nulo. No `/autocomplete` do HERE o campo também nunca é nulo.
 
 ```php
 $sugestao = $sugestoes->first();
@@ -410,6 +438,7 @@ Todo endpoint é sobrescrevível por quem publica o config, o que permite aponta
 
 'here' => ['endpoints' => [
     'autosuggest'  => 'https://autosuggest.search.hereapi.com/v1/autosuggest',
+    'autocomplete' => 'https://autocomplete.search.hereapi.com/v1/autocomplete',
     'geocode'      => 'https://geocode.search.hereapi.com/v1/geocode',
     'revgeocode'   => 'https://revgeocode.search.hereapi.com/v1/revgeocode',
     'lookup'       => 'https://lookup.search.hereapi.com/v1/lookup',
@@ -419,7 +448,21 @@ Todo endpoint é sobrescrevível por quem publica o config, o que permite aponta
 ]],
 ```
 
-O HERE tem uma chave a mais, que não é endpoint: o **foco espacial padrão do Autosuggest**, usado quando `AutocompleteRequest::$near` vem vazio. Sem ela e sem `near`, o autocomplete do HERE lança `InvalidRequestException` (ver [Limitações conhecidas](#limitações-conhecidas)). O formato é o mesmo de `Coordinates::toString()`:
+### Estratégia de autocomplete do HERE
+
+Qual dos dois endpoints atende `autocomplete()` (ver [o porquê de serem dois](#o-here-tem-dois-endpoints-de-autocomplete-e-a-escolha-depende-do-near)):
+
+```dotenv
+BEE_MAPS_HERE_AUTOCOMPLETE_STRATEGY=auto
+```
+
+| Valor | Comportamento |
+|---|---|
+| `auto` (default) | `/autosuggest` quando a requisição traz `near`, `/autocomplete` quando não traz |
+| `autosuggest` | sempre `/autosuggest`. Tem POI, mas exige foco espacial |
+| `autocomplete` | sempre `/autocomplete`. Cobre o país inteiro, mas `isEstablishment` é sempre `false` |
+
+O HERE tem ainda uma chave que não é endpoint: o **foco espacial de fallback do Autosuggest**, usado quando `AutocompleteRequest::$near` vem vazio. Ele só tem efeito na estratégia `autosuggest` — em `auto`, uma busca sem `near` vai para o `/autocomplete` e não é recortada por ele. Na estratégia `autosuggest`, sem esta chave e sem `near`, o pacote lança `InvalidRequestException` (ver [Limitações conhecidas](#limitações-conhecidas)). O formato é o mesmo de `Coordinates::toString()`:
 
 ```dotenv
 BEE_MAPS_HERE_AUTOSUGGEST_CENTER="-23.5615,-46.6562"
@@ -427,18 +470,19 @@ BEE_MAPS_HERE_AUTOSUGGEST_CENTER="-23.5615,-46.6562"
 
 ```php
 'here' => [
-    // "latitude,longitude", ou null para exigir `near` em toda chamada.
+    'autocomplete_strategy' => env('BEE_MAPS_HERE_AUTOCOMPLETE_STRATEGY', 'auto'),
+    // "latitude,longitude", ou null para exigir `near` na estratégia autosuggest.
     'autosuggest_center' => env('BEE_MAPS_HERE_AUTOSUGGEST_CENTER'),
 ],
 ```
 
-Um valor malformado aqui é `ConfigurationException`, não `InvalidRequestException`: quem precisa agir é quem fez o deploy, não quem fez a chamada.
+Um valor malformado em qualquer uma das duas é `ConfigurationException`, não `InvalidRequestException`: quem precisa agir é quem fez o deploy, não quem fez a chamada.
 
 ## Serviços disponíveis
 
 | Serviço | Google | HERE |
 |---|---|---|
-| Autocomplete | `places:autocomplete` | `/v1/autosuggest` |
+| Autocomplete | `places:autocomplete` | `/v1/autosuggest` ou `/v1/autocomplete`, conforme a [estratégia](#estratégia-de-autocomplete-do-here) |
 | Geocoding | Geocoding API | `/v1/geocode`, `/v1/revgeocode`, `/v1/lookup` |
 | PlaceSearch | `places:searchText` | `/v1/discover` |
 | Routing | `directions/v2:computeRoutes` | `/v8/routes` (+ `/v8/findsequence2` quando otimiza) |
@@ -452,7 +496,11 @@ Um valor malformado aqui é `ConfigurationException`, não `InvalidRequestExcept
 - O hífen do CEP é removido (`01310-100` → `01310100`). No Brasil ele é cosmético, mas em Portugal, Polônia e Japão faz parte do código.
 - No Google, `administrative_area_level_2` é mapeado para `city`. No Brasil esse nível é o município; nos Estados Unidos é o *county*, e o HERE devolveria a cidade — os dois provedores discordariam.
 
-**O autocomplete do HERE exige foco espacial.** O endpoint Autosuggest recusa a chamada sem um de `at`/`in=bbox`/`in=circle`/`in=ring` — filtro de país não conta. Informe `AutocompleteRequest::$near` ou configure `bee-maps.here.autosuggest_center`; sem nenhum dos dois, o pacote lança `InvalidRequestException` em vez de deixar o HTTP 400 vazar. O Google não tem essa exigência, então é uma diferença real de provider, não do pacote.
+**No HERE, busca nacional e POI são mutuamente exclusivos.** O `/autosuggest` devolve POI mas recusa a chamada sem um de `at`/`in=bbox`/`in=circle`/`in=ring` — filtro de país não conta como foco. O `/autocomplete` aceita `in=countryCode` sozinho mas não tem `resultType` de lugar, então `isEstablishment` é sempre `false` ali. O modo `auto` alterna entre os dois pela presença de `near`, mas não existe combinação que dê as duas coisas: uma busca sem ponto de referência no HERE não vai encontrar estabelecimento pelo nome. O Google entrega POI nos dois casos, então esta é uma diferença real de provider, não do pacote.
+
+**Na estratégia `autosuggest` forçada, o autocomplete do HERE exige foco espacial.** Informe `AutocompleteRequest::$near` ou configure `bee-maps.here.autosuggest_center`; sem nenhum dos dois, o pacote lança `InvalidRequestException` em vez de deixar o HTTP 400 vazar.
+
+**O autocomplete do HERE pede `show=details` no Autosuggest.** Sem esse parâmetro o `address` da resposta vem só com `label`, e não há como separar `mainText` de `secondaryText`: o `title` do Autosuggest vem **igual ao endereço completo** em todo resultado que não é um lugar nomeado, então usá-lo colapsaria a linha inteira em `mainText`. Isso importa além da estética — quem conta vírgulas em `mainText` para saber se falta o número da casa (é o caso do entregame) aceitaria uma rua sem número. A doc do HERE avisa que `show` pode envolver chamadas adicionais e aumentar a latência; é o preço dos dois campos corretos.
 
 **Uma resposta malformada do HERE devolve coleção vazia** em vez de erro de mapeamento, pela mesma regra de "nenhum resultado não é erro".
 
