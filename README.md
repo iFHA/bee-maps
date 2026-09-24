@@ -85,6 +85,7 @@ Cada `Suggestion` traz:
 | `mainText` | `string` | linha principal — rua e número, ou o nome do lugar |
 | `secondaryText` | `string` | complemento (bairro, cidade, UF, CEP) |
 | `isEstablishment` | `bool` | é estabelecimento, não endereço |
+| `coordinates` | `?Coordinates` | **pode ser nulo** — só o `/autosuggest` do HERE preenche; [ver abaixo](#coordinates-chega-de-graça-só-em-um-dos-três-caminhos) |
 
 ### O HERE tem dois endpoints de autocomplete, e a escolha depende do `near`
 
@@ -97,6 +98,7 @@ O Google resolve autocomplete com um endpoint só. O HERE tem dois, e nenhum faz
 | `in=countryCode` sozinho | recusado | aceito |
 | `isEstablishment` | reflete o resultado | sempre `false` |
 | `place` nulo | acontece (`chainQuery`) | nunca |
+| `coordinates` | vem na resposta | sempre nulo |
 
 A restrição que separa os dois está no spec do GS7: em `/autosuggest` (e em `/discover`) o `in=countryCode` *"must be accompanied by exactly one of `at`, `in=circle` or `in=bbox`"*. Ou seja, **só o `/autocomplete` consegue buscar no país inteiro** — o caso de quem cadastra um endereço em outro estado e não tem ponto de referência nenhum.
 
@@ -125,6 +127,32 @@ if ($sugestao->place !== null) {
     $endereco = $this->maps->geocoding(Provider::Here)->lookup($sugestao->place);
 }
 ```
+
+### `coordinates` chega de graça só em um dos três caminhos
+
+Depois que o usuário escolhe uma sugestão, quem vai mostrar o pino no mapa ou gravar o endereço precisa de latitude e longitude — e a forma óbvia de obtê-las é uma chamada de `lookup()` ou `geocode()`. O campo `coordinates` existe para evitar essa segunda chamada **quando o provider já mandou a posição na própria resposta do autocomplete**. Nem sempre manda:
+
+| caminho | `coordinates` |
+|---|---|
+| HERE `/autosuggest` (busca **com** `near`) | vem preenchido, exceto nos itens `chainQuery`/`categoryQuery` |
+| HERE `/autocomplete` (busca **sem** `near`) | sempre nulo |
+| Google `places:autocomplete` | sempre nulo |
+
+As duas ausências são do provider, não do pacote, e não têm parâmetro que as resolva:
+
+- A doc do `/autocomplete` do HERE **instrui** a resolver a posição depois, via `/lookup` pelo `id` ou via `/geocode` pelo endereço. A tabela de *response enrichment* do GS7 não tem nenhum valor de `show` que adicione `position` a esse endpoint — `tz`, por exemplo, vale em *"all except `/autocomplete`"*.
+- No Google, o `placePrediction` não tem campo de localização nenhum: são só `place`, `placeId`, `text`, `structuredFormat`, `types` e `distanceMeters`. A coordenada só sai do Place Details, que é outra chamada e outro SKU — então ampliar o field mask não mudaria nada.
+
+Por isso o contrato é **"pode ser nulo"**, nunca "vem preenchido": o fallback continua obrigatório, inclusive para quem hoje só usa o HERE com `near` e um dia trocar de provider.
+
+```php
+$sugestao = $sugestoes->first();
+
+$coordenadas = $sugestao->coordinates
+    ?? $this->maps->geocoding($provider)->lookup($sugestao->place)?->coordinates;
+```
+
+Nos itens em que `coordinates` é nulo por serem refinamentos de busca, `place` **também** é nulo — os dois campos caem juntos, e nesse caso não há o que resolver.
 
 ## Geocoding
 
@@ -483,6 +511,8 @@ Um valor malformado em qualquer uma das duas é `ConfigurationException`, não `
 **Na estratégia `autosuggest` forçada, o autocomplete do HERE exige foco espacial.** Informe `AutocompleteRequest::$near` ou configure `bee-maps.here.autosuggest_center`; sem nenhum dos dois, o pacote lança `InvalidRequestException` em vez de deixar o HTTP 400 vazar.
 
 **O autocomplete do HERE pede `show=details` no Autosuggest.** Sem esse parâmetro o `address` da resposta vem só com `label`, e não há como separar `mainText` de `secondaryText`: o `title` do Autosuggest vem **igual ao endereço completo** em todo resultado que não é um lugar nomeado, então usá-lo colapsaria a linha inteira em `mainText`. Isso importa além da estética — quem conta vírgulas em `mainText` para saber se falta o número da casa (é o caso do entregame) aceitaria uma rua sem número. A doc do HERE avisa que `show` pode envolver chamadas adicionais e aumentar a latência; é o preço dos dois campos corretos.
+
+**A coordenada do autocomplete só existe no `/autosuggest` do HERE.** O `Suggestion::$coordinates` poupa uma chamada de geocode depois da escolha do usuário, mas só no caminho com `near`. O `/autocomplete` do HERE e o `places:autocomplete` do Google não devolvem posição, e não há parâmetro nem field mask que mude isso — ver [a seção do campo](#coordinates-chega-de-graça-só-em-um-dos-três-caminhos). Quem depender da coordenada precisa manter o fallback por `lookup()`/`geocode()`.
 
 **Uma resposta malformada do HERE devolve coleção vazia** em vez de erro de mapeamento, pela mesma regra de "nenhum resultado não é erro".
 

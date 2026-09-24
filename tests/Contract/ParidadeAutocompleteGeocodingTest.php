@@ -114,6 +114,21 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
                 $this->assertNotNull($suggestion->place);
             }
         }
+
+        // Divergencia assumida: `coordinates` e o campo que poupa um geocode
+        // depois da escolha, e so o /autosuggest do HERE o preenche. No Google
+        // a predicao nao carrega posicao nenhuma. Por isso o contrato e "pode
+        // ser nulo", nunca "vem preenchido" — quem consumir tem que ter o
+        // fallback por lookup/geocode mesmo migrando de provider.
+        if ($provider === Provider::Here) {
+            $this->assertNotNull($first->coordinates);
+            $this->assertEqualsWithDelta(-23.5615, $first->coordinates->latitude, 0.0001);
+            $this->assertEqualsWithDelta(-46.6562, $first->coordinates->longitude, 0.0001);
+        } else {
+            foreach ($collection as $suggestion) {
+                $this->assertNull($suggestion->coordinates);
+            }
+        }
     }
 
     /**
@@ -144,6 +159,11 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
             $this->assertNotNull($suggestion->place);
             $this->assertSame($provider, $suggestion->place->provider);
             $this->assertNotSame('', $suggestion->place->id);
+
+            // Sem foco os dois providers convergem tambem aqui, e convergem no
+            // pior caso: nenhum dos dois endpoints devolve posicao, entao a
+            // busca nacional sempre custa a resolucao extra.
+            $this->assertNull($suggestion->coordinates);
         }
 
         $this->assertSame('Avenida Paulista, 1000', $collection->first()->mainText);

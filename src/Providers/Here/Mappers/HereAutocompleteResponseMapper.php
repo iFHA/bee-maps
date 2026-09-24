@@ -43,6 +43,15 @@ final class HereAutocompleteResponseMapper
                 // `street`: e um enum fechado, sem `place`. Nunca ha
                 // estabelecimento aqui — ver "Limitacoes conhecidas" no README.
                 isEstablishment: false,
+                // Sempre nulo, e nao ha parametro que mude isso: a propria doc
+                // do /autocomplete manda resolver a posicao depois, via /lookup
+                // pelo `id` ou via /geocode pelo endereco. A tabela de response
+                // enrichment do GS7 nao tem nenhum `show` que adicione
+                // `position` aqui — `tz`, por exemplo, vale em "all except
+                // /autocomplete". Quem precisa da coordenada sem pagar a
+                // chamada extra tem que buscar com `near`, que roteia para o
+                // /autosuggest.
+                coordinates: null,
             );
         }
 

@@ -81,6 +81,54 @@ final class HereAutocompleteTest extends TestCase
         });
     }
 
+    public function test_autosuggest_carries_the_position_so_the_consumer_skips_the_geocode(): void
+    {
+        $this->fakeAutosuggest();
+
+        $collection = $this->suggest(new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6)));
+
+        $first = $collection->first();
+
+        $this->assertNotNull($first->coordinates);
+        $this->assertEqualsWithDelta(-23.5615, $first->coordinates->latitude, 0.0001);
+        $this->assertEqualsWithDelta(-46.6562, $first->coordinates->longitude, 0.0001);
+
+        // O item de lugar tambem traz posicao: nao e privilegio de endereco.
+        $place = $collection->all()[1];
+        $this->assertTrue($place->isEstablishment);
+        $this->assertNotNull($place->coordinates);
+        $this->assertEqualsWithDelta(-23.5701, $place->coordinates->latitude, 0.0001);
+    }
+
+    public function test_a_search_refinement_has_no_position_just_like_it_has_no_place(): void
+    {
+        $this->fakeAutosuggest();
+
+        $collection = $this->suggest(new AutocompleteRequest('Postos', new Coordinates(-23.5, -46.6)));
+
+        // O chainQuery da fixture: um refinamento de busca, sem `position` e
+        // sem `id`. Os dois campos caem juntos, e e isso que o consumidor usa
+        // para saber que nao ha nada para resolver.
+        $refinement = $collection->all()[3];
+
+        $this->assertNull($refinement->place);
+        $this->assertNull($refinement->coordinates);
+    }
+
+    public function test_autocomplete_has_no_position_and_the_consumer_still_needs_the_lookup(): void
+    {
+        $this->fakeAutocomplete();
+
+        $collection = $this->suggest(new AutocompleteRequest('Rua Blumenau'));
+
+        foreach ($collection as $suggestion) {
+            // O endpoint nao devolve posicao e nao ha `show` que adicione uma:
+            // aqui o caminho continua sendo lookup($place).
+            $this->assertNull($suggestion->coordinates);
+            $this->assertNotNull($suggestion->place);
+        }
+    }
+
     public function test_a_configured_center_does_not_shrink_the_nationwide_search_in_auto_mode(): void
     {
         // O autosuggest_center segue setado pelo defineEnvironment. Se ele

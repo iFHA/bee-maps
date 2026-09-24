@@ -31,6 +31,27 @@ final class GoogleAutocompleteTest extends TestCase
             && $request->hasHeader('X-Goog-FieldMask', (new GoogleAutocompleteRequestMapper())->fieldMask()));
     }
 
+    public function test_predictions_never_carry_coordinates(): void
+    {
+        Http::fake([
+            'places.googleapis.com/*' => Http::response(
+                json_decode(file_get_contents(__DIR__ . '/../Fixtures/google/autocomplete.json'), true),
+                200,
+            ),
+        ]);
+
+        $collection = $this->app->make(MapServiceFactory::class)
+            ->autocomplete(Provider::Google)
+            ->suggest(new AutocompleteRequest('Av Paulista'));
+
+        foreach ($collection as $suggestion) {
+            // Nao e limitacao do field mask: o placePrediction do
+            // places:autocomplete nao tem campo de localizacao. A coordenada
+            // no Google so sai do Place Details.
+            $this->assertNull($suggestion->coordinates);
+        }
+    }
+
     public function test_empty_countries_uses_the_configured_region_as_the_default(): void
     {
         Http::fake([
