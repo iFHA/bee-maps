@@ -219,7 +219,7 @@ echo $rota->distance->kilometers(), ' km em ', $rota->duration->minutes(), ' min
 $pontos = $rota->polyline?->coordinates() ?? $rota->legs[0]->polyline->coordinates();
 ```
 
-`polyline`, `legs` e `optimizedOrder` são **opt-in**: sem `includePolyline`, `includeLegs` e `optimizeIntermediates`, os dois provedores devolvem `null`, `[]` e `[]`. Pedir geometria encarece o field mask do Google e infla a resposta do HERE, então nada disso vem sem você pedir.
+`polyline`, `legs` e `optimizedOrder` são **opt-in**: sem `includePolyline`, `includeLegs` e `optimizeIntermediates`, os dois provedores devolvem `null`, `[]` e `[]`. Cada um deles custa: no Google o `computeRoutes` é cobrado pelos campos do field mask, e no HERE o traçado volta como uma string longa por trecho. Por isso nada disso vem sem você pedir.
 
 ### Rotas alternativas
 
