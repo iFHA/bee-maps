@@ -1,18 +1,52 @@
 {
   "items": [
     {
-      "title": "Avenida Paulista, 1000",
+      "title": "Avenida Paulista, 1000, Bela Vista, Sao Paulo - SP, 01310-100, Brasil",
       "id": "here:af:streetsection:HGkDGxvQXcBcOPSQhBbMPB:CggIBCD",
       "resultType": "houseNumber",
-      "address": { "label": "Avenida Paulista, 1000, Sao Paulo - SP, 01310-100, Brasil" },
+      "houseNumberType": "PA",
+      "address": {
+        "label": "Avenida Paulista, 1000, Bela Vista, Sao Paulo - SP, 01310-100, Brasil",
+        "countryCode": "BRA",
+        "countryName": "Brasil",
+        "stateCode": "SP",
+        "state": "Sao Paulo",
+        "city": "Sao Paulo",
+        "district": "Bela Vista",
+        "street": "Avenida Paulista",
+        "postalCode": "01310-100",
+        "houseNumber": "1000"
+      },
       "position": { "lat": -23.5615, "lng": -46.6562 }
     },
     {
       "title": "Shopping Paulista",
       "id": "here:pds:place:076sxxxx-abcdef",
       "resultType": "place",
-      "address": { "label": "Shopping Paulista, Sao Paulo - SP, Brasil" },
+      "address": {
+        "label": "Shopping Paulista, Rua Treze de Maio, Bela Vista, Sao Paulo - SP, Brasil",
+        "countryCode": "BRA",
+        "countryName": "Brasil",
+        "city": "Sao Paulo",
+        "district": "Bela Vista",
+        "street": "Rua Treze de Maio"
+      },
       "position": { "lat": -23.5701, "lng": -46.6412 }
+    },
+    {
+      "title": "Rua Blumenau, Joinville - SC, Brasil",
+      "id": "here:af:streetsection:ZqkDGxvQXcBcOPSQhBbMPB",
+      "resultType": "street",
+      "address": {
+        "label": "Rua Blumenau, Joinville - SC, Brasil",
+        "countryCode": "BRA",
+        "countryName": "Brasil",
+        "stateCode": "SC",
+        "state": "Santa Catarina",
+        "city": "Joinville",
+        "street": "Rua Blumenau"
+      },
+      "position": { "lat": -26.3044, "lng": -48.8487 }
     },
     {
       "title": "Postos Shell",

@@ -53,7 +53,7 @@ final class HereAutocompleteTest extends TestCase
 
         $colecao = $this->suggest(new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6)));
 
-        $this->assertCount(3, $colecao);
+        $this->assertCount(4, $colecao);
 
         Http::assertSent(fn ($request) => str_contains($request->url(), 'apiKey=chave-here-de-teste'));
     }

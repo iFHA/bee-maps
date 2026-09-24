@@ -86,10 +86,11 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
         $this->assertNotSame($primeira->mainText, $primeira->secondaryText);
 
         // Google devolve secondaryText como campo estruturado; HERE o deriva
-        // removendo o prefixo do titulo do label completo — ambas estrategias
-        // legitimamente produzem valores diferentes por provider, entao pinamos.
+        // removendo a linha principal do label completo. Os dois convergiram no
+        // formato, mas o HERE inclui o CEP — divergencia de conteudo, nao de
+        // estrategia, entao pinamos os dois valores.
         if ($provider === Provider::Here) {
-            $this->assertSame('Sao Paulo - SP, 01310-100, Brasil', $primeira->secondaryText);
+            $this->assertSame('Bela Vista, Sao Paulo - SP, 01310-100, Brasil', $primeira->secondaryText);
         } else {
             $this->assertSame('Bela Vista, Sao Paulo - SP, Brasil', $primeira->secondaryText);
         }

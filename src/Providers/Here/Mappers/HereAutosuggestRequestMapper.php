@@ -35,6 +35,12 @@ final class HereAutosuggestRequestMapper
         $query = [
             'q' => $request->query,
             'lang' => $request->language ?? $language,
+            // Sem `show=details` o `address` do Autosuggest vem so com `label`,
+            // e nao ha como derivar a linha principal do endereco — o `title`
+            // nao serve, porque para resultado de endereco ele vem igual ao
+            // label inteiro. A doc avisa que `show` pode custar latencia; e o
+            // preco de `mainText` e `secondaryText` corretos.
+            'show' => 'details',
         ];
 
         // Antes do foco: um codigo de pais invalido deve falhar dizendo isso, e

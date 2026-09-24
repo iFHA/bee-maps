@@ -14,6 +14,11 @@ final class HereAutosuggestMapperTest extends TestCase
 {
     private const CENTRO = '-23.5615000,-46.6562000';
 
+    private function fixture(): array
+    {
+        return json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/autosuggest.json'), true);
+    }
+
     private function comCentro(): HereAutosuggestRequestMapper
     {
         return new HereAutosuggestRequestMapper(new Coordinates(-23.5615, -46.6562));
@@ -94,31 +99,58 @@ final class HereAutosuggestMapperTest extends TestCase
 
     public function test_mapeia_itens_e_anula_place_em_chain_query(): void
     {
-        $json = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/autosuggest.json'), true);
+        $itens = (new HereAutosuggestResponseMapper())->toCollection($this->fixture())->all();
 
-        $colecao = (new HereAutosuggestResponseMapper())->toCollection($json);
-
-        $this->assertCount(3, $colecao);
-
-        $itens = $colecao->all();
+        $this->assertCount(4, $itens);
 
         $this->assertSame(Provider::Here, $itens[0]->place->provider);
         $this->assertFalse($itens[0]->isEstablishment);
 
         $this->assertTrue($itens[1]->isEstablishment);
 
-        $this->assertNull($itens[2]->place, 'chainQuery nao e resolvivel pelo Lookup');
-        $this->assertSame('Postos Shell', $itens[2]->mainText);
+        $this->assertNull($itens[3]->place, 'chainQuery nao e resolvivel pelo Lookup');
+        $this->assertSame('Postos Shell', $itens[3]->mainText);
     }
 
     public function test_separa_main_text_de_secondary_text(): void
     {
-        $json = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/autosuggest.json'), true);
+        $primeiro = (new HereAutosuggestResponseMapper())->toCollection($this->fixture())->first();
 
-        $primeiro = (new HereAutosuggestResponseMapper())->toCollection($json)->first();
-
+        // O `title` do Autosuggest vem igual ao label inteiro; a linha principal
+        // sai dos campos estruturados do address, nao dele.
         $this->assertSame('Avenida Paulista, 1000', $primeiro->mainText);
-        $this->assertSame('Sao Paulo - SP, 01310-100, Brasil', $primeiro->secondaryText);
+        $this->assertSame('Bela Vista, Sao Paulo - SP, 01310-100, Brasil', $primeiro->secondaryText);
+    }
+
+    public function test_rua_sem_numero_nao_ganha_virgula_no_main_text(): void
+    {
+        $rua = (new HereAutosuggestResponseMapper())->toCollection($this->fixture())->all()[2];
+
+        // Regressao: o `title` deste item e "Rua Blumenau, Joinville - SC,
+        // Brasil". Se ele virasse mainText, o consumidor contaria virgulas,
+        // concluiria que ja ha numero da casa e aceitaria uma entrega sem numero.
+        $this->assertSame('Rua Blumenau', $rua->mainText);
+        $this->assertStringNotContainsString(',', $rua->mainText);
+        $this->assertSame('Joinville - SC, Brasil', $rua->secondaryText);
+    }
+
+    public function test_lugar_mantem_o_nome_proprio_como_linha_principal(): void
+    {
+        $lugar = (new HereAutosuggestResponseMapper())->toCollection($this->fixture())->all()[1];
+
+        // Para `place` o title E um nome, nao um endereco: derivar do address
+        // trocaria "Shopping Paulista" pela rua onde ele fica.
+        $this->assertSame('Shopping Paulista', $lugar->mainText);
+        $this->assertSame('Rua Treze de Maio, Bela Vista, Sao Paulo - SP, Brasil', $lugar->secondaryText);
+    }
+
+    public function test_pede_o_endereco_estruturado_ao_autosuggest(): void
+    {
+        $query = $this->comCentro()->toQuery(new AutocompleteRequest('Av Paulista'), 'pt-BR', 'BR');
+
+        // Sem `show=details` o address volta so com `label` e nao ha como
+        // derivar mainText — ver HereAddressLabel::principal().
+        $this->assertSame('details', $query['show']);
     }
 
     public function test_converte_pais_fora_das_quatro_entradas_antigas(): void
