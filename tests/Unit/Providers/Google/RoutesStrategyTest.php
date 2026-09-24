@@ -16,7 +16,7 @@ final class RoutesStrategyTest extends TestCase
 {
     private const URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
 
-    private function estrategia(): RoutesStrategy
+    private function strategy(): RoutesStrategy
     {
         return new RoutesStrategy(
             $this->app->make(MapsHttpClient::class),
@@ -27,18 +27,18 @@ final class RoutesStrategyTest extends TestCase
         );
     }
 
-    private function ponto(float $offset): Coordinates
+    private function point(float $offset): Coordinates
     {
         return new Coordinates(-23.5 - $offset, -46.6 - $offset);
     }
 
     /** @return list<Coordinates> */
-    private function paradas(): array
+    private function stops(): array
     {
-        return [$this->ponto(0.1), $this->ponto(0.2), $this->ponto(0.3)];
+        return [$this->point(0.1), $this->point(0.2), $this->point(0.3)];
     }
 
-    private function fakeDaFixture(): void
+    private function fakeFromFixture(): void
     {
         Http::fake(['routes.googleapis.com/directions/*' => Http::response(
             json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-optimized.json'), true),
@@ -48,35 +48,35 @@ final class RoutesStrategyTest extends TestCase
 
     public function test_fim_fixo_soma_todas_as_pernas(): void
     {
-        $this->fakeDaFixture();
+        $this->fakeFromFixture();
 
-        $resultado = $this->estrategia()->optimize(new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            destination: $this->ponto(0.9),
-            intermediates: $this->paradas(),
+        $result = $this->strategy()->optimize(new OptimizeWaypointsRequest(
+            origin: $this->point(0),
+            destination: $this->point(0.9),
+            intermediates: $this->stops(),
         ));
 
-        $this->assertSame([2, 0, 1], $resultado->order);
-        $this->assertSame(10000, $resultado->distance->meters);
-        $this->assertSame(1000, $resultado->duration->seconds);
-        $this->assertSame('google.routes', $resultado->strategy);
-        $this->assertSame(OptimizationObjective::MinTravelTime, $resultado->objective);
+        $this->assertSame([2, 0, 1], $result->order);
+        $this->assertSame(10000, $result->distance->meters);
+        $this->assertSame(1000, $result->duration->seconds);
+        $this->assertSame('google.routes', $result->strategy);
+        $this->assertSame(OptimizationObjective::MinTravelTime, $result->objective);
     }
 
     public function test_tour_aberto_descarta_a_ultima_perna(): void
     {
         // Sem destino, o computeRoutes — que EXIGE destination — recebe a origem
         // como destino. A ultima perna e a volta para casa, que ninguem pediu.
-        $this->fakeDaFixture();
+        $this->fakeFromFixture();
 
-        $resultado = $this->estrategia()->optimize(new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            intermediates: $this->paradas(),
+        $result = $this->strategy()->optimize(new OptimizeWaypointsRequest(
+            origin: $this->point(0),
+            intermediates: $this->stops(),
         ));
 
-        $this->assertSame([2, 0, 1], $resultado->order, 'a ordem nao muda, so os totais');
-        $this->assertSame(6000, $resultado->distance->meters, '10000 menos a perna de 4000');
-        $this->assertSame(600, $resultado->duration->seconds);
+        $this->assertSame([2, 0, 1], $result->order, 'a ordem nao muda, so os totais');
+        $this->assertSame(6000, $result->distance->meters, '10000 menos a perna de 4000');
+        $this->assertSame(600, $result->duration->seconds);
 
         Http::assertSent(function ($request): bool {
             $payload = $request->data();
@@ -90,12 +90,12 @@ final class RoutesStrategyTest extends TestCase
 
     public function test_field_mask_pede_so_o_que_o_contrato_usa(): void
     {
-        $this->fakeDaFixture();
+        $this->fakeFromFixture();
 
-        $this->estrategia()->optimize(new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            destination: $this->ponto(0.9),
-            intermediates: $this->paradas(),
+        $this->strategy()->optimize(new OptimizeWaypointsRequest(
+            origin: $this->point(0),
+            destination: $this->point(0.9),
+            intermediates: $this->stops(),
         ));
 
         Http::assertSent(function ($request): bool {
@@ -128,10 +128,10 @@ final class RoutesStrategyTest extends TestCase
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/3 pernas.*4|4.*3 pernas/s');
 
-        $this->estrategia()->optimize(new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            destination: $this->ponto(0.9),
-            intermediates: $this->paradas(),
+        $this->strategy()->optimize(new OptimizeWaypointsRequest(
+            origin: $this->point(0),
+            destination: $this->point(0.9),
+            intermediates: $this->stops(),
         ));
     }
 
@@ -152,10 +152,10 @@ final class RoutesStrategyTest extends TestCase
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/2 de 3/');
 
-        $this->estrategia()->optimize(new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            destination: $this->ponto(0.9),
-            intermediates: $this->paradas(),
+        $this->strategy()->optimize(new OptimizeWaypointsRequest(
+            origin: $this->point(0),
+            destination: $this->point(0.9),
+            intermediates: $this->stops(),
         ));
     }
 
@@ -165,10 +165,10 @@ final class RoutesStrategyTest extends TestCase
 
         $this->expectException(ProviderRequestException::class);
 
-        $this->estrategia()->optimize(new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            destination: $this->ponto(0.9),
-            intermediates: $this->paradas(),
+        $this->strategy()->optimize(new OptimizeWaypointsRequest(
+            origin: $this->point(0),
+            destination: $this->point(0.9),
+            intermediates: $this->stops(),
         ));
     }
 
@@ -188,12 +188,12 @@ final class RoutesStrategyTest extends TestCase
             ]],
         ], 200)]);
 
-        $resultado = $this->estrategia()->optimize(new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            destination: $this->ponto(0.9),
-            intermediates: $this->paradas(),
+        $result = $this->strategy()->optimize(new OptimizeWaypointsRequest(
+            origin: $this->point(0),
+            destination: $this->point(0.9),
+            intermediates: $this->stops(),
         ));
 
-        $this->assertSame(8000, $resultado->distance->meters);
+        $this->assertSame(8000, $result->distance->meters);
     }
 }

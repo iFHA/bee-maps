@@ -7,14 +7,14 @@ use BeeDelivery\BeeMaps\DTOs\TypedCollection;
 final class RouteMatrixEntryCollection extends TypedCollection
 {
     /** @var array<string, RouteMatrixEntry> */
-    private array $porPar = [];
+    private array $byPair = [];
 
     public function __construct(RouteMatrixEntry ...$items)
     {
         $this->items = array_values($items);
 
-        foreach ($this->items as $entrada) {
-            $this->porPar[$entrada->originIndex . ':' . $entrada->destinationIndex] = $entrada;
+        foreach ($this->items as $entry) {
+            $this->byPair[$entry->originIndex . ':' . $entry->destinationIndex] = $entry;
         }
     }
 
@@ -38,6 +38,6 @@ final class RouteMatrixEntryCollection extends TypedCollection
      */
     public function entry(int $originIndex, int $destinationIndex): ?RouteMatrixEntry
     {
-        return $this->porPar[$originIndex . ':' . $destinationIndex] ?? null;
+        return $this->byPair[$originIndex . ':' . $destinationIndex] ?? null;
     }
 }

@@ -14,56 +14,56 @@ use BeeDelivery\BeeMaps\Exceptions\ProviderRequestException;
 final class WaypointOrder
 {
     /**
-     * @param array<int|string, mixed> $ordem  O que o provider devolveu.
+     * @param array<int|string, mixed> $order  O que o provider devolveu.
      * @param int                      $total  Quantos intermediarios foram enviados.
-     * @param string                   $origem Nome do campo na resposta, para a mensagem.
+     * @param string                   $origin Nome do campo na resposta, para a mensagem.
      *
      * @return list<int>
      *
      * @throws ProviderRequestException
      */
-    public static function validar(array $ordem, int $total, Provider $provider, string $origem): array
+    public static function validate(array $order, int $total, Provider $provider, string $origin): array
     {
-        $normalizada = array_map('intval', array_values($ordem));
+        $normalized = array_map('intval', array_values($order));
 
-        if (count($normalizada) !== $total) {
-            throw self::erro($provider, sprintf(
+        if (count($normalized) !== $total) {
+            throw self::error($provider, sprintf(
                 'O campo %s devolveu %d de %d waypoints intermediarios; '
                 . 'seguir com ordem incompleta apagaria paradas da rota.',
-                $origem,
-                count($normalizada),
+                $origin,
+                count($normalized),
                 $total,
             ));
         }
 
-        $vistos = [];
+        $seen = [];
 
-        foreach ($normalizada as $indice) {
-            if ($indice < 0 || $indice >= $total) {
-                throw self::erro($provider, sprintf(
+        foreach ($normalized as $index) {
+            if ($index < 0 || $index >= $total) {
+                throw self::error($provider, sprintf(
                     'O campo %s devolveu o indice %d, fora da faixa de %d intermediarios enviados.',
-                    $origem,
-                    $indice,
+                    $origin,
+                    $index,
                     $total,
                 ));
             }
 
-            if (isset($vistos[$indice])) {
-                throw self::erro($provider, sprintf(
+            if (isset($seen[$index])) {
+                throw self::error($provider, sprintf(
                     'O campo %s devolveu o indice %d repetido.',
-                    $origem,
-                    $indice,
+                    $origin,
+                    $index,
                 ));
             }
 
-            $vistos[$indice] = true;
+            $seen[$index] = true;
         }
 
-        return $normalizada;
+        return $normalized;
     }
 
-    private static function erro(Provider $provider, string $mensagem): ProviderRequestException
+    private static function error(Provider $provider, string $message): ProviderRequestException
     {
-        return new ProviderRequestException($provider, Service::RouteOptimization, $mensagem, 200);
+        return new ProviderRequestException($provider, Service::RouteOptimization, $message, 200);
     }
 }

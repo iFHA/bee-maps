@@ -22,17 +22,17 @@ final class HereRouteOptimizationTest extends TestCase
         )]);
     }
 
-    private function requisicao(?Coordinates $destino, OptimizationObjective $objetivo): OptimizeWaypointsRequest
+    private function request(?Coordinates $destination, OptimizationObjective $objective): OptimizeWaypointsRequest
     {
         return new OptimizeWaypointsRequest(
             origin: new Coordinates(-23.5615, -46.6562),
-            destination: $destino,
+            destination: $destination,
             intermediates: [
                 new Coordinates(-23.5505, -46.6333),
                 new Coordinates(-23.587, -46.657),
                 new Coordinates(-23.532, -46.639),
             ],
-            objective: $objetivo,
+            objective: $objective,
         );
     }
 
@@ -40,16 +40,16 @@ final class HereRouteOptimizationTest extends TestCase
     {
         $this->fake();
 
-        $resultado = $this->app->make(MapServiceFactory::class)
+        $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization(Provider::Here)
-            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
+            ->optimize($this->request(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
 
         // A fixture visita destination3, destination1, destination2 — que sao os
         // intermediarios 2, 0 e 1.
-        $this->assertSame([2, 0, 1], $resultado->order);
-        $this->assertSame(23787, $resultado->distance->meters);
-        $this->assertSame(3058, $resultado->duration->seconds);
-        $this->assertSame('here.findsequence', $resultado->strategy);
+        $this->assertSame([2, 0, 1], $result->order);
+        $this->assertSame(23787, $result->distance->meters);
+        $this->assertSame(3058, $result->duration->seconds);
+        $this->assertSame('here.findsequence', $result->strategy);
 
         // Diferente do Routing, aqui NAO ha segunda chamada ao /v8/routes: o
         // contrato pede ordem e totais, e o findsequence2 devolve os dois.
@@ -62,7 +62,7 @@ final class HereRouteOptimizationTest extends TestCase
 
         $this->app->make(MapServiceFactory::class)
             ->routeOptimization(Provider::Here)
-            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686), OptimizationObjective::MinTravelTime));
+            ->optimize($this->request(new Coordinates(-23.598, -46.686), OptimizationObjective::MinTravelTime));
 
         Http::assertSent(function ($request): bool {
             $this->assertStringContainsString('improveFor=time', $request->url());
@@ -77,7 +77,7 @@ final class HereRouteOptimizationTest extends TestCase
 
         $this->app->make(MapServiceFactory::class)
             ->routeOptimization(Provider::Here)
-            ->optimize($this->requisicao(null, OptimizationObjective::MinDistance));
+            ->optimize($this->request(null, OptimizationObjective::MinDistance));
 
         Http::assertSent(function ($request): bool {
             $this->assertStringNotContainsString('end=', $request->url());
@@ -97,7 +97,7 @@ final class HereRouteOptimizationTest extends TestCase
         try {
             $this->app->make(MapServiceFactory::class)
                 ->routeOptimization(Provider::Here)
-                ->optimize($this->requisicao(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
+                ->optimize($this->request(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
 
             $this->fail('resposta sem resultado devia ter lancado');
         } catch (ProviderRequestException $e) {
@@ -124,7 +124,7 @@ final class HereRouteOptimizationTest extends TestCase
 
         $this->app->make(MapServiceFactory::class)
             ->routeOptimization(Provider::Here)
-            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
+            ->optimize($this->request(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
     }
 
     public function test_totais_ausentes_viram_excecao_de_provider(): void
@@ -143,6 +143,6 @@ final class HereRouteOptimizationTest extends TestCase
 
         $this->app->make(MapServiceFactory::class)
             ->routeOptimization(Provider::Here)
-            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
+            ->optimize($this->request(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
     }
 }

@@ -27,51 +27,51 @@ final class GoogleGeocoding implements Geocoding
 
     public function geocode(string $query, ?GeocodeFilters $filters = null): GeocodeResultCollection
     {
-        $parametros = ['address' => $query];
+        $parameters = ['address' => $query];
 
-        if ($componentes = $this->componentes($filters)) {
-            $parametros['components'] = $componentes;
+        if ($components = $this->components($filters)) {
+            $parameters['components'] = $components;
         }
 
-        return $this->consultar($parametros);
+        return $this->fetch($parameters);
     }
 
     public function reverse(Coordinates $coordinates): GeocodeResultCollection
     {
-        return $this->consultar(['latlng' => $coordinates->toString()]);
+        return $this->fetch(['latlng' => $coordinates->toString()]);
     }
 
     public function lookup(PlaceReference $place): ?GeocodeResult
     {
         $place->assertBelongsTo(Provider::Google);
 
-        return $this->consultar(['place_id' => $place->id])->first();
+        return $this->fetch(['place_id' => $place->id])->first();
     }
 
-    private function consultar(array $parametros): GeocodeResultCollection
+    private function fetch(array $parameters): GeocodeResultCollection
     {
-        $resposta = $this->http->get(
+        $response = $this->http->get(
             Provider::Google,
             Service::Geocoding,
             $this->url,
-            $parametros + ['language' => $this->language, 'key' => $this->apiKey],
+            $parameters + ['language' => $this->language, 'key' => $this->apiKey],
         );
 
-        return $this->mapper->toCollection($resposta);
+        return $this->mapper->toCollection($response);
     }
 
-    private function componentes(?GeocodeFilters $filters): ?string
+    private function components(?GeocodeFilters $filters): ?string
     {
         if ($filters === null) {
             return null;
         }
 
-        $partes = array_filter([
+        $parts = array_filter([
             $filters->city !== null ? 'administrative_area:' . $filters->city : null,
             $filters->postalCode !== null ? 'postal_code:' . $filters->postalCode : null,
             $filters->country !== null ? 'country:' . CountryCode::toAlpha2($filters->country) : null,
         ]);
 
-        return $partes === [] ? null : implode('|', $partes);
+        return $parts === [] ? null : implode('|', $parts);
     }
 }

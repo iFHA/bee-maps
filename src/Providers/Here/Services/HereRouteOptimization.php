@@ -31,7 +31,7 @@ final class HereRouteOptimization implements RouteOptimization
 
     public function optimize(OptimizeWaypointsRequest $request): OptimizedWaypoints
     {
-        $resposta = $this->http->get(
+        $response = $this->http->get(
             Provider::Here,
             Service::RouteOptimization,
             $this->url,
@@ -52,8 +52,8 @@ final class HereRouteOptimization implements RouteOptimization
         // Sem traduzir, `catch (ProviderRequestException)` pega o Google e deixa
         // o HERE escapar, e o contrato deixa de ser o mesmo nos dois.
         try {
-            $totais = $this->mapper->toTotals($resposta);
-            $ordem = $this->mapper->toOrder($resposta, count($request->intermediates));
+            $totals = $this->mapper->toTotals($response);
+            $order = $this->mapper->toOrder($response, count($request->intermediates));
         } catch (InvalidRequestException $e) {
             throw new ProviderRequestException(
                 Provider::Here,
@@ -64,9 +64,9 @@ final class HereRouteOptimization implements RouteOptimization
         }
 
         return new OptimizedWaypoints(
-            order: $ordem,
-            distance: new Distance($totais['distance']),
-            duration: new Duration($totais['duration']),
+            order: $order,
+            distance: new Distance($totals['distance']),
+            duration: new Duration($totals['duration']),
             objective: $request->objective,
             strategy: 'here.findsequence',
         );

@@ -16,7 +16,7 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
  */
 final class HereFlexiblePolylineDecoder implements PolylineDecoder
 {
-    private const PRIMEIRO_CARACTERE = 45; // ord('-')
+    private const FIRST_CHARACTER = 45; // ord('-')
 
     /** Tabela de decodificacao oficial, indexada por ord($char) - 45. */
     private const DECODING_TABLE = [
@@ -28,74 +28,74 @@ final class HereFlexiblePolylineDecoder implements PolylineDecoder
 
     public function decode(string $encoded): array
     {
-        $indice = 0;
+        $index = 0;
 
-        $versao = $this->varint($encoded, $indice);
+        $version = $this->varint($encoded, $index);
 
-        if ($versao !== 1) {
-            throw new InvalidRequestException("Versao de flexible polyline nao suportada: {$versao}.");
+        if ($version !== 1) {
+            throw new InvalidRequestException("Versao de flexible polyline nao suportada: {$version}.");
         }
 
-        $cabecalho = $this->varint($encoded, $indice);
-        $precisao = $cabecalho & 15;
-        $terceiraDimensao = ($cabecalho >> 4) & 7;
+        $header = $this->varint($encoded, $index);
+        $precision = $header & 15;
+        $thirdDimension = ($header >> 4) & 7;
 
-        $fator = 10 ** $precisao;
-        $coordenadas = [];
-        $tamanho = strlen($encoded);
+        $factor = 10 ** $precision;
+        $coordinates = [];
+        $size = strlen($encoded);
         $lat = 0;
         $lng = 0;
 
-        while ($indice < $tamanho) {
-            $lat += $this->varintComSinal($encoded, $indice);
-            $lng += $this->varintComSinal($encoded, $indice);
+        while ($index < $size) {
+            $lat += $this->signedVarint($encoded, $index);
+            $lng += $this->signedVarint($encoded, $index);
 
-            if ($terceiraDimensao !== 0) {
-                $this->varintComSinal($encoded, $indice);
+            if ($thirdDimension !== 0) {
+                $this->signedVarint($encoded, $index);
             }
 
-            $coordenadas[] = new Coordinates($lat / $fator, $lng / $fator);
+            $coordinates[] = new Coordinates($lat / $factor, $lng / $factor);
         }
 
-        return $coordenadas;
+        return $coordinates;
     }
 
-    private function varint(string $encoded, int &$indice): int
+    private function varint(string $encoded, int &$index): int
     {
-        $resultado = 0;
-        $deslocamento = 0;
+        $result = 0;
+        $shift = 0;
 
         while (true) {
-            if (! isset($encoded[$indice])) {
+            if (! isset($encoded[$index])) {
                 throw new InvalidRequestException('Flexible polyline truncada: a string acabou no meio de um valor.');
             }
 
-            $posicao = ord($encoded[$indice]) - self::PRIMEIRO_CARACTERE;
-            $valor = ($posicao >= 0 && $posicao < count(self::DECODING_TABLE))
-                ? self::DECODING_TABLE[$posicao]
+            $position = ord($encoded[$index]) - self::FIRST_CHARACTER;
+            $value = ($position >= 0 && $position < count(self::DECODING_TABLE))
+                ? self::DECODING_TABLE[$position]
                 : -1;
 
-            if ($valor < 0) {
+            if ($value < 0) {
                 throw new InvalidRequestException(
-                    "Caractere invalido em flexible polyline na posicao {$indice}: '{$encoded[$indice]}'.",
+                    "Caractere invalido em flexible polyline na posicao {$index}: '{$encoded[$index]}'.",
                 );
             }
 
-            $indice++;
-            $resultado |= ($valor & 0x1F) << $deslocamento;
+            $index++;
+            $result |= ($value & 0x1F) << $shift;
 
-            if (($valor & 0x20) === 0) {
-                return $resultado;
+            if (($value & 0x20) === 0) {
+                return $result;
             }
 
-            $deslocamento += 5;
+            $shift += 5;
         }
     }
 
-    private function varintComSinal(string $encoded, int &$indice): int
+    private function signedVarint(string $encoded, int &$index): int
     {
-        $valor = $this->varint($encoded, $indice);
+        $value = $this->varint($encoded, $index);
 
-        return ($valor & 1) !== 0 ? ~($valor >> 1) : $valor >> 1;
+        return ($value & 1) !== 0 ? ~($value >> 1) : $value >> 1;
     }
 }

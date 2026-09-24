@@ -8,5 +8,5 @@ namespace BeeDelivery\BeeMaps\Providers\Google\Optimization;
  */
 interface AccessToken
 {
-    public function valor(): string;
+    public function value(): string;
 }

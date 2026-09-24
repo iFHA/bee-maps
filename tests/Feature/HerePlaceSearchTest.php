@@ -26,12 +26,12 @@ final class HerePlaceSearchTest extends TestCase
     {
         $this->fake();
 
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->placeSearch(Provider::Here)
             ->search(new PlaceSearchRequest('farmacia', new Coordinates(-23.5, -46.6)));
 
-        $this->assertCount(2, $colecao);
-        $this->assertSame('Drogaria Sao Paulo', $colecao->first()->name);
+        $this->assertCount(2, $collection);
+        $this->assertSame('Drogaria Sao Paulo', $collection->first()->name);
 
         Http::assertSent(function ($request): bool {
             $url = urldecode($request->url());

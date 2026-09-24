@@ -10,9 +10,9 @@ use BeeDelivery\BeeMaps\Enums\TravelMode;
  */
 final class HereTransportMode
 {
-    public static function from(TravelMode $modo): string
+    public static function from(TravelMode $mode): string
     {
-        return match ($modo) {
+        return match ($mode) {
             TravelMode::Drive => 'car',
             TravelMode::TwoWheeler => 'scooter',
             TravelMode::Bicycle => 'bicycle',

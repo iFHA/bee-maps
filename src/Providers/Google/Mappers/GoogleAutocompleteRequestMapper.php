@@ -29,8 +29,8 @@ final class GoogleAutocompleteRequestMapper
             $payload['locationRestriction'] = ['circle' => $circle];
         }
 
-        $paises = $request->countries !== [] ? $request->countries : [$region];
-        $payload['includedRegionCodes'] = array_map(fn (string $p) => CountryCode::toAlpha2($p), $paises);
+        $countries = $request->countries !== [] ? $request->countries : [$region];
+        $payload['includedRegionCodes'] = array_map(fn (string $p) => CountryCode::toAlpha2($p), $countries);
 
         return $payload;
     }

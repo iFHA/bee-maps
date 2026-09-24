@@ -13,7 +13,7 @@ final class GoogleRouteRequestMapper
         $payload = [
             'origin' => $this->waypoint($request->origin),
             'destination' => $this->waypoint($request->destination),
-            'travelMode' => $this->modo($request->mode),
+            'travelMode' => $this->mode($request->mode),
             'languageCode' => $language,
         ];
 
@@ -43,45 +43,45 @@ final class GoogleRouteRequestMapper
      */
     public function fieldMask(RouteRequest $request): string
     {
-        $campos = ['routes.distanceMeters', 'routes.duration'];
+        $fields = ['routes.distanceMeters', 'routes.duration'];
 
         if ($request->includePolyline) {
-            $campos[] = 'routes.polyline.encodedPolyline';
+            $fields[] = 'routes.polyline.encodedPolyline';
         }
 
         if ($request->includeLegs) {
-            $campos[] = 'routes.legs.distanceMeters';
-            $campos[] = 'routes.legs.duration';
-            $campos[] = 'routes.legs.startLocation';
-            $campos[] = 'routes.legs.endLocation';
+            $fields[] = 'routes.legs.distanceMeters';
+            $fields[] = 'routes.legs.duration';
+            $fields[] = 'routes.legs.startLocation';
+            $fields[] = 'routes.legs.endLocation';
 
             if ($request->includePolyline) {
-                $campos[] = 'routes.legs.polyline.encodedPolyline';
+                $fields[] = 'routes.legs.polyline.encodedPolyline';
             }
         }
 
         if ($request->optimizeIntermediates) {
-            $campos[] = 'routes.optimizedIntermediateWaypointIndex';
+            $fields[] = 'routes.optimizedIntermediateWaypointIndex';
         }
 
-        return implode(',', $campos);
+        return implode(',', $fields);
     }
 
-    private function waypoint(Coordinates $ponto): array
+    private function waypoint(Coordinates $point): array
     {
         return [
             'location' => [
                 'latLng' => [
-                    'latitude' => $ponto->latitude,
-                    'longitude' => $ponto->longitude,
+                    'latitude' => $point->latitude,
+                    'longitude' => $point->longitude,
                 ],
             ],
         ];
     }
 
-    private function modo(TravelMode $modo): string
+    private function mode(TravelMode $mode): string
     {
-        return match ($modo) {
+        return match ($mode) {
             TravelMode::Drive => 'DRIVE',
             TravelMode::TwoWheeler => 'TWO_WHEELER',
             TravelMode::Bicycle => 'BICYCLE',

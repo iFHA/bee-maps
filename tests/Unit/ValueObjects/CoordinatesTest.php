@@ -42,21 +42,21 @@ final class CoordinatesTest extends TestCase
     {
         $original = new Coordinates(-23.5615, -46.6562);
 
-        $reconstruida = Coordinates::fromString($original->toString());
+        $rebuilt = Coordinates::fromString($original->toString());
 
-        $this->assertEqualsWithDelta($original->latitude, $reconstruida->latitude, 0.0000001);
-        $this->assertEqualsWithDelta($original->longitude, $reconstruida->longitude, 0.0000001);
+        $this->assertEqualsWithDelta($original->latitude, $rebuilt->latitude, 0.0000001);
+        $this->assertEqualsWithDelta($original->longitude, $rebuilt->longitude, 0.0000001);
     }
 
     public function test_from_string_tolera_espacos_em_volta(): void
     {
-        $coordenada = Coordinates::fromString('  -23.5 , -46.6  ');
+        $coordinate = Coordinates::fromString('  -23.5 , -46.6  ');
 
-        $this->assertSame(-23.5, $coordenada->latitude);
-        $this->assertSame(-46.6, $coordenada->longitude);
+        $this->assertSame(-23.5, $coordinate->latitude);
+        $this->assertSame(-46.6, $coordinate->longitude);
     }
 
-    public static function paresInvalidos(): array
+    public static function invalidPairs(): array
     {
         return [
             'vazio' => [''],
@@ -67,12 +67,12 @@ final class CoordinatesTest extends TestCase
         ];
     }
 
-    #[DataProvider('paresInvalidos')]
-    public function test_from_string_rejeita_par_malformado(string $par): void
+    #[DataProvider('invalidPairs')]
+    public function test_from_string_rejeita_par_malformado(string $pair): void
     {
         $this->expectException(InvalidRequestException::class);
 
-        Coordinates::fromString($par);
+        Coordinates::fromString($pair);
     }
 
     public function test_from_string_ainda_valida_a_faixa(): void

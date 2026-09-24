@@ -32,7 +32,7 @@ final class ParidadeRouteOptimizationTest extends TestCase
         ];
     }
 
-    private function fakeDosDois(): void
+    private function fakeBoth(): void
     {
         Http::fake([
             // Google: 4 intermediarios => 5 pernas. Ordem [2, 0, 3, 1].
@@ -67,64 +67,64 @@ final class ParidadeRouteOptimizationTest extends TestCase
         ]);
     }
 
-    private function requisicao(
-        ?Coordinates $destino,
-        OptimizationObjective $objetivo = OptimizationObjective::MinTravelTime,
+    private function request(
+        ?Coordinates $destination,
+        OptimizationObjective $objective = OptimizationObjective::MinTravelTime,
     ): OptimizeWaypointsRequest {
         return new OptimizeWaypointsRequest(
             origin: new Coordinates(-23.5615, -46.6562),
-            destination: $destino,
+            destination: $destination,
             intermediates: [
                 new Coordinates(-23.5505, -46.6333),
                 new Coordinates(-23.587, -46.657),
                 new Coordinates(-23.532, -46.639),
                 new Coordinates(-23.52, -46.54),
             ],
-            objective: $objetivo,
+            objective: $objective,
         );
     }
 
     #[DataProvider('providers')]
     public function test_fim_fixo_devolve_permutacao_completa_dos_intermediarios(Provider $provider): void
     {
-        $this->fakeDosDois();
+        $this->fakeBoth();
 
-        $resultado = $this->app->make(MapServiceFactory::class)
+        $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
-            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686)));
+            ->optimize($this->request(new Coordinates(-23.598, -46.686)));
 
-        $this->assertSame([2, 0, 3, 1], $resultado->order);
-        $this->assertGreaterThan(0, $resultado->distance->meters);
-        $this->assertGreaterThan(0, $resultado->duration->seconds);
-        $this->assertSame(OptimizationObjective::MinTravelTime, $resultado->objective);
-        $this->assertNotSame('', $resultado->strategy);
+        $this->assertSame([2, 0, 3, 1], $result->order);
+        $this->assertGreaterThan(0, $result->distance->meters);
+        $this->assertGreaterThan(0, $result->duration->seconds);
+        $this->assertSame(OptimizationObjective::MinTravelTime, $result->objective);
+        $this->assertNotSame('', $result->strategy);
     }
 
     #[DataProvider('providers')]
     public function test_tour_aberto_funciona_nos_dois(Provider $provider): void
     {
-        $this->fakeDosDois();
+        $this->fakeBoth();
 
-        $resultado = $this->app->make(MapServiceFactory::class)
+        $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
-            ->optimize($this->requisicao(null));
+            ->optimize($this->request(null));
 
-        $this->assertCount(4, $resultado->order);
-        $this->assertSame([2, 0, 3, 1], $resultado->order);
+        $this->assertCount(4, $result->order);
+        $this->assertSame([2, 0, 3, 1], $result->order);
     }
 
     #[DataProvider('providers')]
     public function test_volta_a_origem_funciona_nos_dois(Provider $provider): void
     {
-        $this->fakeDosDois();
+        $this->fakeBoth();
 
-        $origem = new Coordinates(-23.5615, -46.6562);
+        $origin = new Coordinates(-23.5615, -46.6562);
 
-        $resultado = $this->app->make(MapServiceFactory::class)
+        $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
             ->optimize(new OptimizeWaypointsRequest(
-                origin: $origem,
-                destination: $origem,
+                origin: $origin,
+                destination: $origin,
                 intermediates: [
                     new Coordinates(-23.5505, -46.6333),
                     new Coordinates(-23.587, -46.657),
@@ -133,23 +133,23 @@ final class ParidadeRouteOptimizationTest extends TestCase
                 ],
             ));
 
-        $this->assertCount(4, $resultado->order);
+        $this->assertCount(4, $result->order);
     }
 
     #[DataProvider('providers')]
     public function test_a_ordem_nunca_inclui_origem_nem_destino(Provider $provider): void
     {
-        $this->fakeDosDois();
+        $this->fakeBoth();
 
-        $resultado = $this->app->make(MapServiceFactory::class)
+        $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
-            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686)));
+            ->optimize($this->request(new Coordinates(-23.598, -46.686)));
 
         // 4 intermediarios => indices validos sao 0..3. Um 4 aqui significaria
         // que o destino vazou para dentro do resultado da otimizacao.
-        foreach ($resultado->order as $indice) {
-            $this->assertGreaterThanOrEqual(0, $indice);
-            $this->assertLessThan(4, $indice);
+        foreach ($result->order as $index) {
+            $this->assertGreaterThanOrEqual(0, $index);
+            $this->assertLessThan(4, $index);
         }
     }
 
@@ -167,7 +167,7 @@ final class ParidadeRouteOptimizationTest extends TestCase
         try {
             $this->app->make(MapServiceFactory::class)
                 ->routeOptimization($provider)
-                ->optimize($this->requisicao(new Coordinates(-23.598, -46.686)));
+                ->optimize($this->request(new Coordinates(-23.598, -46.686)));
 
             $this->fail('corpo sem resposta usavel devia ter lancado');
         } catch (ProviderRequestException $e) {
@@ -200,6 +200,6 @@ final class ParidadeRouteOptimizationTest extends TestCase
 
         $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
-            ->optimize($this->requisicao(new Coordinates(-23.598, -46.686)));
+            ->optimize($this->request(new Coordinates(-23.598, -46.686)));
     }
 }

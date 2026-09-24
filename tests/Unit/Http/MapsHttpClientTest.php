@@ -26,9 +26,9 @@ final class MapsHttpClientTest extends TestCase
     {
         Http::fake(['exemplo.test/*' => Http::response(['ok' => true], 200)]);
 
-        $resposta = $this->client()->get(Provider::Here, Service::Geocoding, 'https://exemplo.test/x', ['q' => 'rua']);
+        $response = $this->client()->get(Provider::Here, Service::Geocoding, 'https://exemplo.test/x', ['q' => 'rua']);
 
-        $this->assertSame(['ok' => true], $resposta);
+        $this->assertSame(['ok' => true], $response);
     }
 
     public function test_valor_de_query_em_array_vira_chave_repetida_em_vez_de_indexada(): void

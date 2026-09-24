@@ -25,36 +25,36 @@ final class HereAddressLabel
      * Isso importa alem da estetica — o consumidor conta virgulas em `mainText`
      * para decidir se pede o numero da casa.
      */
-    public static function principal(array $endereco, string $label): string
+    public static function mainText(array $address, string $label): string
     {
-        $rua = $endereco['street'] ?? null;
+        $street = $address['street'] ?? null;
 
-        if ($rua === null) {
-            return $endereco['city']
-                ?? $endereco['county']
-                ?? $endereco['state']
-                ?? $endereco['countryName']
+        if ($street === null) {
+            return $address['city']
+                ?? $address['county']
+                ?? $address['state']
+                ?? $address['countryName']
                 ?? explode(',', $label)[0];
         }
 
-        $numero = $endereco['houseNumber'] ?? null;
+        $number = $address['houseNumber'] ?? null;
 
-        if ($numero === null) {
-            return $rua;
+        if ($number === null) {
+            return $street;
         }
 
-        foreach ([$rua . ', ' . $numero, $rua . ' ' . $numero] as $candidato) {
-            if (str_starts_with($label, $candidato)) {
-                return $candidato;
+        foreach ([$street . ', ' . $number, $street . ' ' . $number] as $candidate) {
+            if (str_starts_with($label, $candidate)) {
+                return $candidate;
             }
         }
 
-        return $rua;
+        return $street;
     }
 
-    public static function complemento(string $principal, string $label): string
+    public static function secondaryText(string $main, string $label): string
     {
-        if (! str_starts_with($label, $principal)) {
+        if (! str_starts_with($label, $main)) {
             return $label;
         }
 
@@ -63,6 +63,6 @@ final class HereAddressLabel
         // ("Belo Horizonte - MG, Brasil"). Charlist so com ASCII de proposito:
         // ltrim opera em bytes, e um travessao no charlist poderia comer o byte
         // inicial de um caractere UTF-8 legitimo.
-        return ltrim(substr($label, strlen($principal)), ' ,-');
+        return ltrim(substr($label, strlen($main)), ' ,-');
     }
 }

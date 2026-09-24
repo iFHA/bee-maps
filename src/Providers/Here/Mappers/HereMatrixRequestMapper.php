@@ -11,8 +11,8 @@ final class HereMatrixRequestMapper
     public function toPayload(RouteMatrixRequest $request): array
     {
         return [
-            'origins' => array_map($this->ponto(...), $request->origins),
-            'destinations' => array_map($this->ponto(...), $request->destinations),
+            'origins' => array_map($this->point(...), $request->origins),
+            'destinations' => array_map($this->point(...), $request->destinations),
             // O autoCircle e obrigatorio (nao ha equivalente no Google) e o
             // proprio HERE calcula centro e raio, devolvendo na resposta o que usou.
             'regionDefinition' => ['type' => 'autoCircle'],
@@ -21,8 +21,8 @@ final class HereMatrixRequestMapper
         ];
     }
 
-    private function ponto(Coordinates $ponto): array
+    private function point(Coordinates $point): array
     {
-        return ['lat' => $ponto->latitude, 'lng' => $ponto->longitude];
+        return ['lat' => $point->latitude, 'lng' => $point->longitude];
     }
 }

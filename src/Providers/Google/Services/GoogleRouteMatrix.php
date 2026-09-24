@@ -33,7 +33,7 @@ final class GoogleRouteMatrix implements RouteMatrix
             throw MatrixTooLargeException::make(Provider::Google, $request->elements(), $this->maxElements);
         }
 
-        $resposta = $this->http->post(
+        $response = $this->http->post(
             Provider::Google,
             Service::RouteMatrix,
             $this->url,
@@ -45,7 +45,7 @@ final class GoogleRouteMatrix implements RouteMatrix
         );
 
         return $this->responseMapper->toCollection(
-            $resposta,
+            $response,
             count($request->origins),
             count($request->destinations),
         );

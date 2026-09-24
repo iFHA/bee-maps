@@ -6,12 +6,12 @@ use BeeDelivery\BeeMaps\Enums\Provider;
 
 final class PlaceReferenceProviderMismatchException extends InvalidRequestException
 {
-    public static function make(Provider $esperado, Provider $recebido): self
+    public static function make(Provider $expected, Provider $received): self
     {
         return new self(sprintf(
             'Referencia de lugar emitida por "%s" nao pode ser consultada em "%s". Refaca a busca por texto.',
-            $recebido->value,
-            $esperado->value,
+            $received->value,
+            $expected->value,
         ));
     }
 }

@@ -28,16 +28,16 @@ final class HereDiscoverRequestMapper
             return $query;
         }
 
-        $pais = $request->region ?? $region;
+        $country = $request->region ?? $region;
 
-        if ($pais === null || $pais === '') {
+        if ($country === null || $country === '') {
             throw new InvalidRequestException(
                 'O Discover do HERE exige contexto geografico: informe PlaceSearchRequest::$near, '
                 . 'PlaceSearchRequest::$region, ou configure bee-maps.defaults.region.',
             );
         }
 
-        $query['in'] = 'countryCode:' . CountryCode::toAlpha3($pais);
+        $query['in'] = 'countryCode:' . CountryCode::toAlpha3($country);
 
         return $query;
     }

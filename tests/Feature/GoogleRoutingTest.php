@@ -29,7 +29,7 @@ final class GoogleRoutingTest extends TestCase
     {
         $this->fake();
 
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Google)
             ->route(new RouteRequest(
                 new Coordinates(-23.5, -46.6),
@@ -41,10 +41,10 @@ final class GoogleRoutingTest extends TestCase
                 includeLegs: true,
             ));
 
-        $this->assertSame(12400, $rota->distance->meters);
-        $this->assertSame(1830, $rota->duration->seconds);
-        $this->assertCount(2, $rota->legs);
-        $this->assertSame([1, 0], $rota->optimizedOrder);
+        $this->assertSame(12400, $route->distance->meters);
+        $this->assertSame(1830, $route->duration->seconds);
+        $this->assertCount(2, $route->legs);
+        $this->assertSame([1, 0], $route->optimizedOrder);
 
         Http::assertSent(function ($request): bool {
             $this->assertSame('chave-google-de-teste', $request->header('X-Goog-Api-Key')[0]);
@@ -67,8 +67,8 @@ final class GoogleRoutingTest extends TestCase
 
         Event::assertDispatched(
             MapRequestCompleted::class,
-            fn (MapRequestCompleted $evento) => $evento->service === Service::Routing
-                && $evento->upstreamCalls === 1,
+            fn (MapRequestCompleted $event) => $event->service === Service::Routing
+                && $event->upstreamCalls === 1,
         );
     }
 }

@@ -26,24 +26,24 @@ final class HereAutocompleteRequestMapper
             'lang' => $request->language ?? $language,
         ];
 
-        $paises = $request->countries !== [] ? $request->countries : [$region];
-        $codigos = array_map(fn (string $p) => CountryCode::toAlpha3($p), $paises);
+        $countries = $request->countries !== [] ? $request->countries : [$region];
+        $codes = array_map(fn (string $p) => CountryCode::toAlpha3($p), $countries);
 
-        $filtrosIn = [];
+        $inFilters = [];
 
         // Sem `near` nao se inventa foco: a ausencia dele e o pedido de busca
         // nacional, e o filtro de pais abaixo da conta sozinho.
         if ($request->near !== null) {
             if ($request->radiusMeters !== null) {
-                $filtrosIn[] = sprintf('circle:%s;r=%d', $request->near->toString(), $request->radiusMeters);
+                $inFilters[] = sprintf('circle:%s;r=%d', $request->near->toString(), $request->radiusMeters);
             } else {
                 $query['at'] = $request->near->toString();
             }
         }
 
-        $filtrosIn[] = 'countryCode:' . implode(',', $codigos);
+        $inFilters[] = 'countryCode:' . implode(',', $codes);
 
-        $query['in'] = $filtrosIn;
+        $query['in'] = $inFilters;
 
         return $query;
     }

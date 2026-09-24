@@ -13,7 +13,7 @@ use BeeDelivery\BeeMaps\Contracts\PolylineDecoder;
 final class Polyline
 {
     /** @var list<Coordinates>|null */
-    private ?array $decodificado = null;
+    private ?array $decoded = null;
 
     public function __construct(
         private readonly string $raw,
@@ -31,6 +31,6 @@ final class Polyline
      */
     public function coordinates(): array
     {
-        return $this->decodificado ??= $this->decoder->decode($this->raw);
+        return $this->decoded ??= $this->decoder->decode($this->raw);
     }
 }

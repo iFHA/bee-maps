@@ -12,9 +12,9 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class HereRouteMapperTest extends TestCase
 {
-    private function fixture(string $nome): array
+    private function fixture(string $name): array
     {
-        return json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/' . $nome), true);
+        return json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/' . $name), true);
     }
 
     public function test_query_minima_tem_origem_destino_modo_e_return(): void
@@ -35,20 +35,20 @@ final class HereRouteMapperTest extends TestCase
     {
         $mapper = new HereRouteRequestMapper();
 
-        $modos = [
+        $modes = [
             TravelMode::Drive->value => 'car',
             TravelMode::TwoWheeler->value => 'scooter',
             TravelMode::Bicycle->value => 'bicycle',
             TravelMode::Walk->value => 'pedestrian',
         ];
 
-        foreach (TravelMode::cases() as $modo) {
+        foreach (TravelMode::cases() as $mode) {
             $query = $mapper->toQuery(
-                new RouteRequest(new Coordinates(0, 0), new Coordinates(1, 1), [], $modo),
+                new RouteRequest(new Coordinates(0, 0), new Coordinates(1, 1), [], $mode),
                 'pt-BR',
             );
 
-            $this->assertSame($modos[$modo->value], $query['transportMode']);
+            $this->assertSame($modes[$mode->value], $query['transportMode']);
         }
     }
 
@@ -121,46 +121,46 @@ final class HereRouteMapperTest extends TestCase
 
     public function test_uma_secao_vira_rota_com_polyline_propria(): void
     {
-        $rota = (new HereRouteResponseMapper())->toRoute($this->fixture('route-uma-secao.json'), true);
+        $route = (new HereRouteResponseMapper())->toRoute($this->fixture('route-uma-secao.json'), true);
 
-        $this->assertSame(5200, $rota->distance->meters);
-        $this->assertSame(780, $rota->duration->seconds);
-        $this->assertSame('BFoz5xJ67i1B1B7PzIhaxL7Y', $rota->polyline->raw());
-        $this->assertCount(4, $rota->polyline->coordinates());
+        $this->assertSame(5200, $route->distance->meters);
+        $this->assertSame(780, $route->duration->seconds);
+        $this->assertSame('BFoz5xJ67i1B1B7PzIhaxL7Y', $route->polyline->raw());
+        $this->assertCount(4, $route->polyline->coordinates());
 
-        $this->assertCount(1, $rota->legs);
-        $this->assertEqualsWithDelta(50.10228, $rota->legs[0]->origin->latitude, 0.00001);
-        $this->assertEqualsWithDelta(50.09878, $rota->legs[0]->destination->latitude, 0.00001);
+        $this->assertCount(1, $route->legs);
+        $this->assertEqualsWithDelta(50.10228, $route->legs[0]->origin->latitude, 0.00001);
+        $this->assertEqualsWithDelta(50.09878, $route->legs[0]->destination->latitude, 0.00001);
     }
 
     public function test_duas_secoes_somam_os_totais_e_deixam_a_polyline_da_rota_nula(): void
     {
-        $rota = (new HereRouteResponseMapper())->toRoute($this->fixture('route.json'), true);
+        $route = (new HereRouteResponseMapper())->toRoute($this->fixture('route.json'), true);
 
-        $this->assertSame(12400, $rota->distance->meters);
-        $this->assertSame(1830, $rota->duration->seconds);
+        $this->assertSame(12400, $route->distance->meters);
+        $this->assertSame(1830, $route->duration->seconds);
 
         // D17: concatenar duas flexible polylines como string produz lixo, entao
         // a geometria vive nas pernas quando ha mais de uma secao.
-        $this->assertNull($rota->polyline);
-        $this->assertCount(2, $rota->legs);
-        $this->assertNotNull($rota->legs[0]->polyline);
-        $this->assertSame(7200, $rota->legs[1]->distance->meters);
+        $this->assertNull($route->polyline);
+        $this->assertCount(2, $route->legs);
+        $this->assertNotNull($route->legs[0]->polyline);
+        $this->assertSame(7200, $route->legs[1]->distance->meters);
     }
 
     public function test_pernas_so_aparecem_quando_pedidas(): void
     {
-        $rota = (new HereRouteResponseMapper())->toRoute($this->fixture('route.json'), false);
+        $route = (new HereRouteResponseMapper())->toRoute($this->fixture('route.json'), false);
 
-        $this->assertSame([], $rota->legs);
-        $this->assertSame(12400, $rota->distance->meters);
+        $this->assertSame([], $route->legs);
+        $this->assertSame(12400, $route->distance->meters);
     }
 
     public function test_ordem_otimizada_e_repassada_para_o_dto(): void
     {
-        $rota = (new HereRouteResponseMapper())->toRoute($this->fixture('route.json'), false, [1, 0]);
+        $route = (new HereRouteResponseMapper())->toRoute($this->fixture('route.json'), false, [1, 0]);
 
-        $this->assertSame([1, 0], $rota->optimizedOrder);
+        $this->assertSame([1, 0], $route->optimizedOrder);
     }
 
     public function test_resposta_sem_rota_vira_excecao_tipada(): void

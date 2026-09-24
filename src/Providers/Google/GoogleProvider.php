@@ -113,17 +113,17 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
             new GoogleRouteMatrixResponseMapper(),
             $this->config['endpoints']['route_matrix'],
             $this->apiKey(),
-            MatrixLimit::normalizar($this->config['matrix_max_elements'] ?? null),
+            MatrixLimit::normalize($this->config['matrix_max_elements'] ?? null),
         );
     }
 
     public function routeOptimization(): RouteOptimization
     {
         // Callables, nao instancias: ver o porque no GoogleRouteOptimization.
-        return new GoogleRouteOptimization($this->estrategiaPorTempo(...), $this->estrategiaPorDistancia(...));
+        return new GoogleRouteOptimization($this->strategyByTime(...), $this->strategyByDistance(...));
     }
 
-    private function estrategiaPorTempo(): OptimizationStrategy
+    private function strategyByTime(): OptimizationStrategy
     {
         return new RoutesStrategy(
             $this->http,
@@ -134,7 +134,7 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
         );
     }
 
-    private function estrategiaPorDistancia(): OptimizationStrategy
+    private function strategyByDistance(): OptimizationStrategy
     {
         $config = $this->config['route_optimization'] ?? [];
 
@@ -145,12 +145,12 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
             return new MatrixTspStrategy($this->http, $this->routeMatrix(), new NearestNeighbourTour());
         }
 
-        $credenciais = $config['service_account'] ?? [];
+        $credentials = $config['service_account'] ?? [];
 
         return new FleetRoutingStrategy(
             $this->http,
-            new ServiceAccountToken($credenciais, $config['scope'] ?? ''),
-            str_replace('{projectId}', (string) ($credenciais['project_id'] ?? ''), $config['url'] ?? ''),
+            new ServiceAccountToken($credentials, $config['scope'] ?? ''),
+            str_replace('{projectId}', (string) ($credentials['project_id'] ?? ''), $config['url'] ?? ''),
         );
     }
 

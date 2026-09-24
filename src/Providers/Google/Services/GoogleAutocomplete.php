@@ -26,7 +26,7 @@ final class GoogleAutocomplete implements Autocomplete
 
     public function suggest(AutocompleteRequest $request): SuggestionCollection
     {
-        $resposta = $this->http->post(
+        $response = $this->http->post(
             Provider::Google,
             Service::Autocomplete,
             $this->url,
@@ -37,6 +37,6 @@ final class GoogleAutocomplete implements Autocomplete
             ],
         );
 
-        return $this->responseMapper->toCollection($resposta);
+        return $this->responseMapper->toCollection($response);
     }
 }

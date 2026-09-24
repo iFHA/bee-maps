@@ -57,10 +57,10 @@ final class HereFindSequenceMapper
             };
         }
 
-        foreach ($intermediates as $indice => $ponto) {
-            $nome = 'destination' . ($indice + 1);
+        foreach ($intermediates as $index => $point) {
+            $name = 'destination' . ($index + 1);
 
-            $query[$nome] = $nome . ';' . $ponto->toString();
+            $query[$name] = $name . ';' . $point->toString();
         }
 
         return $query;
@@ -73,25 +73,25 @@ final class HereFindSequenceMapper
      *         HERE manda distance e time explicitos: ausencia e falha, nao
      *         omissao de valor zero como no proto3 do Google.
      */
-    public function toTotals(array $resposta): array
+    public function toTotals(array $response): array
     {
-        $resultado = $resposta['results'][0] ?? [];
+        $result = $response['results'][0] ?? [];
 
-        $distancia = $resultado['distance'] ?? null;
-        $tempo = $resultado['time'] ?? null;
+        $distance = $result['distance'] ?? null;
+        $time = $result['time'] ?? null;
 
-        if (! is_numeric($distancia) || ! is_numeric($tempo)) {
+        if (! is_numeric($distance) || ! is_numeric($time)) {
             throw new InvalidRequestException(
                 'O findsequence do HERE nao devolveu distancia e tempo totais; '
                 . 'somar zero inventaria a medida.',
             );
         }
 
-        return ['distance' => (int) $distancia, 'duration' => (int) $tempo];
+        return ['distance' => (int) $distance, 'duration' => (int) $time];
     }
 
     /**
-     * @param int $totalIntermediarios Quantos waypoints intermediarios foram enviados.
+     * @param int $totalIntermediates Quantos waypoints intermediarios foram enviados.
      *
      * @return list<int> Permutacao completa de 0..N-1, na ordem de visita.
      *
@@ -99,9 +99,9 @@ final class HereFindSequenceMapper
      *         completa e valida. Devolver ordem parcial e pior que falhar: o
      *         request mapper montaria uma rota sem parte das paradas.
      */
-    public function toOrder(array $resposta, int $totalIntermediarios): array
+    public function toOrder(array $response, int $totalIntermediates): array
     {
-        $waypoints = $resposta['results'][0]['waypoints'] ?? null;
+        $waypoints = $response['results'][0]['waypoints'] ?? null;
 
         if ($waypoints === null || $waypoints === []) {
             throw new InvalidRequestException('O findsequence do HERE nao devolveu sequencia de waypoints.');
@@ -109,35 +109,35 @@ final class HereFindSequenceMapper
 
         usort($waypoints, fn (array $a, array $b) => ($a['sequence'] ?? 0) <=> ($b['sequence'] ?? 0));
 
-        $ordem = [];
+        $order = [];
 
         foreach ($waypoints as $waypoint) {
-            if (preg_match('/^destination(\d+)$/', (string) ($waypoint['id'] ?? ''), $partes) !== 1) {
+            if (preg_match('/^destination(\d+)$/', (string) ($waypoint['id'] ?? ''), $parts) !== 1) {
                 continue;
             }
 
-            $indice = (int) $partes[1] - 1;
+            $index = (int) $parts[1] - 1;
 
-            if ($indice < 0 || $indice >= $totalIntermediarios || in_array($indice, $ordem, true)) {
+            if ($index < 0 || $index >= $totalIntermediates || in_array($index, $order, true)) {
                 throw new InvalidRequestException(sprintf(
                     'O findsequence do HERE devolveu o waypoint "%s", fora da faixa de %d intermediarios enviados.',
                     (string) ($waypoint['id'] ?? ''),
-                    $totalIntermediarios,
+                    $totalIntermediates,
                 ));
             }
 
-            $ordem[] = $indice;
+            $order[] = $index;
         }
 
-        if (count($ordem) !== $totalIntermediarios) {
+        if (count($order) !== $totalIntermediates) {
             throw new InvalidRequestException(sprintf(
                 'O findsequence do HERE devolveu %d de %d waypoints intermediarios; '
                 . 'seguir com ordem incompleta apagaria paradas da rota.',
-                count($ordem),
-                $totalIntermediarios,
+                count($order),
+                $totalIntermediates,
             ));
         }
 
-        return $ordem;
+        return $order;
     }
 }

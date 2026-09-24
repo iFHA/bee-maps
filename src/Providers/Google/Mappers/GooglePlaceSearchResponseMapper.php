@@ -10,35 +10,35 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
 
 final class GooglePlaceSearchResponseMapper
 {
-    public function __construct(private readonly GoogleAddressMapper $enderecos = new GoogleAddressMapper())
+    public function __construct(private readonly GoogleAddressMapper $addresses = new GoogleAddressMapper())
     {
     }
 
-    public function toCollection(array $resposta): PlaceCollection
+    public function toCollection(array $response): PlaceCollection
     {
-        $lugares = [];
+        $places = [];
 
-        foreach ($resposta['places'] ?? [] as $lugar) {
-            $lugares[] = $this->toPlace($lugar);
+        foreach ($response['places'] ?? [] as $place) {
+            $places[] = $this->toPlace($place);
         }
 
-        return new PlaceCollection(...$lugares);
+        return new PlaceCollection(...$places);
     }
 
-    private function toPlace(array $lugar): Place
+    private function toPlace(array $place): Place
     {
         return new Place(
-            place: isset($lugar['id']) ? new PlaceReference(Provider::Google, $lugar['id']) : null,
-            name: $lugar['displayName']['text'] ?? '',
-            address: $this->enderecos->fromComponents(
-                $lugar['addressComponents'] ?? [],
-                $lugar['formattedAddress'] ?? '',
+            place: isset($place['id']) ? new PlaceReference(Provider::Google, $place['id']) : null,
+            name: $place['displayName']['text'] ?? '',
+            address: $this->addresses->fromComponents(
+                $place['addressComponents'] ?? [],
+                $place['formattedAddress'] ?? '',
                 'longText',
                 'shortText',
             ),
             coordinates: new Coordinates(
-                (float) $lugar['location']['latitude'],
-                (float) $lugar['location']['longitude'],
+                (float) $place['location']['latitude'],
+                (float) $place['location']['longitude'],
             ),
         );
     }

@@ -87,21 +87,21 @@ final class CountryCode
      * Alpha-2 e alpha-3 passam direto (uppercased); qualquer outra coisa
      * (nome por extenso, codigo invalido) lanca excecao.
      */
-    public static function toAlpha3(string $pais): string
+    public static function toAlpha3(string $country): string
     {
-        $codigo = strtoupper($pais);
+        $code = strtoupper($country);
 
-        if (strlen($codigo) === 3) {
-            return $codigo;
+        if (strlen($code) === 3) {
+            return $code;
         }
 
-        if (isset(self::ALPHA3[$codigo])) {
-            return self::ALPHA3[$codigo];
+        if (isset(self::ALPHA3[$code])) {
+            return self::ALPHA3[$code];
         }
 
         throw new InvalidRequestException(sprintf(
             'O codigo de pais "%s" nao e um codigo ISO 3166-1 alpha-2 valido.',
-            $pais,
+            $country,
         ));
     }
 
@@ -109,28 +109,28 @@ final class CountryCode
      * Alpha-3 e alpha-2 passam direto (uppercased); qualquer outra coisa
      * (nome por extenso, codigo invalido) lanca excecao.
      */
-    public static function toAlpha2(string $pais): string
+    public static function toAlpha2(string $country): string
     {
-        $codigo = strtoupper($pais);
+        $code = strtoupper($country);
 
-        if (strlen($codigo) === 2) {
-            if (isset(self::ALPHA3[$codigo])) {
-                return $codigo;
+        if (strlen($code) === 2) {
+            if (isset(self::ALPHA3[$code])) {
+                return $code;
             }
 
             throw new InvalidRequestException(sprintf(
                 'O codigo de pais "%s" nao e um codigo ISO 3166-1 alpha-2 valido.',
-                $pais,
+                $country,
             ));
         }
 
-        if (isset(self::alpha2()[$codigo])) {
-            return self::alpha2()[$codigo];
+        if (isset(self::alpha2()[$code])) {
+            return self::alpha2()[$code];
         }
 
         throw new InvalidRequestException(sprintf(
             'O codigo de pais "%s" nao e um codigo ISO 3166-1 alpha-3 valido.',
-            $pais,
+            $country,
         ));
     }
 

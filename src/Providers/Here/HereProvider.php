@@ -66,7 +66,7 @@ final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesG
             HereAutocompleteStrategy::fromConfig($this->config['autocomplete_strategy'] ?? null),
             new HereAutosuggest(
                 $this->http,
-                new HereAutosuggestRequestMapper($this->centroDoAutosuggest()),
+                new HereAutosuggestRequestMapper($this->autosuggestCenter()),
                 new HereAutosuggestResponseMapper(),
                 $this->config['endpoints']['autosuggest'],
                 $this->apiKey(),
@@ -134,7 +134,7 @@ final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesG
             new HereMatrixResponseMapper(),
             $this->config['endpoints']['matrix'],
             $this->apiKey(),
-            MatrixLimit::normalizar($this->config['matrix_max_elements'] ?? null),
+            MatrixLimit::normalize($this->config['matrix_max_elements'] ?? null),
         );
     }
 
@@ -152,16 +152,16 @@ final class HereProvider implements MapProvider, ProvidesAutocomplete, ProvidesG
      * Config malformado e erro de configuracao, nao de requisicao: quem precisa
      * agir e quem fez o deploy, e a mensagem tem que dizer qual chave esta errada.
      */
-    private function centroDoAutosuggest(): ?Coordinates
+    private function autosuggestCenter(): ?Coordinates
     {
-        $centro = $this->config['autosuggest_center'] ?? null;
+        $center = $this->config['autosuggest_center'] ?? null;
 
-        if ($centro === null || $centro === '') {
+        if ($center === null || $center === '') {
             return null;
         }
 
         try {
-            return Coordinates::fromString((string) $centro);
+            return Coordinates::fromString((string) $center);
         } catch (InvalidRequestException $e) {
             throw new ConfigurationException(
                 'bee-maps.here.autosuggest_center invalido: ' . $e->getMessage(),

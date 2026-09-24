@@ -16,14 +16,14 @@ namespace BeeDelivery\BeeMaps\Support;
  */
 final class CredentialRedaction
 {
-    private const PARAMETROS = 'apiKey|api_key|key|token|access_token|signature|sig';
+    private const PARAMETERS = 'apiKey|api_key|key|token|access_token|signature|sig';
 
-    public static function redigir(string $texto): string
+    public static function redact(string $text): string
     {
         return preg_replace(
-            '/([?&])(' . self::PARAMETROS . ')=[^&\s]*/i',
+            '/([?&])(' . self::PARAMETERS . ')=[^&\s]*/i',
             '$1$2=[REDACTED]',
-            $texto,
+            $text,
         );
     }
 }

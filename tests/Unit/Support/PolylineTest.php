@@ -14,36 +14,36 @@ final class PolylineTest extends TestCase
     {
         $polyline = new Polyline('_p~iF~ps|U_ulLnnqC_mqNvxq`@', new GoogleEncodedPolylineDecoder());
 
-        $coordenadas = $polyline->coordinates();
+        $coordinates = $polyline->coordinates();
 
-        $this->assertCount(3, $coordenadas);
-        $this->assertEqualsWithDelta(38.5, $coordenadas[0]->latitude, 0.00001);
-        $this->assertEqualsWithDelta(-120.2, $coordenadas[0]->longitude, 0.00001);
-        $this->assertEqualsWithDelta(43.252, $coordenadas[2]->latitude, 0.00001);
-        $this->assertEqualsWithDelta(-126.453, $coordenadas[2]->longitude, 0.00001);
+        $this->assertCount(3, $coordinates);
+        $this->assertEqualsWithDelta(38.5, $coordinates[0]->latitude, 0.00001);
+        $this->assertEqualsWithDelta(-120.2, $coordinates[0]->longitude, 0.00001);
+        $this->assertEqualsWithDelta(43.252, $coordinates[2]->latitude, 0.00001);
+        $this->assertEqualsWithDelta(-126.453, $coordinates[2]->longitude, 0.00001);
     }
 
     public function test_decodifica_flexible_polyline_do_here(): void
     {
         $polyline = new Polyline('BFoz5xJ67i1B1B7PzIhaxL7Y', new HereFlexiblePolylineDecoder());
 
-        $coordenadas = $polyline->coordinates();
+        $coordinates = $polyline->coordinates();
 
-        $this->assertCount(4, $coordenadas);
-        $this->assertEqualsWithDelta(50.10228, $coordenadas[0]->latitude, 0.00001);
-        $this->assertEqualsWithDelta(8.69821, $coordenadas[0]->longitude, 0.00001);
-        $this->assertEqualsWithDelta(50.09878, $coordenadas[3]->latitude, 0.00001);
-        $this->assertEqualsWithDelta(8.68752, $coordenadas[3]->longitude, 0.00001);
+        $this->assertCount(4, $coordinates);
+        $this->assertEqualsWithDelta(50.10228, $coordinates[0]->latitude, 0.00001);
+        $this->assertEqualsWithDelta(8.69821, $coordinates[0]->longitude, 0.00001);
+        $this->assertEqualsWithDelta(50.09878, $coordinates[3]->latitude, 0.00001);
+        $this->assertEqualsWithDelta(8.68752, $coordinates[3]->longitude, 0.00001);
     }
 
     public function test_raw_devolve_a_string_original_sem_decodificar(): void
     {
         $decoder = new class implements \BeeDelivery\BeeMaps\Contracts\PolylineDecoder {
-            public int $chamadas = 0;
+            public int $calls = 0;
 
             public function decode(string $encoded): array
             {
-                $this->chamadas++;
+                $this->calls++;
 
                 return [];
             }
@@ -52,17 +52,17 @@ final class PolylineTest extends TestCase
         $polyline = new Polyline('qualquer-coisa', $decoder);
 
         $this->assertSame('qualquer-coisa', $polyline->raw());
-        $this->assertSame(0, $decoder->chamadas, 'raw() nao pode disparar decodificacao.');
+        $this->assertSame(0, $decoder->calls, 'raw() nao pode disparar decodificacao.');
     }
 
     public function test_decodificacao_e_memoizada(): void
     {
         $decoder = new class implements \BeeDelivery\BeeMaps\Contracts\PolylineDecoder {
-            public int $chamadas = 0;
+            public int $calls = 0;
 
             public function decode(string $encoded): array
             {
-                $this->chamadas++;
+                $this->calls++;
 
                 return [];
             }
@@ -72,7 +72,7 @@ final class PolylineTest extends TestCase
         $polyline->coordinates();
         $polyline->coordinates();
 
-        $this->assertSame(1, $decoder->chamadas);
+        $this->assertSame(1, $decoder->calls);
     }
 
     public function test_polyline_do_google_truncada_vira_excecao_tipada(): void

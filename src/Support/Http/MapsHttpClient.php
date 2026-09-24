@@ -34,11 +34,11 @@ final class MapsHttpClient
      *
      * @var array{calls: int, durationMs: float, status: int}|null
      */
-    private ?array $operacaoEmCurso = null;
+    private ?array $currentOperation = null;
 
     public function get(Provider $provider, Service $service, string $url, array $query = [], array $headers = []): array
     {
-        return $this->send($provider, $service, fn () => $this->pending($headers)->get($url, $this->serializarQuery($query)));
+        return $this->send($provider, $service, fn () => $this->pending($headers)->get($url, $this->serializeQuery($query)));
     }
 
     public function post(Provider $provider, Service $service, string $url, array $payload, array $headers = []): array
@@ -56,24 +56,24 @@ final class MapsHttpClient
      * da POC veria duas chamadas rapidas do HERE contra uma do Google e
      * concluiria o oposto do que os dados dizem.
      */
-    public function operacao(Provider $provider, Service $service, callable $passos): mixed
+    public function operation(Provider $provider, Service $service, callable $steps): mixed
     {
-        $anterior = $this->operacaoEmCurso;
-        $this->operacaoEmCurso = ['calls' => 0, 'durationMs' => 0.0, 'status' => 0];
+        $previous = $this->currentOperation;
+        $this->currentOperation = ['calls' => 0, 'durationMs' => 0.0, 'status' => 0];
 
         try {
-            return $passos();
+            return $steps();
         } finally {
-            $acumulado = $this->operacaoEmCurso;
-            $this->operacaoEmCurso = $anterior;
+            $accumulated = $this->currentOperation;
+            $this->currentOperation = $previous;
 
-            if ($acumulado['calls'] > 0) {
+            if ($accumulated['calls'] > 0) {
                 $this->events->dispatch(new MapRequestCompleted(
                     provider: $provider,
                     service: $service,
-                    httpStatus: $acumulado['status'],
-                    durationMs: round($acumulado['durationMs'], 2),
-                    upstreamCalls: $acumulado['calls'],
+                    httpStatus: $accumulated['status'],
+                    durationMs: round($accumulated['durationMs'], 2),
+                    upstreamCalls: $accumulated['calls'],
                 ));
             }
         }
@@ -85,7 +85,7 @@ final class MapsHttpClient
             ->withHeaders($headers + ['Accept' => 'application/json'])
             ->timeout($this->config['timeout'])
             ->connectTimeout($this->config['connect_timeout'])
-            ->retry($this->config['attempts'], $this->config['retry_delay_ms'], $this->deveTentarNovamente(...), throw: false);
+            ->retry($this->config['attempts'], $this->config['retry_delay_ms'], $this->shouldRetry(...), throw: false);
     }
 
     /**
@@ -94,17 +94,17 @@ final class MapsHttpClient
      * mesma chave (ex.: o filtro "in" do HERE precisa de "in=a&in=b"). Serializa
      * manualmente cada valor de array como a mesma chave repetida.
      */
-    private function serializarQuery(array $parametros): string
+    private function serializeQuery(array $parameters): string
     {
-        $partes = [];
+        $parts = [];
 
-        foreach ($parametros as $chave => $valor) {
-            foreach ((array) $valor as $item) {
-                $partes[] = rawurlencode((string) $chave) . '=' . rawurlencode((string) $item);
+        foreach ($parameters as $key => $value) {
+            foreach ((array) $value as $item) {
+                $parts[] = rawurlencode((string) $key) . '=' . rawurlencode((string) $item);
             }
         }
 
-        return implode('&', $partes);
+        return implode('&', $parts);
     }
 
     /**
@@ -112,14 +112,14 @@ final class MapsHttpClient
      * resposta que sinaliza indisponibilidade temporaria (429, 5xx). Repetir um 401/403
      * apenas dobra a carga no provider exatamente quando ele esta bloqueando a chamada.
      */
-    private function deveTentarNovamente(Throwable $excecao): bool
+    private function shouldRetry(Throwable $exception): bool
     {
-        if ($excecao instanceof ConnectionException) {
+        if ($exception instanceof ConnectionException) {
             return true;
         }
 
-        if ($excecao instanceof RequestException) {
-            $status = $excecao->response->status();
+        if ($exception instanceof RequestException) {
+            $status = $exception->response->status();
 
             return $status === 429 || $status >= 500;
         }
@@ -129,36 +129,36 @@ final class MapsHttpClient
 
     private function send(Provider $provider, Service $service, callable $call): array
     {
-        $inicio = microtime(true);
+        $start = microtime(true);
 
         try {
-            /** @var Response $resposta */
-            $resposta = $call();
+            /** @var Response $response */
+            $response = $call();
         } catch (ConnectionException $e) {
-            $this->registrar($provider, $service, 0, (microtime(true) - $inicio) * 1000);
+            $this->record($provider, $service, 0, (microtime(true) - $start) * 1000);
 
-            throw new ProviderUnavailableException($provider, $service, $this->redigirCredenciais($e->getMessage()));
+            throw new ProviderUnavailableException($provider, $service, $this->redactCredentials($e->getMessage()));
         }
 
-        $this->registrar($provider, $service, $resposta->status(), (microtime(true) - $inicio) * 1000);
+        $this->record($provider, $service, $response->status(), (microtime(true) - $start) * 1000);
 
-        if ($resposta->failed()) {
-            throw $this->traduzirErro($provider, $service, $resposta);
+        if ($response->failed()) {
+            throw $this->translateError($provider, $service, $response);
         }
 
-        return $resposta->json() ?? [];
+        return $response->json() ?? [];
     }
 
     /**
      * Fora de uma operacao, cada chamada vira um evento. Dentro, acumula: quem
      * emite e o finally de operacao().
      */
-    private function registrar(Provider $provider, Service $service, int $status, float $duracaoMs): void
+    private function record(Provider $provider, Service $service, int $status, float $elapsedMs): void
     {
-        if ($this->operacaoEmCurso !== null) {
-            $this->operacaoEmCurso['calls']++;
-            $this->operacaoEmCurso['durationMs'] += $duracaoMs;
-            $this->operacaoEmCurso['status'] = $status;
+        if ($this->currentOperation !== null) {
+            $this->currentOperation['calls']++;
+            $this->currentOperation['durationMs'] += $elapsedMs;
+            $this->currentOperation['status'] = $status;
 
             return;
         }
@@ -167,40 +167,40 @@ final class MapsHttpClient
             provider: $provider,
             service: $service,
             httpStatus: $status,
-            durationMs: round($duracaoMs, 2),
+            durationMs: round($elapsedMs, 2),
         ));
     }
 
-    private function traduzirErro(Provider $provider, Service $service, Response $resposta): ProviderRequestException
+    private function translateError(Provider $provider, Service $service, Response $response): ProviderRequestException
     {
-        $status = $resposta->status();
-        $corpo = $resposta->json();
+        $status = $response->status();
+        $body = $response->json();
 
         // O computeRouteMatrix do Google embrulha o erro num array
         // ([{"error": {...}}]), diferente de todos os outros endpoints. Sem este
         // fallback a mensagem que explica a falha — "the product of the number of
         // origins and destinations must be <= 625" — se perde, e o consumidor
         // recebe um "Bad Request" sem causa.
-        $erro = $corpo['error'] ?? $corpo[0]['error'] ?? null;
+        $error = $body['error'] ?? $body[0]['error'] ?? null;
 
-        $codigo = $erro['status'] ?? $erro['code'] ?? null;
-        $mensagem = $this->redigirCredenciais($erro['message'] ?? $resposta->reason() ?? 'falha na chamada ao provider');
+        $code = $error['status'] ?? $error['code'] ?? null;
+        $message = $this->redactCredentials($error['message'] ?? $response->reason() ?? 'falha na chamada ao provider');
 
         // Preserva null: providerCode() é ?string justamente para distinguir
         // "o provider não mandou código" de "mandou um código". Um (string) aqui
         // transformaria todo ausente em '' e quebraria essa distinção.
-        $codigo = $codigo !== null ? (string) $codigo : null;
+        $code = $code !== null ? (string) $code : null;
 
         return match (true) {
-            $status === 401, $status === 403 => new ProviderAuthenticationException($provider, $service, $mensagem, $status, $codigo),
-            $status === 429 => new ProviderRateLimitException($provider, $service, $mensagem, $status, $codigo),
-            $status >= 500 => new ProviderUnavailableException($provider, $service, $mensagem, $status, $codigo),
-            default => new ProviderRequestException($provider, $service, $mensagem, $status, $codigo),
+            $status === 401, $status === 403 => new ProviderAuthenticationException($provider, $service, $message, $status, $code),
+            $status === 429 => new ProviderRateLimitException($provider, $service, $message, $status, $code),
+            $status >= 500 => new ProviderUnavailableException($provider, $service, $message, $status, $code),
+            default => new ProviderRequestException($provider, $service, $message, $status, $code),
         };
     }
 
-    private function redigirCredenciais(string $texto): string
+    private function redactCredentials(string $text): string
     {
-        return CredentialRedaction::redigir($texto);
+        return CredentialRedaction::redact($text);
     }
 }

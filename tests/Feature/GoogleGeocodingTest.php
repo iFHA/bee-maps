@@ -33,9 +33,9 @@ final class GoogleGeocodingTest extends TestCase
     {
         $this->fakeOk();
 
-        $colecao = $this->geocoding()->geocode('Av Paulista 1000');
+        $collection = $this->geocoding()->geocode('Av Paulista 1000');
 
-        $this->assertCount(1, $colecao);
+        $this->assertCount(1, $collection);
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'address=Av Paulista 1000'));
     }
 
@@ -52,9 +52,9 @@ final class GoogleGeocodingTest extends TestCase
     {
         $this->fakeOk();
 
-        $resultado = $this->geocoding()->lookup(new PlaceReference(Provider::Google, 'ChIJ0WGkg4FEzpQRrlsz_whLqZs'));
+        $result = $this->geocoding()->lookup(new PlaceReference(Provider::Google, 'ChIJ0WGkg4FEzpQRrlsz_whLqZs'));
 
-        $this->assertNotNull($resultado);
+        $this->assertNotNull($result);
         Http::assertSent(fn ($r) => str_contains($r->url(), 'place_id=ChIJ0WGkg4FEzpQRrlsz_whLqZs'));
     }
 

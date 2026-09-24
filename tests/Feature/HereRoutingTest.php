@@ -29,7 +29,7 @@ final class HereRoutingTest extends TestCase
     {
         $this->fake();
 
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Here)
             ->route(new RouteRequest(
                 new Coordinates(50.10228, 8.69821),
@@ -38,9 +38,9 @@ final class HereRoutingTest extends TestCase
                 includeLegs: true,
             ));
 
-        $this->assertSame(5200, $rota->distance->meters);
-        $this->assertSame(780, $rota->duration->seconds);
-        $this->assertCount(4, $rota->polyline->coordinates());
+        $this->assertSame(5200, $route->distance->meters);
+        $this->assertSame(780, $route->duration->seconds);
+        $this->assertCount(4, $route->polyline->coordinates());
 
         Http::assertSent(function ($request): bool {
             $url = urldecode($request->url());
@@ -65,12 +65,12 @@ final class HereRoutingTest extends TestCase
         Event::assertDispatchedTimes(MapRequestCompleted::class, 1);
         Event::assertDispatched(
             MapRequestCompleted::class,
-            fn (MapRequestCompleted $evento) => $evento->service === Service::Routing
-                && $evento->upstreamCalls === 1,
+            fn (MapRequestCompleted $event) => $event->service === Service::Routing
+                && $event->upstreamCalls === 1,
         );
     }
 
-    private function fakeOtimizado(): void
+    private function fakeOptimized(): void
     {
         Http::fake([
             'wps.hereapi.com/*' => Http::response(
@@ -84,7 +84,7 @@ final class HereRoutingTest extends TestCase
         ]);
     }
 
-    private function requisicaoOtimizada(): RouteRequest
+    private function optimizedRequest(): RouteRequest
     {
         return new RouteRequest(
             new Coordinates(50.10228, 8.69821),
@@ -98,14 +98,14 @@ final class HereRoutingTest extends TestCase
 
     public function test_rota_otimizada_consulta_a_sequencia_e_depois_a_rota(): void
     {
-        $this->fakeOtimizado();
+        $this->fakeOptimized();
 
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Here)
-            ->route($this->requisicaoOtimizada());
+            ->route($this->optimizedRequest());
 
-        $this->assertSame([1, 0], $rota->optimizedOrder);
-        $this->assertSame(12400, $rota->distance->meters);
+        $this->assertSame([1, 0], $route->optimizedOrder);
+        $this->assertSame(12400, $route->distance->meters);
 
         // A rota tem que ser pedida na ordem que o findsequence devolveu.
         Http::assertSent(function ($request): bool {
@@ -114,12 +114,12 @@ final class HereRoutingTest extends TestCase
             }
 
             $url = urldecode($request->url());
-            $posicaoSegundo = strpos($url, 'via=50.1006300,8.6915000');
-            $posicaoPrimeiro = strpos($url, 'via=50.1001000,8.6900000');
+            $secondPosition = strpos($url, 'via=50.1006300,8.6915000');
+            $firstPosition = strpos($url, 'via=50.1001000,8.6900000');
 
-            $this->assertNotFalse($posicaoSegundo);
-            $this->assertNotFalse($posicaoPrimeiro);
-            $this->assertLessThan($posicaoPrimeiro, $posicaoSegundo);
+            $this->assertNotFalse($secondPosition);
+            $this->assertNotFalse($firstPosition);
+            $this->assertLessThan($firstPosition, $secondPosition);
 
             return true;
         });
@@ -128,19 +128,19 @@ final class HereRoutingTest extends TestCase
     public function test_rota_otimizada_e_uma_operacao_com_duas_chamadas_upstream(): void
     {
         Event::fake([MapRequestCompleted::class]);
-        $this->fakeOtimizado();
+        $this->fakeOptimized();
 
         $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Here)
-            ->route($this->requisicaoOtimizada());
+            ->route($this->optimizedRequest());
 
         // Um unico evento: sem isso, a POC compararia uma chamada do Google
         // contra duas do HERE e concluiria o oposto do que os dados dizem.
         Event::assertDispatchedTimes(MapRequestCompleted::class, 1);
         Event::assertDispatched(
             MapRequestCompleted::class,
-            fn (MapRequestCompleted $evento) => $evento->service === Service::Routing
-                && $evento->upstreamCalls === 2,
+            fn (MapRequestCompleted $event) => $event->service === Service::Routing
+                && $event->upstreamCalls === 2,
         );
     }
 
@@ -150,7 +150,7 @@ final class HereRoutingTest extends TestCase
         // preventStrayRequests quebra o teste.
         $this->fake();
 
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Here)
             ->route(new RouteRequest(
                 new Coordinates(50.10228, 8.69821),
@@ -158,6 +158,6 @@ final class HereRoutingTest extends TestCase
                 optimizeIntermediates: true,
             ));
 
-        $this->assertSame([], $rota->optimizedOrder);
+        $this->assertSame([], $route->optimizedOrder);
     }
 }

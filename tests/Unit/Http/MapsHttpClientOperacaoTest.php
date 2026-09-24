@@ -22,23 +22,23 @@ final class MapsHttpClientOperacaoTest extends TestCase
             'segunda.exemplo.test/*' => Http::response(['ok' => 2], 200),
         ]);
 
-        $cliente = $this->app->make(MapsHttpClient::class);
+        $client = $this->app->make(MapsHttpClient::class);
 
-        $resultado = $cliente->operacao(Provider::Here, Service::Routing, function () use ($cliente) {
-            $cliente->get(Provider::Here, Service::Routing, 'https://primeira.exemplo.test/x');
+        $result = $client->operation(Provider::Here, Service::Routing, function () use ($client) {
+            $client->get(Provider::Here, Service::Routing, 'https://primeira.exemplo.test/x');
 
-            return $cliente->get(Provider::Here, Service::Routing, 'https://segunda.exemplo.test/y');
+            return $client->get(Provider::Here, Service::Routing, 'https://segunda.exemplo.test/y');
         });
 
-        $this->assertSame(['ok' => 2], $resultado);
+        $this->assertSame(['ok' => 2], $result);
 
         Event::assertDispatchedTimes(MapRequestCompleted::class, 1);
         Event::assertDispatched(
             MapRequestCompleted::class,
-            fn (MapRequestCompleted $evento) => $evento->upstreamCalls === 2
-                && $evento->httpStatus === 200
-                && $evento->provider === Provider::Here
-                && $evento->service === Service::Routing,
+            fn (MapRequestCompleted $event) => $event->upstreamCalls === 2
+                && $event->httpStatus === 200
+                && $event->provider === Provider::Here
+                && $event->service === Service::Routing,
         );
     }
 
@@ -48,14 +48,14 @@ final class MapsHttpClientOperacaoTest extends TestCase
 
         Http::fake(['primeira.exemplo.test/*' => Http::response(['ok' => 1], 200)]);
 
-        $cliente = $this->app->make(MapsHttpClient::class);
-        $cliente->get(Provider::Here, Service::Routing, 'https://primeira.exemplo.test/x');
-        $cliente->get(Provider::Here, Service::Routing, 'https://primeira.exemplo.test/x');
+        $client = $this->app->make(MapsHttpClient::class);
+        $client->get(Provider::Here, Service::Routing, 'https://primeira.exemplo.test/x');
+        $client->get(Provider::Here, Service::Routing, 'https://primeira.exemplo.test/x');
 
         Event::assertDispatchedTimes(MapRequestCompleted::class, 2);
         Event::assertDispatched(
             MapRequestCompleted::class,
-            fn (MapRequestCompleted $evento) => $evento->upstreamCalls === 1,
+            fn (MapRequestCompleted $event) => $event->upstreamCalls === 1,
         );
     }
 
@@ -68,12 +68,12 @@ final class MapsHttpClientOperacaoTest extends TestCase
             'segunda.exemplo.test/*' => Http::response(['error' => ['message' => 'caiu']], 503),
         ]);
 
-        $cliente = $this->app->make(MapsHttpClient::class);
+        $client = $this->app->make(MapsHttpClient::class);
 
         try {
-            $cliente->operacao(Provider::Here, Service::Routing, function () use ($cliente) {
-                $cliente->get(Provider::Here, Service::Routing, 'https://primeira.exemplo.test/x');
-                $cliente->get(Provider::Here, Service::Routing, 'https://segunda.exemplo.test/y');
+            $client->operation(Provider::Here, Service::Routing, function () use ($client) {
+                $client->get(Provider::Here, Service::Routing, 'https://primeira.exemplo.test/x');
+                $client->get(Provider::Here, Service::Routing, 'https://segunda.exemplo.test/y');
             });
 
             $this->fail('Esperava ProviderUnavailableException.');
@@ -86,7 +86,7 @@ final class MapsHttpClientOperacaoTest extends TestCase
         Event::assertDispatchedTimes(MapRequestCompleted::class, 1);
         Event::assertDispatched(
             MapRequestCompleted::class,
-            fn (MapRequestCompleted $evento) => $evento->upstreamCalls === 2 && $evento->httpStatus === 503,
+            fn (MapRequestCompleted $event) => $event->upstreamCalls === 2 && $event->httpStatus === 503,
         );
     }
 
@@ -94,9 +94,9 @@ final class MapsHttpClientOperacaoTest extends TestCase
     {
         Event::fake([MapRequestCompleted::class]);
 
-        $cliente = $this->app->make(MapsHttpClient::class);
+        $client = $this->app->make(MapsHttpClient::class);
 
-        $cliente->operacao(Provider::Here, Service::Routing, fn () => 'nada a fazer');
+        $client->operation(Provider::Here, Service::Routing, fn () => 'nada a fazer');
 
         Event::assertNotDispatched(MapRequestCompleted::class);
     }

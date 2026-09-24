@@ -19,28 +19,28 @@ final class HereRouteResponseMapper
     }
 
     /**
-     * @param list<int> $ordemOtimizada
-     * @param bool      $pediuAlternativas Mesma razao de `incluirPernas`: sem pedido,
+     * @param list<int> $optimizedOrder
+     * @param bool      $askedForAlternatives Mesma razao de `incluirPernas`: sem pedido,
      *                                     NENHUM provider devolve alternativas, ainda que
      *                                     a resposta traga — simetria antes de generosidade.
      */
     public function toRoute(
-        array $resposta,
-        bool $incluirPernas,
-        array $ordemOtimizada = [],
-        bool $pediuAlternativas = false,
+        array $response,
+        bool $includeLegs,
+        array $optimizedOrder = [],
+        bool $askedForAlternatives = false,
     ): Route {
-        $rotas = $resposta['routes'] ?? [];
-        $secoes = $rotas[0]['sections'] ?? null;
+        $routes = $response['routes'] ?? [];
+        $sections = $routes[0]['sections'] ?? null;
 
-        if ($secoes === null || $secoes === []) {
+        if ($sections === null || $sections === []) {
             throw new InvalidRequestException('O HERE nao devolveu rota para os pontos informados.');
         }
 
-        return $this->rota($secoes, $incluirPernas, $ordemOtimizada, $pediuAlternativas
+        return $this->route($sections, $includeLegs, $optimizedOrder, $askedForAlternatives
             ? array_values(array_filter(array_map(
-                fn (array $outra) => $this->rotaAlternativa($outra, $incluirPernas),
-                array_slice($rotas, 1),
+                fn (array $other) => $this->alternativeRoute($other, $includeLegs),
+                array_slice($routes, 1),
             )))
             : []);
     }
@@ -49,61 +49,61 @@ final class HereRouteResponseMapper
      * Alternativa sem secoes e resposta incompleta do provider, nao alternativa
      * vazia: descartamos em vez de fabricar uma rota de zero metros.
      */
-    private function rotaAlternativa(array $rota, bool $incluirPernas): ?Route
+    private function alternativeRoute(array $route, bool $includeLegs): ?Route
     {
-        $secoes = $rota['sections'] ?? null;
+        $sections = $route['sections'] ?? null;
 
-        if ($secoes === null || $secoes === []) {
+        if ($sections === null || $sections === []) {
             return null;
         }
 
-        return $this->rota($secoes, $incluirPernas, [], []);
+        return $this->route($sections, $includeLegs, [], []);
     }
 
     /**
-     * @param list<int>   $ordemOtimizada
+     * @param list<int>   $optimizedOrder
      * @param list<Route> $alternativas
      */
-    private function rota(array $secoes, bool $incluirPernas, array $ordemOtimizada, array $alternativas): Route
+    private function route(array $sections, bool $includeLegs, array $optimizedOrder, array $alternativas): Route
     {
-        $metros = 0;
-        $segundos = 0;
+        $meters = 0;
+        $seconds = 0;
 
-        foreach ($secoes as $secao) {
-            $metros += (int) ($secao['summary']['length'] ?? 0);
-            $segundos += (int) ($secao['summary']['duration'] ?? 0);
+        foreach ($sections as $section) {
+            $meters += (int) ($section['summary']['length'] ?? 0);
+            $seconds += (int) ($section['summary']['duration'] ?? 0);
         }
 
         return new Route(
-            distance: new Distance($metros),
-            duration: new Duration($segundos),
+            distance: new Distance($meters),
+            duration: new Duration($seconds),
             // D17: com mais de uma secao nao existe polyline unica da rota — e a
             // geometria fica nas pernas. Concatenar as strings produziria lixo.
-            polyline: count($secoes) === 1 ? $this->polyline($secoes[0]['polyline'] ?? null) : null,
-            legs: $incluirPernas ? array_map($this->perna(...), $secoes) : [],
-            optimizedOrder: $ordemOtimizada,
+            polyline: count($sections) === 1 ? $this->polyline($sections[0]['polyline'] ?? null) : null,
+            legs: $includeLegs ? array_map($this->leg(...), $sections) : [],
+            optimizedOrder: $optimizedOrder,
             alternatives: $alternativas,
         );
     }
 
-    private function perna(array $secao): RouteLeg
+    private function leg(array $section): RouteLeg
     {
         return new RouteLeg(
-            origin: $this->ponto($secao['departure']['place']['location'] ?? []),
-            destination: $this->ponto($secao['arrival']['place']['location'] ?? []),
-            distance: new Distance((int) ($secao['summary']['length'] ?? 0)),
-            duration: new Duration((int) ($secao['summary']['duration'] ?? 0)),
-            polyline: $this->polyline($secao['polyline'] ?? null),
+            origin: $this->point($section['departure']['place']['location'] ?? []),
+            destination: $this->point($section['arrival']['place']['location'] ?? []),
+            distance: new Distance((int) ($section['summary']['length'] ?? 0)),
+            duration: new Duration((int) ($section['summary']['duration'] ?? 0)),
+            polyline: $this->polyline($section['polyline'] ?? null),
         );
     }
 
-    private function ponto(array $localizacao): Coordinates
+    private function point(array $location): Coordinates
     {
-        return new Coordinates((float) ($localizacao['lat'] ?? 0), (float) ($localizacao['lng'] ?? 0));
+        return new Coordinates((float) ($location['lat'] ?? 0), (float) ($location['lng'] ?? 0));
     }
 
-    private function polyline(?string $codificada): ?Polyline
+    private function polyline(?string $encoded): ?Polyline
     {
-        return $codificada !== null ? new Polyline($codificada, $this->decoder) : null;
+        return $encoded !== null ? new Polyline($encoded, $this->decoder) : null;
     }
 }

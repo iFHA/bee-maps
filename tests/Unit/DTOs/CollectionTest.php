@@ -12,35 +12,35 @@ final class CollectionTest extends TestCase
 {
     public function test_colecao_vazia_nao_e_erro(): void
     {
-        $colecao = new SuggestionCollection();
+        $collection = new SuggestionCollection();
 
-        $this->assertTrue($colecao->isEmpty());
-        $this->assertCount(0, $colecao);
-        $this->assertNull($colecao->first());
+        $this->assertTrue($collection->isEmpty());
+        $this->assertCount(0, $collection);
+        $this->assertNull($collection->first());
     }
 
     public function test_colecao_e_iteravel_e_preserva_a_ordem(): void
     {
-        $colecao = new SuggestionCollection(
+        $collection = new SuggestionCollection(
             new Suggestion(new PlaceReference(Provider::Google, 'a'), 'Rua A', 'Rua A', 'Centro', false),
             new Suggestion(null, 'Postos Shell', 'Postos Shell', '', true),
         );
 
-        $this->assertCount(2, $colecao);
-        $this->assertSame('Rua A', $colecao->first()->description);
+        $this->assertCount(2, $collection);
+        $this->assertSame('Rua A', $collection->first()->description);
 
-        $descricoes = [];
-        foreach ($colecao as $item) {
-            $descricoes[] = $item->description;
+        $descriptions = [];
+        foreach ($collection as $item) {
+            $descriptions[] = $item->description;
         }
 
-        $this->assertSame(['Rua A', 'Postos Shell'], $descricoes);
+        $this->assertSame(['Rua A', 'Postos Shell'], $descriptions);
     }
 
     public function test_sugestao_sem_lugar_resolvivel_tem_place_nulo(): void
     {
-        $sugestao = new Suggestion(null, 'Postos Shell', 'Postos Shell', '', true);
+        $suggestion = new Suggestion(null, 'Postos Shell', 'Postos Shell', '', true);
 
-        $this->assertNull($sugestao->place);
+        $this->assertNull($suggestion->place);
     }
 }

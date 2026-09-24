@@ -10,10 +10,10 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\Coordinates;
 final class HereAutosuggestRequestMapper
 {
     /**
-     * @param Coordinates|null $centroPadrao Foco usado quando a requisicao nao traz
+     * @param Coordinates|null $defaultCenter Foco usado quando a requisicao nao traz
      *                                       coordenada. Vem de bee-maps.here.autosuggest_center.
      */
-    public function __construct(private readonly ?Coordinates $centroPadrao = null)
+    public function __construct(private readonly ?Coordinates $defaultCenter = null)
     {
     }
 
@@ -45,29 +45,29 @@ final class HereAutosuggestRequestMapper
 
         // Antes do foco: um codigo de pais invalido deve falhar dizendo isso, e
         // nao ser mascarado por uma mensagem sobre coordenada faltando.
-        $paises = $request->countries !== [] ? $request->countries : [$region];
-        $codigos = array_map(fn (string $p) => CountryCode::toAlpha3($p), $paises);
+        $countries = $request->countries !== [] ? $request->countries : [$region];
+        $codes = array_map(fn (string $p) => CountryCode::toAlpha3($p), $countries);
 
-        $foco = $request->near ?? $this->centroPadrao;
+        $focus = $request->near ?? $this->defaultCenter;
 
-        if ($foco === null) {
+        if ($focus === null) {
             throw new InvalidRequestException(
                 'O Autosuggest do HERE exige um foco espacial: informe AutocompleteRequest::$near '
                 . 'ou configure bee-maps.here.autosuggest_center (formato "latitude,longitude").',
             );
         }
 
-        $filtrosIn = [];
+        $inFilters = [];
 
         if ($request->radiusMeters !== null) {
-            $filtrosIn[] = sprintf('circle:%s;r=%d', $foco->toString(), $request->radiusMeters);
+            $inFilters[] = sprintf('circle:%s;r=%d', $focus->toString(), $request->radiusMeters);
         } else {
-            $query['at'] = $foco->toString();
+            $query['at'] = $focus->toString();
         }
 
-        $filtrosIn[] = 'countryCode:' . implode(',', $codigos);
+        $inFilters[] = 'countryCode:' . implode(',', $codes);
 
-        $query['in'] = $filtrosIn;
+        $query['in'] = $inFilters;
 
         return $query;
     }

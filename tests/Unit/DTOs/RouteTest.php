@@ -28,18 +28,18 @@ final class RouteTest extends TestCase
 
     public function test_rota_sem_pernas_nem_otimizacao_tem_colecoes_vazias(): void
     {
-        $rota = new Route(new Distance(1200), new Duration(300), null);
+        $route = new Route(new Distance(1200), new Duration(300), null);
 
-        $this->assertSame(1.2, $rota->distance->kilometers());
-        $this->assertSame(5.0, $rota->duration->minutes());
-        $this->assertNull($rota->polyline);
-        $this->assertSame([], $rota->legs);
-        $this->assertSame([], $rota->optimizedOrder);
+        $this->assertSame(1.2, $route->distance->kilometers());
+        $this->assertSame(5.0, $route->duration->minutes());
+        $this->assertNull($route->polyline);
+        $this->assertSame([], $route->legs);
+        $this->assertSame([], $route->optimizedOrder);
     }
 
     public function test_rota_carrega_pernas_e_ordem_otimizada(): void
     {
-        $perna = new RouteLeg(
+        $leg = new RouteLeg(
             origin: new Coordinates(-23.5, -46.6),
             destination: new Coordinates(-23.6, -46.7),
             distance: new Distance(1200),
@@ -47,10 +47,10 @@ final class RouteTest extends TestCase
             polyline: null,
         );
 
-        $rota = new Route(new Distance(1200), new Duration(300), null, [$perna], [1, 0]);
+        $route = new Route(new Distance(1200), new Duration(300), null, [$leg], [1, 0]);
 
-        $this->assertCount(1, $rota->legs);
-        $this->assertSame($perna, $rota->legs[0]);
-        $this->assertSame([1, 0], $rota->optimizedOrder);
+        $this->assertCount(1, $route->legs);
+        $this->assertSame($leg, $route->legs[0]);
+        $this->assertSame([1, 0], $route->optimizedOrder);
     }
 }

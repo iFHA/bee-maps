@@ -20,12 +20,12 @@ final class GoogleAutocompleteTest extends TestCase
             ),
         ]);
 
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->autocomplete(Provider::Google)
             ->suggest(new AutocompleteRequest('Av Paulista'));
 
-        $this->assertCount(2, $colecao);
-        $this->assertSame('Avenida Paulista, 1000', $colecao->first()->mainText);
+        $this->assertCount(2, $collection);
+        $this->assertSame('Avenida Paulista, 1000', $collection->first()->mainText);
 
         Http::assertSent(fn ($request) => $request->hasHeader('X-Goog-Api-Key', 'chave-google-de-teste')
             && $request->hasHeader('X-Goog-FieldMask', (new GoogleAutocompleteRequestMapper())->fieldMask()));

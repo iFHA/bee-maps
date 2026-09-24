@@ -16,7 +16,7 @@ final class BeeMapsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigProfundo(__DIR__ . '/../config/bee-maps.php', 'bee-maps');
+        $this->deepMergeConfig(__DIR__ . '/../config/bee-maps.php', 'bee-maps');
 
         $this->app->singleton(MapsHttpClient::class, fn ($app) => new MapsHttpClient(
             $app->make(Factory::class),
@@ -64,18 +64,18 @@ final class BeeMapsServiceProvider extends ServiceProvider
      * arquivo reavaliaria todo env() dele e preencheria com null as chaves que o
      * operador definiu — trocando "Undefined array key" por credencial nula.
      */
-    private function mergeConfigProfundo(string $caminho, string $chave): void
+    private function deepMergeConfig(string $path, string $key): void
     {
-        if ($this->configuracaoEstaCacheada()) {
+        if ($this->configurationIsCached()) {
             return;
         }
 
         $config = $this->app->make('config');
 
-        $config->set($chave, ConfigMerge::deep(require $caminho, $config->get($chave, [])));
+        $config->set($key, ConfigMerge::deep(require $path, $config->get($key, [])));
     }
 
-    private function configuracaoEstaCacheada(): bool
+    private function configurationIsCached(): bool
     {
         return $this->app instanceof CachesConfiguration && $this->app->configurationIsCached();
     }

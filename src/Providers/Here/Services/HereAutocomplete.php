@@ -24,7 +24,7 @@ final class HereAutocomplete implements Autocomplete
 
     public function suggest(AutocompleteRequest $request): SuggestionCollection
     {
-        return $this->strategy->resolver($request) === HereAutocompleteStrategy::Autosuggest
+        return $this->strategy->resolve($request) === HereAutocompleteStrategy::Autosuggest
             ? $this->autosuggest->suggest($request)
             : $this->autocomplete->suggest($request);
     }

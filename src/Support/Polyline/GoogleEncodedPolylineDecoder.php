@@ -14,54 +14,54 @@ final class GoogleEncodedPolylineDecoder implements PolylineDecoder
 {
     public function decode(string $encoded): array
     {
-        $coordenadas = [];
-        $indice = 0;
-        $tamanho = strlen($encoded);
+        $coordinates = [];
+        $index = 0;
+        $size = strlen($encoded);
         $lat = 0;
         $lng = 0;
 
-        while ($indice < $tamanho) {
-            $lat += $this->proximoDelta($encoded, $indice);
-            $lng += $this->proximoDelta($encoded, $indice);
+        while ($index < $size) {
+            $lat += $this->nextDelta($encoded, $index);
+            $lng += $this->nextDelta($encoded, $index);
 
-            $coordenadas[] = new Coordinates($lat / 100000, $lng / 100000);
+            $coordinates[] = new Coordinates($lat / 100000, $lng / 100000);
         }
 
-        return $coordenadas;
+        return $coordinates;
     }
 
-    private function proximoDelta(string $encoded, int &$indice): int
+    private function nextDelta(string $encoded, int &$index): int
     {
-        $resultado = 0;
-        $deslocamento = 0;
+        $result = 0;
+        $shift = 0;
 
         do {
-            if (! isset($encoded[$indice])) {
+            if (! isset($encoded[$index])) {
                 throw new InvalidRequestException('Polyline do Google truncada: a string acabou no meio de um delta.');
             }
 
-            $codigo = ord($encoded[$indice]);
+            $code = ord($encoded[$index]);
 
             // O alfabeto e ASCII 63 ('?') a 126 ('~'): byte fora disso produz
             // $byte negativo, encerra o varint antes da hora e devolve
             // coordenada plausivel e errada em vez de erro — justamente o que o
             // @throws de PolylineDecoder::decode() promete evitar.
-            if ($codigo < 63 || $codigo > 126) {
+            if ($code < 63 || $code > 126) {
                 throw new InvalidRequestException(sprintf(
                     'Caractere invalido em polyline do Google na posicao %d: "%s".',
-                    $indice,
-                    $encoded[$indice],
+                    $index,
+                    $encoded[$index],
                 ));
             }
 
-            $byte = $codigo - 63;
-            $indice++;
+            $byte = $code - 63;
+            $index++;
 
-            $resultado |= ($byte & 0x1F) << $deslocamento;
-            $deslocamento += 5;
+            $result |= ($byte & 0x1F) << $shift;
+            $shift += 5;
         } while ($byte >= 0x20);
 
         // Zigzag: bit menos significativo carrega o sinal.
-        return ($resultado & 1) !== 0 ? ~($resultado >> 1) : $resultado >> 1;
+        return ($result & 1) !== 0 ? ~($result >> 1) : $result >> 1;
     }
 }

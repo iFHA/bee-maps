@@ -16,33 +16,33 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\Duration;
  */
 final class RouteMatrixFalso implements RouteMatrix
 {
-    public ?RouteMatrixRequest $ultimaRequisicao = null;
+    public ?RouteMatrixRequest $lastRequest = null;
 
-    /** @param list<int|float> $posicoes */
-    public function __construct(private readonly array $posicoes)
+    /** @param list<int|float> $positions */
+    public function __construct(private readonly array $positions)
     {
     }
 
     public function matrix(RouteMatrixRequest $request): RouteMatrixEntryCollection
     {
-        $this->ultimaRequisicao = $request;
+        $this->lastRequest = $request;
 
-        $entradas = [];
+        $entries = [];
 
-        foreach ($this->posicoes as $o => $posOrigem) {
-            foreach ($this->posicoes as $d => $posDestino) {
-                $metros = (int) abs($posOrigem - $posDestino);
+        foreach ($this->positions as $o => $originPos) {
+            foreach ($this->positions as $d => $destinationPos) {
+                $meters = (int) abs($originPos - $destinationPos);
 
-                $entradas[] = new RouteMatrixEntry(
+                $entries[] = new RouteMatrixEntry(
                     originIndex: $o,
                     destinationIndex: $d,
-                    distance: new Distance($metros),
-                    duration: new Duration($metros * 6),
+                    distance: new Distance($meters),
+                    duration: new Duration($meters * 6),
                     reachable: true,
                 );
             }
         }
 
-        return new RouteMatrixEntryCollection(...$entradas);
+        return new RouteMatrixEntryCollection(...$entries);
     }
 }

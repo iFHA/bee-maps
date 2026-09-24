@@ -11,7 +11,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class OptimizeWaypointsRequestTest extends TestCase
 {
-    private function ponto(float $offset): Coordinates
+    private function point(float $offset): Coordinates
     {
         return new Coordinates(-23.5 - $offset, -46.6 - $offset);
     }
@@ -19,8 +19,8 @@ final class OptimizeWaypointsRequestTest extends TestCase
     public function test_destino_nulo_significa_tour_aberto(): void
     {
         $request = new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            intermediates: [$this->ponto(0.1), $this->ponto(0.2)],
+            origin: $this->point(0),
+            intermediates: [$this->point(0.1), $this->point(0.2)],
         );
 
         $this->assertNull($request->destination);
@@ -33,12 +33,12 @@ final class OptimizeWaypointsRequestTest extends TestCase
         // array_filter preserva chaves: sem reindexar, a lista vira objeto no
         // json_encode e os indices devolvidos em $order deixam de casar com o
         // que o chamador enxerga. Mesma regra do RouteMatrixRequest.
-        $pontos = [0 => $this->ponto(0.1), 2 => $this->ponto(0.2), 5 => $this->ponto(0.3)];
+        $points = [0 => $this->point(0.1), 2 => $this->point(0.2), 5 => $this->point(0.3)];
 
         $request = new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            destination: $this->ponto(0.9),
-            intermediates: $pontos,
+            origin: $this->point(0),
+            destination: $this->point(0.9),
+            intermediates: $points,
         );
 
         $this->assertSame([0, 1, 2], array_keys($request->intermediates));
@@ -49,7 +49,7 @@ final class OptimizeWaypointsRequestTest extends TestCase
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/intermediari/i');
 
-        new OptimizeWaypointsRequest(origin: $this->ponto(0), destination: $this->ponto(0.9));
+        new OptimizeWaypointsRequest(origin: $this->point(0), destination: $this->point(0.9));
     }
 
     public function test_um_intermediario_so_nao_e_erro(): void
@@ -58,9 +58,9 @@ final class OptimizeWaypointsRequestTest extends TestCase
         // quer saber quanto custa origem -> parada -> destino. Recusar quebraria
         // quem itera sobre pedidos e as vezes encontra um de uma parada so.
         $request = new OptimizeWaypointsRequest(
-            origin: $this->ponto(0),
-            destination: $this->ponto(0.9),
-            intermediates: [$this->ponto(0.1)],
+            origin: $this->point(0),
+            destination: $this->point(0.9),
+            intermediates: [$this->point(0.1)],
         );
 
         $this->assertCount(1, $request->intermediates);

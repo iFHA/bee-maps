@@ -10,7 +10,7 @@ final class TokenFalso implements AccessToken
     {
     }
 
-    public function valor(): string
+    public function value(): string
     {
         return $this->token;
     }

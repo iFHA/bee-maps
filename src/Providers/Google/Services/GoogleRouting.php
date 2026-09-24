@@ -25,7 +25,7 @@ final class GoogleRouting implements Routing
 
     public function route(RouteRequest $request): Route
     {
-        $resposta = $this->http->post(
+        $response = $this->http->post(
             Provider::Google,
             Service::Routing,
             $this->url,
@@ -37,7 +37,7 @@ final class GoogleRouting implements Routing
         );
 
         return $this->responseMapper->toRoute(
-            $resposta,
+            $response,
             $request->includeLegs,
             $request->optimizeIntermediates,
             $request->alternatives > 0,

@@ -54,34 +54,34 @@ final class GooglePlaceSearchMapperTest extends TestCase
 
     public function test_resposta_vira_colecao_tipada_com_endereco_estruturado(): void
     {
-        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/place-search.json'), true);
+        $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/place-search.json'), true);
 
-        $colecao = (new GooglePlaceSearchResponseMapper())->toCollection($resposta);
+        $collection = (new GooglePlaceSearchResponseMapper())->toCollection($response);
 
-        $this->assertCount(2, $colecao);
+        $this->assertCount(2, $collection);
 
-        $primeiro = $colecao->first();
-        $this->assertSame('Drogaria Sao Paulo', $primeiro->name);
-        $this->assertSame(Provider::Google, $primeiro->place->provider);
-        $this->assertSame('ChIJ0WGkg4FEzpQRrlsz_whLqZs', $primeiro->place->id);
-        $this->assertSame('Avenida Paulista', $primeiro->address->street);
-        $this->assertSame('1000', $primeiro->address->number);
-        $this->assertSame('Bela Vista', $primeiro->address->neighborhood);
-        $this->assertSame('Sao Paulo', $primeiro->address->city);
-        $this->assertSame('SP', $primeiro->address->state);
-        $this->assertSame('Brasil', $primeiro->address->country);
+        $first = $collection->first();
+        $this->assertSame('Drogaria Sao Paulo', $first->name);
+        $this->assertSame(Provider::Google, $first->place->provider);
+        $this->assertSame('ChIJ0WGkg4FEzpQRrlsz_whLqZs', $first->place->id);
+        $this->assertSame('Avenida Paulista', $first->address->street);
+        $this->assertSame('1000', $first->address->number);
+        $this->assertSame('Bela Vista', $first->address->neighborhood);
+        $this->assertSame('Sao Paulo', $first->address->city);
+        $this->assertSame('SP', $first->address->state);
+        $this->assertSame('Brasil', $first->address->country);
         // Mesma regra BR do geocoding: hifen do CEP removido.
-        $this->assertSame('01310100', $primeiro->address->postalCode);
-        $this->assertEqualsWithDelta(-23.5615, $primeiro->coordinates->latitude, 0.0001);
+        $this->assertSame('01310100', $first->address->postalCode);
+        $this->assertEqualsWithDelta(-23.5615, $first->coordinates->latitude, 0.0001);
 
-        $segundo = $colecao->all()[1];
-        $this->assertNull($segundo->address->postalCode);
+        $second = $collection->all()[1];
+        $this->assertNull($second->address->postalCode);
     }
 
     public function test_resposta_sem_places_vira_colecao_vazia(): void
     {
-        $colecao = (new GooglePlaceSearchResponseMapper())->toCollection([]);
+        $collection = (new GooglePlaceSearchResponseMapper())->toCollection([]);
 
-        $this->assertTrue($colecao->isEmpty());
+        $this->assertTrue($collection->isEmpty());
     }
 }

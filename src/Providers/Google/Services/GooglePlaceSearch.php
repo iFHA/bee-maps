@@ -26,7 +26,7 @@ final class GooglePlaceSearch implements PlaceSearch
 
     public function search(PlaceSearchRequest $request): PlaceCollection
     {
-        $resposta = $this->http->post(
+        $response = $this->http->post(
             Provider::Google,
             Service::PlaceSearch,
             $this->url,
@@ -37,6 +37,6 @@ final class GooglePlaceSearch implements PlaceSearch
             ],
         );
 
-        return $this->responseMapper->toCollection($resposta);
+        return $this->responseMapper->toCollection($response);
     }
 }

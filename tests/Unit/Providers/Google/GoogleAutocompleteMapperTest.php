@@ -87,23 +87,23 @@ final class GoogleAutocompleteMapperTest extends TestCase
     {
         $json = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/autocomplete.json'), true);
 
-        $colecao = (new GoogleAutocompleteResponseMapper())->toCollection($json);
+        $collection = (new GoogleAutocompleteResponseMapper())->toCollection($json);
 
-        $this->assertCount(2, $colecao);
+        $this->assertCount(2, $collection);
 
-        $primeira = $colecao->first();
-        $this->assertSame('Avenida Paulista, 1000', $primeira->mainText);
-        $this->assertSame(Provider::Google, $primeira->place->provider);
-        $this->assertSame('ChIJ0WGkg4FEzpQRrlsz_whLqZs', $primeira->place->id);
-        $this->assertFalse($primeira->isEstablishment);
+        $first = $collection->first();
+        $this->assertSame('Avenida Paulista, 1000', $first->mainText);
+        $this->assertSame(Provider::Google, $first->place->provider);
+        $this->assertSame('ChIJ0WGkg4FEzpQRrlsz_whLqZs', $first->place->id);
+        $this->assertFalse($first->isEstablishment);
 
-        $this->assertTrue($colecao->all()[1]->isEstablishment);
+        $this->assertTrue($collection->all()[1]->isEstablishment);
     }
 
     public function test_resposta_sem_sugestoes_devolve_colecao_vazia(): void
     {
-        $colecao = (new GoogleAutocompleteResponseMapper())->toCollection([]);
+        $collection = (new GoogleAutocompleteResponseMapper())->toCollection([]);
 
-        $this->assertTrue($colecao->isEmpty());
+        $this->assertTrue($collection->isEmpty());
     }
 }

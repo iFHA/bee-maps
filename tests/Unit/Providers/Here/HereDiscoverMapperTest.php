@@ -42,26 +42,26 @@ final class HereDiscoverMapperTest extends TestCase
 
     public function test_resposta_vira_colecao_tipada(): void
     {
-        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/discover.json'), true);
+        $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/discover.json'), true);
 
-        $colecao = (new HereDiscoverResponseMapper())->toCollection($resposta);
+        $collection = (new HereDiscoverResponseMapper())->toCollection($response);
 
-        $this->assertCount(2, $colecao);
+        $this->assertCount(2, $collection);
 
-        $primeiro = $colecao->first();
-        $this->assertSame('Drogaria Sao Paulo', $primeiro->name);
-        $this->assertSame(Provider::Here, $primeiro->place->provider);
-        $this->assertSame('here:pds:place:076c3nbf-1234567890abcdef', $primeiro->place->id);
-        $this->assertSame('Avenida Paulista', $primeiro->address->street);
-        $this->assertSame('1000', $primeiro->address->number);
-        $this->assertSame('Bela Vista', $primeiro->address->neighborhood);
-        $this->assertSame('Sao Paulo', $primeiro->address->city);
-        $this->assertSame('SP', $primeiro->address->state);
-        $this->assertSame('Brasil', $primeiro->address->country);
-        $this->assertSame('01310100', $primeiro->address->postalCode);
-        $this->assertEqualsWithDelta(-23.5615, $primeiro->coordinates->latitude, 0.0001);
+        $first = $collection->first();
+        $this->assertSame('Drogaria Sao Paulo', $first->name);
+        $this->assertSame(Provider::Here, $first->place->provider);
+        $this->assertSame('here:pds:place:076c3nbf-1234567890abcdef', $first->place->id);
+        $this->assertSame('Avenida Paulista', $first->address->street);
+        $this->assertSame('1000', $first->address->number);
+        $this->assertSame('Bela Vista', $first->address->neighborhood);
+        $this->assertSame('Sao Paulo', $first->address->city);
+        $this->assertSame('SP', $first->address->state);
+        $this->assertSame('Brasil', $first->address->country);
+        $this->assertSame('01310100', $first->address->postalCode);
+        $this->assertEqualsWithDelta(-23.5615, $first->coordinates->latitude, 0.0001);
 
-        $this->assertNull($colecao->all()[1]->address->postalCode);
+        $this->assertNull($collection->all()[1]->address->postalCode);
     }
 
     public function test_resposta_sem_items_vira_colecao_vazia(): void

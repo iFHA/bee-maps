@@ -33,9 +33,9 @@ final class HereAutocompleteTest extends TestCase
         ]);
     }
 
-    private function estrategia(string $valor): void
+    private function strategy(string $value): void
     {
-        $this->app['config']->set('bee-maps.here.autocomplete_strategy', $valor);
+        $this->app['config']->set('bee-maps.here.autocomplete_strategy', $value);
     }
 
     private function suggest(AutocompleteRequest $request)
@@ -51,9 +51,9 @@ final class HereAutocompleteTest extends TestCase
         // preventStrayRequests quebra o teste em vez de mascarar a rota.
         $this->fakeAutosuggest();
 
-        $colecao = $this->suggest(new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6)));
+        $collection = $this->suggest(new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6)));
 
-        $this->assertCount(4, $colecao);
+        $this->assertCount(4, $collection);
 
         Http::assertSent(fn ($request) => str_contains($request->url(), 'apiKey=chave-here-de-teste'));
     }
@@ -62,9 +62,9 @@ final class HereAutocompleteTest extends TestCase
     {
         $this->fakeAutocomplete();
 
-        $colecao = $this->suggest(new AutocompleteRequest('Rua Blumenau'));
+        $collection = $this->suggest(new AutocompleteRequest('Rua Blumenau'));
 
-        $this->assertCount(3, $colecao);
+        $this->assertCount(3, $collection);
 
         Http::assertSent(function ($request): bool {
             $url = urldecode($request->url());
@@ -116,7 +116,7 @@ final class HereAutocompleteTest extends TestCase
 
     public function test_estrategia_autocomplete_forcada_usa_o_endpoint_mesmo_com_coordenada(): void
     {
-        $this->estrategia('autocomplete');
+        $this->strategy('autocomplete');
         $this->fakeAutocomplete();
 
         $this->suggest(new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), 3000, ['BR']));
@@ -133,7 +133,7 @@ final class HereAutocompleteTest extends TestCase
 
     public function test_estrategia_autosuggest_forcada_cai_no_centro_configurado_sem_coordenada(): void
     {
-        $this->estrategia('autosuggest');
+        $this->strategy('autosuggest');
         $this->fakeAutosuggest();
 
         $this->suggest(new AutocompleteRequest('Av Paulista'));
@@ -147,7 +147,7 @@ final class HereAutocompleteTest extends TestCase
     {
         // Sem Http::fake: se a excecao nao vier, preventStrayRequests quebra o
         // teste — que e o comportamento desejado.
-        $this->estrategia('autosuggest');
+        $this->strategy('autosuggest');
         $this->app['config']->set('bee-maps.here.autosuggest_center', null);
 
         $this->expectException(InvalidRequestException::class);
@@ -157,7 +157,7 @@ final class HereAutocompleteTest extends TestCase
 
     public function test_estrategia_invalida_e_erro_de_configuracao(): void
     {
-        $this->estrategia('discover');
+        $this->strategy('discover');
 
         $this->expectException(ConfigurationException::class);
 

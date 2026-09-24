@@ -32,37 +32,37 @@ final class FleetRoutingStrategy implements OptimizationStrategy
 
     public function optimize(OptimizeWaypointsRequest $request): OptimizedWaypoints
     {
-        $resposta = $this->http->post(
+        $response = $this->http->post(
             Provider::Google,
             Service::RouteOptimization,
             $this->url,
             $this->payload($request),
-            ['Authorization' => 'Bearer ' . $this->token->valor()],
+            ['Authorization' => 'Bearer ' . $this->token->value()],
         );
 
-        $rota = $resposta['routes'][0] ?? null;
+        $route = $response['routes'][0] ?? null;
 
-        if (! is_array($rota)) {
-            throw $this->erro('A Cloud Fleet Routing nao devolveu rota para os pontos informados.');
+        if (! is_array($route)) {
+            throw $this->error('A Cloud Fleet Routing nao devolveu rota para os pontos informados.');
         }
 
-        $ordem = WaypointOrder::validar(
+        $order = WaypointOrder::validate(
             array_map(
-                static fn (array $visita): int => (int) ($visita['shipmentIndex'] ?? -1),
-                array_values($rota['visits'] ?? []),
+                static fn (array $visit): int => (int) ($visit['shipmentIndex'] ?? -1),
+                array_values($route['visits'] ?? []),
             ),
             count($request->intermediates),
             Provider::Google,
             'routes[0].visits[].shipmentIndex',
         );
 
-        $metricas = $resposta['metrics']['aggregatedRouteMetrics'] ?? [];
+        $metrics = $response['metrics']['aggregatedRouteMetrics'] ?? [];
 
         return new OptimizedWaypoints(
-            order: $ordem,
+            order: $order,
             // proto3 omite valor zero, aqui como no resto da API do Google.
-            distance: new Distance((int) ($metricas['travelDistanceMeters'] ?? 0)),
-            duration: new Duration($this->segundos($metricas['travelDuration'] ?? null)),
+            distance: new Distance((int) ($metrics['travelDistanceMeters'] ?? 0)),
+            duration: new Duration($this->seconds($metrics['travelDuration'] ?? null)),
             objective: $request->objective,
             strategy: 'google.fleet_routing',
         );
@@ -70,50 +70,50 @@ final class FleetRoutingStrategy implements OptimizationStrategy
 
     private function payload(OptimizeWaypointsRequest $request): array
     {
-        $veiculo = ['startLocation' => $this->local($request->origin)];
+        $vehicle = ['startLocation' => $this->location($request->origin)];
 
         // Tour aberto: sem endLocation o veiculo termina na ultima visita. E o
         // equivalente nativo do `end` omitido no findsequence2 do HERE.
         if ($request->destination !== null) {
-            $veiculo['endLocation'] = $this->local($request->destination);
+            $vehicle['endLocation'] = $this->location($request->destination);
         }
 
-        $veiculo += match ($request->objective) {
+        $vehicle += match ($request->objective) {
             OptimizationObjective::MinDistance => ['costPerKilometer' => 1],
             OptimizationObjective::MinTravelTime => ['costPerHour' => 1],
         };
 
         $shipments = [];
 
-        foreach ($request->intermediates as $parada) {
+        foreach ($request->intermediates as $stop) {
             // `deliveries` e campo repeated no proto: lista, nao mapa. O pacote
             // legado monta como mapa, e esse caminho nunca rodou em producao.
-            $shipments[] = ['deliveries' => [['arrivalLocation' => $this->local($parada)]]];
+            $shipments[] = ['deliveries' => [['arrivalLocation' => $this->location($stop)]]];
         }
 
         return [
-            'model' => ['vehicles' => [$veiculo], 'shipments' => $shipments],
+            'model' => ['vehicles' => [$vehicle], 'shipments' => $shipments],
             'searchMode' => 'SEARCH_MODE_UNSPECIFIED',
             'considerRoadTraffic' => false,
         ];
     }
 
-    private function local(Coordinates $ponto): array
+    private function location(Coordinates $point): array
     {
-        return ['latitude' => $ponto->latitude, 'longitude' => $ponto->longitude];
+        return ['latitude' => $point->latitude, 'longitude' => $point->longitude];
     }
 
-    private function segundos(string|int|null $valor): int
+    private function seconds(string|int|null $value): int
     {
         return match (true) {
-            $valor === null => 0,
-            is_int($valor) => $valor,
-            default => (int) rtrim($valor, 's'),
+            $value === null => 0,
+            is_int($value) => $value,
+            default => (int) rtrim($value, 's'),
         };
     }
 
-    private function erro(string $mensagem): ProviderRequestException
+    private function error(string $message): ProviderRequestException
     {
-        return new ProviderRequestException(Provider::Google, Service::RouteOptimization, $mensagem, 200);
+        return new ProviderRequestException(Provider::Google, Service::RouteOptimization, $message, 200);
     }
 }

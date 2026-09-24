@@ -14,12 +14,12 @@ final class MatrixLimit
      * variavel declarada sem valor no .env chega como '' (o default do env() so
      * vale quando a variavel nao existe), e (int) '' e 0.
      */
-    public static function normalizar(mixed $valor): ?int
+    public static function normalize(mixed $value): ?int
     {
-        if ($valor === null || $valor === '') {
+        if ($value === null || $value === '') {
             return null;
         }
 
-        return (int) $valor > 0 ? (int) $valor : null;
+        return (int) $value > 0 ? (int) $value : null;
     }
 }

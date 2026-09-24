@@ -27,47 +27,47 @@ final class HereGeocoding implements Geocoding
 
     public function geocode(string $query, ?GeocodeFilters $filters = null): GeocodeResultCollection
     {
-        $parametros = ['q' => $this->comFiltros($query, $filters)];
+        $parameters = ['q' => $this->withFilters($query, $filters)];
 
         if ($filters?->country !== null) {
-            $parametros['in'] = 'countryCode:' . CountryCode::toAlpha3($filters->country);
+            $parameters['in'] = 'countryCode:' . CountryCode::toAlpha3($filters->country);
         }
 
-        return $this->consultar($this->endpoints['geocode'], $parametros);
+        return $this->fetch($this->endpoints['geocode'], $parameters);
     }
 
     public function reverse(Coordinates $coordinates): GeocodeResultCollection
     {
-        return $this->consultar($this->endpoints['revgeocode'], ['at' => $coordinates->toString()]);
+        return $this->fetch($this->endpoints['revgeocode'], ['at' => $coordinates->toString()]);
     }
 
     public function lookup(PlaceReference $place): ?GeocodeResult
     {
         $place->assertBelongsTo(Provider::Here);
 
-        return $this->consultar($this->endpoints['lookup'], ['id' => $place->id])->first();
+        return $this->fetch($this->endpoints['lookup'], ['id' => $place->id])->first();
     }
 
-    private function consultar(string $url, array $parametros): GeocodeResultCollection
+    private function fetch(string $url, array $parameters): GeocodeResultCollection
     {
-        $resposta = $this->http->get(
+        $response = $this->http->get(
             Provider::Here,
             Service::Geocoding,
             $url,
-            $parametros + ['lang' => $this->language, 'apiKey' => $this->apiKey],
+            $parameters + ['lang' => $this->language, 'apiKey' => $this->apiKey],
         );
 
-        return $this->mapper->toCollection($resposta);
+        return $this->mapper->toCollection($response);
     }
 
     /**
      * O HERE nao tem parametro "components" como o Google: cidade e CEP entram
      * na propria busca por texto livre.
      */
-    private function comFiltros(string $query, ?GeocodeFilters $filters): string
+    private function withFilters(string $query, ?GeocodeFilters $filters): string
     {
-        $partes = array_filter([$query, $filters?->city, $filters?->postalCode]);
+        $parts = array_filter([$query, $filters?->city, $filters?->postalCode]);
 
-        return implode(', ', $partes);
+        return implode(', ', $parts);
     }
 }

@@ -26,13 +26,13 @@ final class HerePlaceSearch implements PlaceSearch
 
     public function search(PlaceSearchRequest $request): PlaceCollection
     {
-        $resposta = $this->http->get(
+        $response = $this->http->get(
             Provider::Here,
             Service::PlaceSearch,
             $this->url,
             $this->requestMapper->toQuery($request, $this->language, $this->region) + ['apiKey' => $this->apiKey],
         );
 
-        return $this->responseMapper->toCollection($resposta);
+        return $this->responseMapper->toCollection($response);
     }
 }

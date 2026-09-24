@@ -15,8 +15,8 @@ final class ParidadeRouteMatrixTest extends TestCase
 {
     private function fakeTudo(): void
     {
-        $fixture = fn (string $caminho) => json_decode(
-            file_get_contents(__DIR__ . '/../Fixtures/' . $caminho),
+        $fixture = fn (string $path) => json_decode(
+            file_get_contents(__DIR__ . '/../Fixtures/' . $path),
             true,
         );
 
@@ -39,7 +39,7 @@ final class ParidadeRouteMatrixTest extends TestCase
     {
         $this->fakeTudo();
 
-        $matriz = $this->app->make(MapServiceFactory::class)
+        $matrix = $this->app->make(MapServiceFactory::class)
             ->routeMatrix($provider)
             ->matrix(new RouteMatrixRequest(
                 [new Coordinates(-23.5615, -46.6562), new Coordinates(-23.4400, -46.5300)],
@@ -50,39 +50,39 @@ final class ParidadeRouteMatrixTest extends TestCase
                 ],
             ));
 
-        $this->assertInstanceOf(RouteMatrixEntryCollection::class, $matriz);
+        $this->assertInstanceOf(RouteMatrixEntryCollection::class, $matrix);
 
         // 2x3, e nao 2x2: numa matriz quadrada a diagonal nao muda ao transpor,
         // entao a transposicao so era pega por causa de um errorCode assimetrico.
-        $this->assertCount(6, $matriz);
+        $this->assertCount(6, $matrix);
 
-        foreach ([0, 1] as $origem) {
-            foreach ([0, 1, 2] as $destino) {
-                $entrada = $matriz->entry($origem, $destino);
+        foreach ([0, 1] as $origin) {
+            foreach ([0, 1, 2] as $destination) {
+                $entry = $matrix->entry($origin, $destination);
 
-                $this->assertNotNull($entrada, "Faltou a entrada ({$origem},{$destino}).");
-                $this->assertSame($origem, $entrada->originIndex);
-                $this->assertSame($destino, $entrada->destinationIndex);
-                $this->assertIsBool($entrada->reachable);
-                $this->assertGreaterThanOrEqual(0, $entrada->distance->meters);
-                $this->assertGreaterThanOrEqual(0, $entrada->duration->seconds);
+                $this->assertNotNull($entry, "Faltou a entrada ({$origin},{$destination}).");
+                $this->assertSame($origin, $entry->originIndex);
+                $this->assertSame($destination, $entry->destinationIndex);
+                $this->assertIsBool($entry->reachable);
+                $this->assertGreaterThanOrEqual(0, $entry->distance->meters);
+                $this->assertGreaterThanOrEqual(0, $entry->duration->seconds);
             }
         }
 
         // A origem 0 esta no centro e a 1 a ~25 km: toda linha da origem 1 tem
         // que ser uma ordem de grandeza maior. E esta asserção que torna a
         // transposicao impossivel de passar despercebida.
-        foreach ([1, 2] as $destino) {
-            $this->assertLessThan(5000, $matriz->entry(0, $destino)->distance->meters);
-            $this->assertGreaterThan(20000, $matriz->entry(1, $destino)->distance->meters);
+        foreach ([1, 2] as $destination) {
+            $this->assertLessThan(5000, $matrix->entry(0, $destination)->distance->meters);
+            $this->assertGreaterThan(20000, $matrix->entry(1, $destination)->distance->meters);
         }
 
         // As duas fixtures marcam (1,0) como sem rota — o par inalcancavel tem
         // que aparecer igual nos dois providers, e com medidas zeradas.
-        $this->assertFalse($matriz->entry(1, 0)->reachable);
-        $this->assertSame(0, $matriz->entry(1, 0)->distance->meters);
+        $this->assertFalse($matrix->entry(1, 0)->reachable);
+        $this->assertSame(0, $matrix->entry(1, 0)->distance->meters);
 
-        $this->assertTrue($matriz->entry(0, 0)->reachable);
-        $this->assertSame(1225, $matriz->entry(0, 0)->distance->meters);
+        $this->assertTrue($matrix->entry(0, 0)->reachable);
+        $this->assertSame(1225, $matrix->entry(0, 0)->distance->meters);
     }
 }

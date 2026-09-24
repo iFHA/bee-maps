@@ -35,35 +35,35 @@ final class MatrixTspStrategy implements OptimizationStrategy
         // nas metricas de RouteOptimization e infla as de RouteMatrix — e a
         // comparacao de latencia entre providers le isso como se o Google nao
         // tivesse otimizado nada. Mesmo motivo do agrupamento no HereRouting.
-        return $this->http->operacao(
+        return $this->http->operation(
             Provider::Google,
             Service::RouteOptimization,
-            fn (): OptimizedWaypoints => $this->resolver($request),
+            fn (): OptimizedWaypoints => $this->resolve($request),
         );
     }
 
-    private function resolver(OptimizeWaypointsRequest $request): OptimizedWaypoints
+    private function resolve(OptimizeWaypointsRequest $request): OptimizedWaypoints
     {
-        $pontos = [$request->origin, ...$request->intermediates];
-        $fim = null;
+        $points = [$request->origin, ...$request->intermediates];
+        $end = null;
 
         if ($request->destination !== null) {
-            $pontos[] = $request->destination;
-            $fim = count($pontos) - 1;
+            $points[] = $request->destination;
+            $end = count($points) - 1;
         }
 
-        $matriz = $this->matrix->matrix(new RouteMatrixRequest($pontos, $pontos, $request->mode));
+        $matrixResult = $this->matrix->matrix(new RouteMatrixRequest($points, $points, $request->mode));
 
-        $tour = $this->tsp->tour($matriz, 0, $fim, $request->objective);
+        $tour = $this->tsp->tour($matrixResult, 0, $end, $request->objective);
 
         // O TourResult fala em indices da MATRIZ, onde a posicao 0 e a origem.
         // O contrato fala em indices de $intermediates. O deslocamento de 1 e a
         // traducao, e e responsabilidade desta classe: o TSP nao sabe que existe
         // um contrato RouteOptimization.
-        $ordem = array_map(static fn (int $indice): int => $indice - 1, $tour->order);
+        $order = array_map(static fn (int $index): int => $index - 1, $tour->order);
 
         return new OptimizedWaypoints(
-            order: $ordem,
+            order: $order,
             distance: $tour->distance,
             duration: $tour->duration,
             objective: $request->objective,

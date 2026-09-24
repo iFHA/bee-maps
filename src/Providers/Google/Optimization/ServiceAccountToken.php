@@ -20,11 +20,11 @@ use Google\Client;
 final class ServiceAccountToken implements AccessToken
 {
     /**
-     * @param array<string, mixed> $credenciais Conteudo do JSON de service account.
+     * @param array<string, mixed> $credentials Conteudo do JSON de service account.
      */
     public function __construct(
-        private readonly array $credenciais,
-        private readonly string $escopo,
+        private readonly array $credentials,
+        private readonly string $scope,
     ) {
         if (! class_exists(Client::class)) {
             throw new ConfigurationException(
@@ -35,21 +35,21 @@ final class ServiceAccountToken implements AccessToken
             );
         }
 
-        foreach (['project_id', 'private_key', 'client_email'] as $obrigatorio) {
-            if (empty($this->credenciais[$obrigatorio])) {
+        foreach (['project_id', 'private_key', 'client_email'] as $required) {
+            if (empty($this->credentials[$required])) {
                 throw MissingCredentialsException::make(
                     Provider::Google,
-                    'bee-maps.google.route_optimization.service_account.' . $obrigatorio,
+                    'bee-maps.google.route_optimization.service_account.' . $required,
                 );
             }
         }
     }
 
-    public function valor(): string
+    public function value(): string
     {
         $client = new Client();
-        $client->setAuthConfig($this->credenciais);
-        $client->addScope($this->escopo);
+        $client->setAuthConfig($this->credentials);
+        $client->addScope($this->scope);
 
         $token = $client->fetchAccessTokenWithAssertion()['access_token'] ?? null;
 

@@ -10,39 +10,39 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
 
 final class GoogleGeocodeResponseMapper
 {
-    public function __construct(private readonly GoogleAddressMapper $enderecos = new GoogleAddressMapper())
+    public function __construct(private readonly GoogleAddressMapper $addresses = new GoogleAddressMapper())
     {
     }
 
-    public function toCollection(array $resposta): GeocodeResultCollection
+    public function toCollection(array $response): GeocodeResultCollection
     {
-        $resultados = [];
+        $results = [];
 
-        foreach ($resposta['results'] ?? [] as $resultado) {
-            $resultados[] = $this->toResult($resultado);
+        foreach ($response['results'] ?? [] as $result) {
+            $results[] = $this->toResult($result);
         }
 
-        return new GeocodeResultCollection(...$resultados);
+        return new GeocodeResultCollection(...$results);
     }
 
-    private function toResult(array $resultado): GeocodeResult
+    private function toResult(array $result): GeocodeResult
     {
         return new GeocodeResult(
-            address: $this->enderecos->fromComponents(
-                $resultado['address_components'] ?? [],
-                $resultado['formatted_address'] ?? '',
+            address: $this->addresses->fromComponents(
+                $result['address_components'] ?? [],
+                $result['formatted_address'] ?? '',
                 'long_name',
                 'short_name',
             ),
             coordinates: new Coordinates(
-                (float) $resultado['geometry']['location']['lat'],
-                (float) $resultado['geometry']['location']['lng'],
+                (float) $result['geometry']['location']['lat'],
+                (float) $result['geometry']['location']['lng'],
             ),
-            partial: ($resultado['partial_match'] ?? false) === true,
+            partial: ($result['partial_match'] ?? false) === true,
             // O Google nao expoe grau de casamento, so o booleano acima.
             matchScore: null,
-            place: isset($resultado['place_id'])
-                ? new PlaceReference(Provider::Google, $resultado['place_id'])
+            place: isset($result['place_id'])
+                ? new PlaceReference(Provider::Google, $result['place_id'])
                 : null,
         );
     }

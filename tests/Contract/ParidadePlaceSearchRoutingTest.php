@@ -18,8 +18,8 @@ final class ParidadePlaceSearchRoutingTest extends TestCase
 {
     private function fakeTudo(): void
     {
-        $fixture = fn (string $caminho) => json_decode(
-            file_get_contents(__DIR__ . '/../Fixtures/' . $caminho),
+        $fixture = fn (string $path) => json_decode(
+            file_get_contents(__DIR__ . '/../Fixtures/' . $path),
             true,
         );
 
@@ -45,34 +45,34 @@ final class ParidadePlaceSearchRoutingTest extends TestCase
     {
         $this->fakeTudo();
 
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->placeSearch($provider)
             ->search(new PlaceSearchRequest('farmacia', new Coordinates(-23.5, -46.6)));
 
-        $this->assertInstanceOf(PlaceCollection::class, $colecao);
-        $this->assertGreaterThan(0, $colecao->count());
+        $this->assertInstanceOf(PlaceCollection::class, $collection);
+        $this->assertGreaterThan(0, $collection->count());
 
-        foreach ($colecao as $lugar) {
-            $this->assertNotSame('', $lugar->name);
-            $this->assertNotSame('', $lugar->address->formatted);
-            $this->assertSame($provider, $lugar->place->provider);
-            $this->assertNotSame('', $lugar->place->id);
+        foreach ($collection as $place) {
+            $this->assertNotSame('', $place->name);
+            $this->assertNotSame('', $place->address->formatted);
+            $this->assertSame($provider, $place->place->provider);
+            $this->assertNotSame('', $place->place->id);
         }
 
         // Os dois lados devolvem endereco ESTRUTURADO, nao so o formatado:
         // e a D16 (field mask Enterprise no Google) virando asserção. Se alguem
         // tirar places.addressComponents do field mask para economizar, este
         // teste quebra em vez de a POC comparar dados assimetricos.
-        $primeiro = $colecao->first();
-        $this->assertSame('Drogaria Sao Paulo', $primeiro->name);
-        $this->assertSame('Avenida Paulista', $primeiro->address->street);
-        $this->assertSame('1000', $primeiro->address->number);
-        $this->assertSame('Bela Vista', $primeiro->address->neighborhood);
-        $this->assertSame('Sao Paulo', $primeiro->address->city);
-        $this->assertSame('SP', $primeiro->address->state);
-        $this->assertSame('Brasil', $primeiro->address->country);
-        $this->assertSame('01310100', $primeiro->address->postalCode);
-        $this->assertEqualsWithDelta(-23.5615, $primeiro->coordinates->latitude, 0.0001);
+        $first = $collection->first();
+        $this->assertSame('Drogaria Sao Paulo', $first->name);
+        $this->assertSame('Avenida Paulista', $first->address->street);
+        $this->assertSame('1000', $first->address->number);
+        $this->assertSame('Bela Vista', $first->address->neighborhood);
+        $this->assertSame('Sao Paulo', $first->address->city);
+        $this->assertSame('SP', $first->address->state);
+        $this->assertSame('Brasil', $first->address->country);
+        $this->assertSame('01310100', $first->address->postalCode);
+        $this->assertEqualsWithDelta(-23.5615, $first->coordinates->latitude, 0.0001);
     }
 
     /**
@@ -87,7 +87,7 @@ final class ParidadePlaceSearchRoutingTest extends TestCase
     {
         $this->fakeTudo();
 
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing($provider)
             ->route(new RouteRequest(
                 origin: new Coordinates(-23.5, -46.6),
@@ -99,33 +99,33 @@ final class ParidadePlaceSearchRoutingTest extends TestCase
                 includeLegs: true,
             ));
 
-        $this->assertInstanceOf(Route::class, $rota);
+        $this->assertInstanceOf(Route::class, $route);
 
         // Totais convergem porque as duas fixtures descrevem a mesma rota:
         // 5200 + 7200 metros e 780 + 1050 segundos.
-        $this->assertSame(12400, $rota->distance->meters);
-        $this->assertSame(1830, $rota->duration->seconds);
-        $this->assertSame(12.4, $rota->distance->kilometers());
+        $this->assertSame(12400, $route->distance->meters);
+        $this->assertSame(1830, $route->duration->seconds);
+        $this->assertSame(12.4, $route->distance->kilometers());
 
-        $this->assertSame([1, 0], $rota->optimizedOrder);
+        $this->assertSame([1, 0], $route->optimizedOrder);
 
-        $this->assertCount(2, $rota->legs);
+        $this->assertCount(2, $route->legs);
 
-        foreach ($rota->legs as $perna) {
-            $this->assertGreaterThan(0, $perna->distance->meters);
-            $this->assertGreaterThan(0, $perna->duration->seconds);
-            $this->assertNotNull($perna->polyline);
+        foreach ($route->legs as $leg) {
+            $this->assertGreaterThan(0, $leg->distance->meters);
+            $this->assertGreaterThan(0, $leg->duration->seconds);
+            $this->assertNotNull($leg->polyline);
             // Geometria decodificavel nos dois formatos: e o que garante que
             // Polyline nao virou um wrapper de string opaca.
-            $this->assertGreaterThan(1, count($perna->polyline->coordinates()));
+            $this->assertGreaterThan(1, count($leg->polyline->coordinates()));
         }
 
         // Divergencia deliberada e documentada (D17): o Google devolve polyline
         // da rota inteira; o HERE, uma por secao — com waypoint intermediario
         // nao existe polyline unica, e concatenar as strings produziria lixo.
         $provider === Provider::Google
-            ? $this->assertNotNull($rota->polyline)
-            : $this->assertNull($rota->polyline);
+            ? $this->assertNotNull($route->polyline)
+            : $this->assertNull($route->polyline);
     }
 
     #[DataProvider('providers')]
@@ -133,15 +133,15 @@ final class ParidadePlaceSearchRoutingTest extends TestCase
     {
         $this->fakeTudo();
 
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing($provider)
             ->route(new RouteRequest(new Coordinates(-23.5, -46.6), new Coordinates(-23.6, -46.7)));
 
-        $this->assertGreaterThan(0, $rota->distance->meters);
-        $this->assertGreaterThan(0, $rota->duration->seconds);
+        $this->assertGreaterThan(0, $route->distance->meters);
+        $this->assertGreaterThan(0, $route->duration->seconds);
         // Sem includeLegs, nenhum provider devolve pernas: o contrato e opt-in
         // nos dois lados, nao "o que o provider quiser mandar".
-        $this->assertSame([], $rota->legs);
-        $this->assertSame([], $rota->optimizedOrder);
+        $this->assertSame([], $route->legs);
+        $this->assertSame([], $route->optimizedOrder);
     }
 }

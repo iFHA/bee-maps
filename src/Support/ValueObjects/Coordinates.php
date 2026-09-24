@@ -24,17 +24,17 @@ final readonly class Coordinates
      * o config do pacote quanto as duas APIs usam — e parsear isso inline em cada
      * ponto de uso e como um `partial` mal derivado nasce.
      */
-    public static function fromString(string $par): self
+    public static function fromString(string $pair): self
     {
-        $partes = array_map('trim', explode(',', $par));
+        $parts = array_map('trim', explode(',', $pair));
 
-        if (count($partes) !== 2 || ! is_numeric($partes[0]) || ! is_numeric($partes[1])) {
+        if (count($parts) !== 2 || ! is_numeric($parts[0]) || ! is_numeric($parts[1])) {
             throw new InvalidRequestException(
-                "Par de coordenadas invalido: \"{$par}\". Formato esperado: \"latitude,longitude\".",
+                "Par de coordenadas invalido: \"{$pair}\". Formato esperado: \"latitude,longitude\".",
             );
         }
 
-        return new self((float) $partes[0], (float) $partes[1]);
+        return new self((float) $parts[0], (float) $parts[1]);
     }
 
     public function toString(): string

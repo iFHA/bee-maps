@@ -27,12 +27,12 @@ final class GooglePlaceSearchTest extends TestCase
     {
         $this->fake();
 
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->placeSearch(Provider::Google)
             ->search(new PlaceSearchRequest('farmacia'));
 
-        $this->assertCount(2, $colecao);
-        $this->assertSame('Drogaria Sao Paulo', $colecao->first()->name);
+        $this->assertCount(2, $collection);
+        $this->assertSame('Drogaria Sao Paulo', $collection->first()->name);
 
         Http::assertSent(function ($request): bool {
             $this->assertSame('chave-google-de-teste', $request->header('X-Goog-Api-Key')[0]);

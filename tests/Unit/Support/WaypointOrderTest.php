@@ -11,7 +11,7 @@ final class WaypointOrderTest extends TestCase
 {
     public function test_permutacao_completa_passa(): void
     {
-        $this->assertSame([2, 0, 1], WaypointOrder::validar([2, 0, 1], 3, Provider::Google, 'teste'));
+        $this->assertSame([2, 0, 1], WaypointOrder::validate([2, 0, 1], 3, Provider::Google, 'teste'));
     }
 
     public function test_ordem_curta_e_recusada(): void
@@ -21,7 +21,7 @@ final class WaypointOrderTest extends TestCase
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/2 de 3/');
 
-        WaypointOrder::validar([0, 1], 3, Provider::Google, 'teste');
+        WaypointOrder::validate([0, 1], 3, Provider::Google, 'teste');
     }
 
     public function test_indice_repetido_e_recusado(): void
@@ -29,7 +29,7 @@ final class WaypointOrderTest extends TestCase
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/repetid/i');
 
-        WaypointOrder::validar([0, 1, 1], 3, Provider::Google, 'teste');
+        WaypointOrder::validate([0, 1, 1], 3, Provider::Google, 'teste');
     }
 
     public function test_indice_fora_da_faixa_e_recusado(): void
@@ -37,7 +37,7 @@ final class WaypointOrderTest extends TestCase
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/fora da faixa/i');
 
-        WaypointOrder::validar([0, 1, 7], 3, Provider::Google, 'teste');
+        WaypointOrder::validate([0, 1, 7], 3, Provider::Google, 'teste');
     }
 
     public function test_contagem_certa_com_indice_fora_da_faixa_nao_passa(): void
@@ -46,6 +46,6 @@ final class WaypointOrderTest extends TestCase
         // O invariante e "permutacao de 0..N-1", nao "tem N elementos".
         $this->expectException(ProviderRequestException::class);
 
-        WaypointOrder::validar([0, 1, 3], 3, Provider::Google, 'teste');
+        WaypointOrder::validate([0, 1, 3], 3, Provider::Google, 'teste');
     }
 }

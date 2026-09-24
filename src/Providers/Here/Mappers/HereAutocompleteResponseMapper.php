@@ -18,27 +18,27 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
  */
 final class HereAutocompleteResponseMapper
 {
-    public function toCollection(array $resposta): SuggestionCollection
+    public function toCollection(array $response): SuggestionCollection
     {
-        $sugestoes = [];
+        $suggestions = [];
 
-        foreach ($resposta['items'] ?? [] as $item) {
+        foreach ($response['items'] ?? [] as $item) {
             $label = $item['address']['label'] ?? $item['title'] ?? null;
 
             if ($label === null) {
                 continue;
             }
 
-            $principal = HereAddressLabel::principal($item['address'] ?? [], $label);
+            $main = HereAddressLabel::mainText($item['address'] ?? [], $label);
 
-            $sugestoes[] = new Suggestion(
+            $suggestions[] = new Suggestion(
                 // Diferente do /autosuggest, aqui todo item e resolvivel no
                 // /lookup: nao existem `chainQuery`/`categoryQuery` neste
                 // endpoint. O isset e defesa contra resposta malformada.
                 place: isset($item['id']) ? new PlaceReference(Provider::Here, $item['id']) : null,
                 description: $label,
-                mainText: $principal,
-                secondaryText: HereAddressLabel::complemento($principal, $label),
+                mainText: $main,
+                secondaryText: HereAddressLabel::secondaryText($main, $label),
                 // O `resultType` do /autocomplete vai de `administrativeArea` a
                 // `street`: e um enum fechado, sem `place`. Nunca ha
                 // estabelecimento aqui — ver "Limitacoes conhecidas" no README.
@@ -46,6 +46,6 @@ final class HereAutocompleteResponseMapper
             );
         }
 
-        return new SuggestionCollection(...$sugestoes);
+        return new SuggestionCollection(...$suggestions);
     }
 }

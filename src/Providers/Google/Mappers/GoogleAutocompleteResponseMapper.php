@@ -9,26 +9,26 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
 
 final class GoogleAutocompleteResponseMapper
 {
-    public function toCollection(array $resposta): SuggestionCollection
+    public function toCollection(array $response): SuggestionCollection
     {
-        $sugestoes = [];
+        $suggestions = [];
 
-        foreach ($resposta['suggestions'] ?? [] as $item) {
-            $predicao = $item['placePrediction'] ?? null;
+        foreach ($response['suggestions'] ?? [] as $item) {
+            $prediction = $item['placePrediction'] ?? null;
 
-            if ($predicao === null || ! isset($predicao['placeId'], $predicao['text']['text'])) {
+            if ($prediction === null || ! isset($prediction['placeId'], $prediction['text']['text'])) {
                 continue;
             }
 
-            $sugestoes[] = new Suggestion(
-                place: new PlaceReference(Provider::Google, $predicao['placeId']),
-                description: $predicao['text']['text'],
-                mainText: $predicao['structuredFormat']['mainText']['text'] ?? $predicao['text']['text'],
-                secondaryText: $predicao['structuredFormat']['secondaryText']['text'] ?? '',
-                isEstablishment: in_array('establishment', $predicao['types'] ?? [], true),
+            $suggestions[] = new Suggestion(
+                place: new PlaceReference(Provider::Google, $prediction['placeId']),
+                description: $prediction['text']['text'],
+                mainText: $prediction['structuredFormat']['mainText']['text'] ?? $prediction['text']['text'],
+                secondaryText: $prediction['structuredFormat']['secondaryText']['text'] ?? '',
+                isEstablishment: in_array('establishment', $prediction['types'] ?? [], true),
             );
         }
 
-        return new SuggestionCollection(...$sugestoes);
+        return new SuggestionCollection(...$suggestions);
     }
 }

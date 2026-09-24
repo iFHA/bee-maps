@@ -12,12 +12,12 @@ namespace BeeDelivery\BeeMaps\Support;
 final class ConfigMerge
 {
     /**
-     * @param array<mixed> $padroes   o que o pacote traz
-     * @param array<mixed> $publicado o que o consumidor publicou; vence em conflito
+     * @param array<mixed> $patterns   o que o pacote traz
+     * @param array<mixed> $published o que o consumidor publicou; vence em conflito
      *
      * @return array<mixed>
      */
-    public static function deep(array $padroes, array $publicado): array
+    public static function deep(array $patterns, array $published): array
     {
         // Quando o PADRAO do pacote e uma lista NAO VAZIA, o publicado substitui
         // por inteiro — e reindexado. Basta o padrao ser lista: exigir que o
@@ -28,22 +28,22 @@ final class ConfigMerge
         // Ja a checagem de vazio nao e detalhe: array_is_list([]) e true, entao um
         // padrao `[]` cairia aqui e rodaria array_values() sobre o mapa publicado,
         // descartando as chaves dele.
-        if (array_is_list($padroes) && $padroes !== []) {
-            return array_values($publicado);
+        if (array_is_list($patterns) && $patterns !== []) {
+            return array_values($published);
         }
 
-        foreach ($padroes as $chave => $valor) {
-            if (! array_key_exists($chave, $publicado)) {
-                $publicado[$chave] = $valor;
+        foreach ($patterns as $key => $value) {
+            if (! array_key_exists($key, $published)) {
+                $published[$key] = $value;
 
                 continue;
             }
 
-            if (is_array($valor) && is_array($publicado[$chave])) {
-                $publicado[$chave] = self::deep($valor, $publicado[$chave]);
+            if (is_array($value) && is_array($published[$key])) {
+                $published[$key] = self::deep($value, $published[$key]);
             }
         }
 
-        return $publicado;
+        return $published;
     }
 }

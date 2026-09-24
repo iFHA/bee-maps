@@ -10,19 +10,19 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\PlaceReference;
 
 final class HereDiscoverResponseMapper
 {
-    public function __construct(private readonly HereAddressMapper $enderecos = new HereAddressMapper())
+    public function __construct(private readonly HereAddressMapper $addresses = new HereAddressMapper())
     {
     }
 
-    public function toCollection(array $resposta): PlaceCollection
+    public function toCollection(array $response): PlaceCollection
     {
-        $lugares = [];
+        $places = [];
 
-        foreach ($resposta['items'] ?? [] as $item) {
-            $lugares[] = new Place(
+        foreach ($response['items'] ?? [] as $item) {
+            $places[] = new Place(
                 place: isset($item['id']) ? new PlaceReference(Provider::Here, $item['id']) : null,
                 name: $item['title'] ?? '',
-                address: $this->enderecos->fromItem($item['address'] ?? [], $item['title'] ?? ''),
+                address: $this->addresses->fromItem($item['address'] ?? [], $item['title'] ?? ''),
                 coordinates: new Coordinates(
                     (float) $item['position']['lat'],
                     (float) $item['position']['lng'],
@@ -30,6 +30,6 @@ final class HereDiscoverResponseMapper
             );
         }
 
-        return new PlaceCollection(...$lugares);
+        return new PlaceCollection(...$places);
     }
 }

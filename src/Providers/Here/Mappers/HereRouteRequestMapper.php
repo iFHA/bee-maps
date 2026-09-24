@@ -9,24 +9,24 @@ use BeeDelivery\BeeMaps\Providers\Here\HereTransportMode;
 final class HereRouteRequestMapper
 {
     /**
-     * @param list<int>|null $ordemIntermediarios Indices dos intermediarios na ordem em
+     * @param list<int>|null $intermediatesOrder Indices dos intermediarios na ordem em
      *                                            que devem ser visitados. Null mantem a
      *                                            ordem recebida. O /v8/routes NAO otimiza
      *                                            sozinho: a ordem vem do findsequence.
      */
-    public function toQuery(RouteRequest $request, string $language, ?array $ordemIntermediarios = null): array
+    public function toQuery(RouteRequest $request, string $language, ?array $intermediatesOrder = null): array
     {
-        $retorno = ['summary'];
+        $returnValue = ['summary'];
 
         if ($request->includePolyline) {
-            $retorno[] = 'polyline';
+            $returnValue[] = 'polyline';
         }
 
         $query = [
             'origin' => $request->origin->toString(),
             'destination' => $request->destination->toString(),
             'transportMode' => HereTransportMode::from($request->mode),
-            'return' => implode(',', $retorno),
+            'return' => implode(',', $returnValue),
             'lang' => $language,
         ];
 
@@ -36,28 +36,28 @@ final class HereRouteRequestMapper
             $query['alternatives'] = $request->alternatives;
         }
 
-        $intermediarios = $request->intermediates;
+        $intermediates = $request->intermediates;
 
-        if ($ordemIntermediarios !== null) {
-            if (count($ordemIntermediarios) !== count($request->intermediates)) {
+        if ($intermediatesOrder !== null) {
+            if (count($intermediatesOrder) !== count($request->intermediates)) {
                 throw new InvalidRequestException(sprintf(
                     'Ordem de intermediarios com %d itens para %d waypoints: montar a rota assim '
                     . 'descartaria paradas em silencio.',
-                    count($ordemIntermediarios),
+                    count($intermediatesOrder),
                     count($request->intermediates),
                 ));
             }
 
-            $intermediarios = array_map(
-                fn (int $indice) => $request->intermediates[$indice],
-                $ordemIntermediarios,
+            $intermediates = array_map(
+                fn (int $index) => $request->intermediates[$index],
+                $intermediatesOrder,
             );
         }
 
-        if ($intermediarios !== []) {
+        if ($intermediates !== []) {
             // O MapsHttpClient serializa array como chave repetida (via=a&via=b),
             // que e o formato que o /v8/routes exige.
-            $query['via'] = array_map(fn ($ponto) => $ponto->toString(), $intermediarios);
+            $query['via'] = array_map(fn ($point) => $point->toString(), $intermediates);
         }
 
         return $query;

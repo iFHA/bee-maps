@@ -12,7 +12,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class GoogleRouteMatrixMapperTest extends TestCase
 {
-    private function requisicao(): RouteMatrixRequest
+    private function request(): RouteMatrixRequest
     {
         return new RouteMatrixRequest(
             [new Coordinates(-23.5615, -46.6562), new Coordinates(-23.5505, -46.6425)],
@@ -23,7 +23,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
 
     public function test_payload_envolve_cada_ponto_em_waypoint(): void
     {
-        $payload = (new GoogleRouteMatrixRequestMapper())->toPayload($this->requisicao());
+        $payload = (new GoogleRouteMatrixRequestMapper())->toPayload($this->request());
 
         $this->assertCount(2, $payload['origins']);
         $this->assertCount(2, $payload['destinations']);
@@ -48,32 +48,32 @@ final class GoogleRouteMatrixMapperTest extends TestCase
 
     public function test_resposta_fora_de_ordem_vira_colecao_endereçavel(): void
     {
-        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
+        $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
-        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 2, 3);
+        $collection = (new GoogleRouteMatrixResponseMapper())->toCollection($response, 2, 3);
 
-        $this->assertCount(6, $colecao);
+        $this->assertCount(6, $collection);
 
         // A fixture esta na ordem que a API devolveu: (0,1) antes de (0,0).
         // Se o mapper indexasse por posicao, estes valores sairiam trocados.
-        $this->assertSame(1225, $colecao->entry(0, 0)->distance->meters);
-        $this->assertSame(262, $colecao->entry(0, 0)->duration->seconds);
-        $this->assertSame(1629, $colecao->entry(0, 1)->distance->meters);
-        $this->assertSame(2594, $colecao->entry(0, 2)->distance->meters);
-        $this->assertSame(26031, $colecao->entry(1, 1)->distance->meters);
-        $this->assertSame(25021, $colecao->entry(1, 2)->distance->meters);
+        $this->assertSame(1225, $collection->entry(0, 0)->distance->meters);
+        $this->assertSame(262, $collection->entry(0, 0)->duration->seconds);
+        $this->assertSame(1629, $collection->entry(0, 1)->distance->meters);
+        $this->assertSame(2594, $collection->entry(0, 2)->distance->meters);
+        $this->assertSame(26031, $collection->entry(1, 1)->distance->meters);
+        $this->assertSame(25021, $collection->entry(1, 2)->distance->meters);
     }
 
     public function test_par_sem_rota_vira_entrada_inalcancavel_e_nao_some(): void
     {
-        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
+        $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
-        $entrada = (new GoogleRouteMatrixResponseMapper())->toCollection($resposta, 2, 3)->entry(1, 0);
+        $entry = (new GoogleRouteMatrixResponseMapper())->toCollection($response, 2, 3)->entry(1, 0);
 
-        $this->assertNotNull($entrada);
-        $this->assertFalse($entrada->reachable);
-        $this->assertSame(0, $entrada->distance->meters);
-        $this->assertSame(0, $entrada->duration->seconds);
+        $this->assertNotNull($entry);
+        $this->assertFalse($entry->reachable);
+        $this->assertSame(0, $entry->distance->meters);
+        $this->assertSame(0, $entry->duration->seconds);
     }
 
     public function test_resposta_vazia_vira_colecao_vazia(): void
@@ -101,11 +101,11 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         // proto3 omite o valor default do enum, e
         // ROUTE_MATRIX_ELEMENT_CONDITION_UNSPECIFIED vale 0: ausencia significa
         // "indefinido", nao "tem rota".
-        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection([
+        $collection = (new GoogleRouteMatrixResponseMapper())->toCollection([
             ['originIndex' => 0, 'destinationIndex' => 0],
         ], 1, 1);
 
-        $this->assertFalse($colecao->entry(0, 0)->reachable);
+        $this->assertFalse($collection->entry(0, 0)->reachable);
     }
 
     public function test_stream_truncado_vira_excecao(): void
@@ -145,14 +145,14 @@ final class GoogleRouteMatrixMapperTest extends TestCase
 
     public function test_grade_completa_passa(): void
     {
-        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection([
+        $collection = (new GoogleRouteMatrixResponseMapper())->toCollection([
             ['originIndex' => 0, 'destinationIndex' => 1, 'distanceMeters' => 20, 'duration' => '2s', 'condition' => 'ROUTE_EXISTS'],
             ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 10, 'duration' => '1s', 'condition' => 'ROUTE_EXISTS'],
         ], 1, 2);
 
-        $this->assertCount(2, $colecao);
-        $this->assertSame(10, $colecao->entry(0, 0)->distance->meters);
-        $this->assertSame(20, $colecao->entry(0, 1)->distance->meters);
+        $this->assertCount(2, $collection);
+        $this->assertSame(10, $collection->entry(0, 0)->distance->meters);
+        $this->assertSame(20, $collection->entry(0, 1)->distance->meters);
     }
 
     public function test_erro_no_topo_do_corpo_vira_excecao_e_nao_par_sem_rota(): void
@@ -173,11 +173,11 @@ final class GoogleRouteMatrixMapperTest extends TestCase
 
     public function test_matriz_normal_continua_passando(): void
     {
-        $colecao = (new GoogleRouteMatrixResponseMapper())->toCollection([
+        $collection = (new GoogleRouteMatrixResponseMapper())->toCollection([
             ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 10, 'duration' => '1s', 'condition' => 'ROUTE_EXISTS'],
         ], 1, 1);
 
-        $this->assertSame(10, $colecao->entry(0, 0)->distance->meters);
+        $this->assertSame(10, $collection->entry(0, 0)->distance->meters);
     }
 
     public function test_error_de_tipo_inesperado_tambem_vira_excecao(): void

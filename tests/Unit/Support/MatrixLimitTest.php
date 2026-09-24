@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 final class MatrixLimitTest extends TestCase
 {
-    public static function valores(): array
+    public static function values(): array
     {
         return [
             'ausente' => [null, null],
@@ -23,9 +23,9 @@ final class MatrixLimitTest extends TestCase
         ];
     }
 
-    #[DataProvider('valores')]
-    public function test_normaliza(mixed $entrada, ?int $esperado): void
+    #[DataProvider('values')]
+    public function test_normaliza(mixed $entry, ?int $expected): void
     {
-        $this->assertSame($esperado, MatrixLimit::normalizar($entrada));
+        $this->assertSame($expected, MatrixLimit::normalize($entry));
     }
 }

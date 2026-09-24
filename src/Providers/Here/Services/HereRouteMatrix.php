@@ -30,7 +30,7 @@ final class HereRouteMatrix implements RouteMatrix
             throw MatrixTooLargeException::make(Provider::Here, $request->elements(), $this->maxElements);
         }
 
-        $resposta = $this->http->post(
+        $response = $this->http->post(
             Provider::Here,
             Service::RouteMatrix,
             // async=false e a D10: o modo assincrono e submit -> poll -> download,
@@ -40,7 +40,7 @@ final class HereRouteMatrix implements RouteMatrix
         );
 
         return $this->responseMapper->toCollection(
-            $resposta,
+            $response,
             count($request->origins),
             count($request->destinations),
         );

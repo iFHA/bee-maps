@@ -38,7 +38,7 @@ final class SmokeLiveTest extends TestCase
         Http::allowStrayRequests();
     }
 
-    private static function chave(Provider $provider): ?string
+    private static function key(Provider $provider): ?string
     {
         return getenv($provider === Provider::Google ? 'GOOGLE_MAPS_KEY' : 'HERE_API_KEY') ?: null;
     }
@@ -49,9 +49,9 @@ final class SmokeLiveTest extends TestCase
      * o smoke inteiro. Testes de um provedor so chamam isto; os parametrizados
      * ganham o recorte pelo proprio dataProvider.
      */
-    private function exigirChave(Provider $provider): void
+    private function requireKey(Provider $provider): void
     {
-        if (self::chave($provider) === null) {
+        if (self::key($provider) === null) {
             $this->markTestSkipped(sprintf(
                 'Defina %s para rodar o smoke live do %s.',
                 $provider === Provider::Google ? 'GOOGLE_MAPS_KEY' : 'HERE_API_KEY',
@@ -62,8 +62,8 @@ final class SmokeLiveTest extends TestCase
 
     protected function defineEnvironment($app): void
     {
-        $google = self::chave(Provider::Google);
-        $here = self::chave(Provider::Here);
+        $google = self::key(Provider::Google);
+        $here = self::key(Provider::Here);
 
         if ($google === null && $here === null) {
             $this->markTestSkipped('Defina GOOGLE_MAPS_KEY e/ou HERE_API_KEY para rodar o smoke live.');
@@ -85,23 +85,23 @@ final class SmokeLiveTest extends TestCase
      */
     public static function providers(): array
     {
-        $todos = [
+        $all = [
             'google' => [Provider::Google],
             'here' => [Provider::Here],
         ];
 
-        return array_filter($todos, fn (array $caso) => self::chave($caso[0]) !== null);
+        return array_filter($all, fn (array $case) => self::key($case[0]) !== null);
     }
 
     #[DataProvider('providers')]
     public function test_autocomplete_sem_coordenada_responde(Provider $provider): void
     {
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->autocomplete($provider)
             ->suggest(new AutocompleteRequest('Avenida Paulista'));
 
-        $this->assertGreaterThan(0, $colecao->count());
-        $this->assertNotSame('', $colecao->first()->description);
+        $this->assertGreaterThan(0, $collection->count());
+        $this->assertNotSame('', $collection->first()->description);
     }
 
     /**
@@ -111,30 +111,30 @@ final class SmokeLiveTest extends TestCase
      */
     public function test_autocomplete_nacional_do_here_responde_sem_foco_espacial(): void
     {
-        $this->exigirChave(Provider::Here);
+        $this->requireKey(Provider::Here);
 
         $this->app['config']->set('bee-maps.here.autocomplete_strategy', 'autocomplete');
         $this->app['config']->set('bee-maps.here.autosuggest_center', null);
 
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->autocomplete(Provider::Here)
             ->suggest(new AutocompleteRequest('Rua Blumenau'));
 
-        $this->assertGreaterThan(0, $colecao->count());
-        $this->assertNotNull($colecao->first()->place);
+        $this->assertGreaterThan(0, $collection->count());
+        $this->assertNotNull($collection->first()->place);
     }
 
     public function test_autosuggest_forcado_do_here_responde_com_o_centro_configurado(): void
     {
-        $this->exigirChave(Provider::Here);
+        $this->requireKey(Provider::Here);
 
         $this->app['config']->set('bee-maps.here.autocomplete_strategy', 'autosuggest');
 
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->autocomplete(Provider::Here)
             ->suggest(new AutocompleteRequest('Avenida Paulista'));
 
-        $this->assertGreaterThan(0, $colecao->count());
+        $this->assertGreaterThan(0, $collection->count());
     }
 
     #[DataProvider('providers')]
@@ -143,53 +143,53 @@ final class SmokeLiveTest extends TestCase
         // Esta e a chamada que dava 400 no HERE: near presente e radiusMeters no
         // default de 50000. Nenhum teste com Http::fake pega isso, porque o fake
         // nao valida a query.
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->autocomplete($provider)
             ->suggest(new AutocompleteRequest('Avenida Paulista', new Coordinates(-23.5615, -46.6562)));
 
-        $this->assertGreaterThan(0, $colecao->count());
+        $this->assertGreaterThan(0, $collection->count());
     }
 
     #[DataProvider('providers')]
     public function test_autocomplete_com_coordenada_e_sem_raio_responde(Provider $provider): void
     {
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->autocomplete($provider)
             ->suggest(new AutocompleteRequest('Avenida Paulista', new Coordinates(-23.5615, -46.6562), null));
 
-        $this->assertGreaterThan(0, $colecao->count());
+        $this->assertGreaterThan(0, $collection->count());
     }
 
     #[DataProvider('providers')]
     public function test_geocoding_responde(Provider $provider): void
     {
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->geocoding($provider)
             ->geocode('Avenida Paulista 1000, Sao Paulo');
 
-        $this->assertGreaterThan(0, $colecao->count());
-        $this->assertNotNull($colecao->first()->coordinates);
+        $this->assertGreaterThan(0, $collection->count());
+        $this->assertNotNull($collection->first()->coordinates);
     }
 
     #[DataProvider('providers')]
     public function test_place_search_responde_com_endereco_estruturado(Provider $provider): void
     {
-        $colecao = $this->app->make(MapServiceFactory::class)
+        $collection = $this->app->make(MapServiceFactory::class)
             ->placeSearch($provider)
             ->search(new PlaceSearchRequest('farmacia', new Coordinates(-23.5615, -46.6562)));
 
-        $this->assertGreaterThan(0, $colecao->count());
+        $this->assertGreaterThan(0, $collection->count());
 
         // D16 virando verificacao real: se o SKU Enterprise nao estiver
         // habilitado na conta, o Google devolve 403 ou vem sem componentes, e
         // este assert e o unico lugar onde isso aparece antes da producao.
-        $this->assertNotNull($colecao->first()->address->city);
+        $this->assertNotNull($collection->first()->address->city);
     }
 
     #[DataProvider('providers')]
     public function test_rota_simples_responde_com_polyline(Provider $provider): void
     {
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing($provider)
             ->route(new RouteRequest(
                 origin: new Coordinates(-23.5615, -46.6562),
@@ -197,12 +197,12 @@ final class SmokeLiveTest extends TestCase
                 includePolyline: true,
             ));
 
-        $this->assertGreaterThan(0, $rota->distance->meters);
-        $this->assertGreaterThan(0, $rota->duration->seconds);
-        $this->assertNotNull($rota->polyline);
+        $this->assertGreaterThan(0, $route->distance->meters);
+        $this->assertGreaterThan(0, $route->duration->seconds);
+        $this->assertNotNull($route->polyline);
         // Decodificar de verdade: e o que prova que o formato do provider e o
         // que o decodificador registrado espera.
-        $this->assertGreaterThan(1, count($rota->polyline->coordinates()));
+        $this->assertGreaterThan(1, count($route->polyline->coordinates()));
     }
 
     /**
@@ -216,9 +216,9 @@ final class SmokeLiveTest extends TestCase
      */
     public function test_rota_otimizada_do_here_usa_o_endpoint_de_sequencia_configurado(): void
     {
-        $this->exigirChave(Provider::Here);
+        $this->requireKey(Provider::Here);
 
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Here)
             ->route(new RouteRequest(
                 origin: new Coordinates(-23.5615, -46.6562),
@@ -231,17 +231,17 @@ final class SmokeLiveTest extends TestCase
                 includeLegs: true,
             ));
 
-        $this->assertCount(2, $rota->optimizedOrder);
-        $this->assertGreaterThan(0, $rota->distance->meters);
+        $this->assertCount(2, $route->optimizedOrder);
+        $this->assertGreaterThan(0, $route->distance->meters);
     }
 
     public function test_rota_otimizada_do_here_em_duas_rodas_responde(): void
     {
-        $this->exigirChave(Provider::Here);
+        $this->requireKey(Provider::Here);
 
         // O smoke so exercitava Drive. O findsequence e um motor legado, e os
         // quatro transport modes nao sao obviamente os mesmos do /v8/routes.
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Here)
             ->route(new RouteRequest(
                 origin: new Coordinates(-23.5615, -46.6562),
@@ -251,14 +251,14 @@ final class SmokeLiveTest extends TestCase
                 optimizeIntermediates: true,
             ));
 
-        $this->assertCount(2, $rota->optimizedOrder);
+        $this->assertCount(2, $route->optimizedOrder);
     }
 
     public function test_rota_otimizada_do_google_resolve_em_uma_chamada(): void
     {
-        $this->exigirChave(Provider::Google);
+        $this->requireKey(Provider::Google);
 
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing(Provider::Google)
             ->route(new RouteRequest(
                 origin: new Coordinates(-23.5615, -46.6562),
@@ -271,31 +271,31 @@ final class SmokeLiveTest extends TestCase
                 includeLegs: true,
             ));
 
-        $this->assertCount(2, $rota->optimizedOrder);
-        $this->assertCount(3, $rota->legs);
+        $this->assertCount(2, $route->optimizedOrder);
+        $this->assertCount(3, $route->legs);
     }
 
     #[DataProvider('providers')]
     public function test_matriz_2x2_responde(Provider $provider): void
     {
-        $matriz = $this->app->make(MapServiceFactory::class)
+        $matrix = $this->app->make(MapServiceFactory::class)
             ->routeMatrix($provider)
             ->matrix(new RouteMatrixRequest(
                 [new Coordinates(-23.5615, -46.6562), new Coordinates(-23.5505, -46.6425)],
                 [new Coordinates(-23.5580, -46.6500), new Coordinates(-23.5540, -46.6470)],
             ));
 
-        $this->assertCount(4, $matriz);
+        $this->assertCount(4, $matrix);
 
         // Todos os quatro pares tem que existir e ser alcancaveis: sao pontos a
         // poucos quilometros um do outro em Sao Paulo.
-        foreach ([0, 1] as $origem) {
-            foreach ([0, 1] as $destino) {
-                $entrada = $matriz->entry($origem, $destino);
+        foreach ([0, 1] as $origin) {
+            foreach ([0, 1] as $destination) {
+                $entry = $matrix->entry($origin, $destination);
 
-                $this->assertNotNull($entrada, "Faltou a entrada ({$origem},{$destino}).");
-                $this->assertTrue($entrada->reachable);
-                $this->assertGreaterThan(0, $entrada->distance->meters);
+                $this->assertNotNull($entry, "Faltou a entrada ({$origin},{$destination}).");
+                $this->assertTrue($entry->reachable);
+                $this->assertGreaterThan(0, $entry->distance->meters);
             }
         }
     }
@@ -304,19 +304,19 @@ final class SmokeLiveTest extends TestCase
     {
         $this->expectException(\BeeDelivery\BeeMaps\Exceptions\MatrixTooLargeException::class);
 
-        $pontos = [];
+        $points = [];
 
         for ($i = 0; $i < 26; $i++) {
-            $pontos[] = new Coordinates(-23.5 - ($i / 10000), -46.6 - ($i / 10000));
+            $points[] = new Coordinates(-23.5 - ($i / 10000), -46.6 - ($i / 10000));
         }
 
         $this->app->make(MapServiceFactory::class)
             ->routeMatrix(Provider::Google)
-            ->matrix(new RouteMatrixRequest($pontos, $pontos));
+            ->matrix(new RouteMatrixRequest($points, $points));
     }
 
     /** @return list<Coordinates> */
-    private function paradasReais(): array
+    private function realStops(): array
     {
         return [
             new Coordinates(-23.5505, -46.6333),
@@ -332,7 +332,7 @@ final class SmokeLiveTest extends TestCase
     #[DataProvider('providers')]
     public function test_live_rota_com_alternativas_devolve_mais_de_uma(Provider $provider): void
     {
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing($provider)
             ->route(new RouteRequest(
                 origin: new Coordinates(-23.5615, -46.6562),
@@ -340,69 +340,69 @@ final class SmokeLiveTest extends TestCase
                 alternatives: 3,
             ));
 
-        $this->assertNotSame([], $rota->alternatives, 'Nenhuma alternativa: o parametro nao chegou no provider.');
+        $this->assertNotSame([], $route->alternatives, 'Nenhuma alternativa: o parametro nao chegou no provider.');
 
-        foreach ($rota->alternatives as $alternativa) {
-            $this->assertGreaterThan(0, $alternativa->distance->meters);
+        foreach ($route->alternatives as $alternative) {
+            $this->assertGreaterThan(0, $alternative->distance->meters);
         }
     }
 
     #[DataProvider('providers')]
     public function test_live_sem_pedir_alternativas_vem_rota_unica(Provider $provider): void
     {
-        $rota = $this->app->make(MapServiceFactory::class)
+        $route = $this->app->make(MapServiceFactory::class)
             ->routing($provider)
             ->route(new RouteRequest(
                 origin: new Coordinates(-23.5615, -46.6562),
                 destination: new Coordinates(-23.5505, -46.6333),
             ));
 
-        $this->assertSame([], $rota->alternatives);
+        $this->assertSame([], $route->alternatives);
     }
 
     #[DataProvider('providers')]
     public function test_live_otimiza_com_fim_fixo(Provider $provider): void
     {
-        $resultado = $this->app->make(MapServiceFactory::class)
+        $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
             ->optimize(new OptimizeWaypointsRequest(
                 origin: new Coordinates(-23.5615, -46.6562),
                 destination: new Coordinates(-23.5980, -46.6860),
-                intermediates: $this->paradasReais(),
+                intermediates: $this->realStops(),
             ));
 
-        $this->assertCount(3, $resultado->order);
-        $this->assertGreaterThan(0, $resultado->distance->meters);
+        $this->assertCount(3, $result->order);
+        $this->assertGreaterThan(0, $result->distance->meters);
     }
 
     #[DataProvider('providers')]
     public function test_live_otimiza_tour_aberto(Provider $provider): void
     {
-        $resultado = $this->app->make(MapServiceFactory::class)
+        $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
             ->optimize(new OptimizeWaypointsRequest(
                 origin: new Coordinates(-23.5615, -46.6562),
-                intermediates: $this->paradasReais(),
+                intermediates: $this->realStops(),
             ));
 
-        $this->assertCount(3, $resultado->order);
-        $this->assertGreaterThan(0, $resultado->distance->meters);
+        $this->assertCount(3, $result->order);
+        $this->assertGreaterThan(0, $result->distance->meters);
     }
 
     #[DataProvider('providers')]
     public function test_live_otimiza_com_volta_a_origem(Provider $provider): void
     {
-        $origem = new Coordinates(-23.5615, -46.6562);
+        $origin = new Coordinates(-23.5615, -46.6562);
 
-        $resultado = $this->app->make(MapServiceFactory::class)
+        $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
             ->optimize(new OptimizeWaypointsRequest(
-                origin: $origem,
-                destination: $origem,
-                intermediates: $this->paradasReais(),
+                origin: $origin,
+                destination: $origin,
+                intermediates: $this->realStops(),
             ));
 
-        $this->assertCount(3, $resultado->order);
+        $this->assertCount(3, $result->order);
     }
 
     #[DataProvider('providers')]
@@ -411,16 +411,16 @@ final class SmokeLiveTest extends TestCase
         // No HERE vira improveFor=distance; no Google, a matriz + TSP local.
         // A estrategia fleet_routing NAO entra no smoke: a service account nao
         // existe neste ambiente.
-        $resultado = $this->app->make(MapServiceFactory::class)
+        $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
             ->optimize(new OptimizeWaypointsRequest(
                 origin: new Coordinates(-23.5615, -46.6562),
                 destination: new Coordinates(-23.5980, -46.6860),
-                intermediates: $this->paradasReais(),
+                intermediates: $this->realStops(),
                 objective: OptimizationObjective::MinDistance,
             ));
 
-        $this->assertCount(3, $resultado->order);
-        $this->assertGreaterThan(0, $resultado->distance->meters);
+        $this->assertCount(3, $result->order);
+        $this->assertGreaterThan(0, $result->distance->meters);
     }
 }

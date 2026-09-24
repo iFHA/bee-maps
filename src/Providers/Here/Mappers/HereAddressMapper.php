@@ -11,19 +11,19 @@ use BeeDelivery\BeeMaps\Support\ValueObjects\Address;
  */
 final class HereAddressMapper
 {
-    public function fromItem(array $endereco, string $formatadoPadrao): Address
+    public function fromItem(array $address, string $defaultFormatted): Address
     {
-        $cep = $endereco['postalCode'] ?? null;
+        $postalCode = $address['postalCode'] ?? null;
 
         return new Address(
-            street: $endereco['street'] ?? null,
-            number: $endereco['houseNumber'] ?? null,
-            neighborhood: $endereco['district'] ?? null,
-            city: $endereco['city'] ?? null,
-            state: $endereco['stateCode'] ?? $endereco['state'] ?? null,
-            country: $endereco['countryName'] ?? null,
-            postalCode: $cep !== null ? str_replace('-', '', $cep) : null,
-            formatted: $endereco['label'] ?? $formatadoPadrao,
+            street: $address['street'] ?? null,
+            number: $address['houseNumber'] ?? null,
+            neighborhood: $address['district'] ?? null,
+            city: $address['city'] ?? null,
+            state: $address['stateCode'] ?? $address['state'] ?? null,
+            country: $address['countryName'] ?? null,
+            postalCode: $postalCode !== null ? str_replace('-', '', $postalCode) : null,
+            formatted: $address['label'] ?? $defaultFormatted,
         );
     }
 }

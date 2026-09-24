@@ -18,7 +18,7 @@ final class HereRouteMatrixTest extends TestCase
             200,
         )]);
 
-        $matriz = $this->app->make(MapServiceFactory::class)
+        $matrix = $this->app->make(MapServiceFactory::class)
             ->routeMatrix(Provider::Here)
             ->matrix(new RouteMatrixRequest(
                 [new Coordinates(-23.5615, -46.6562), new Coordinates(-23.4400, -46.5300)],
@@ -29,9 +29,9 @@ final class HereRouteMatrixTest extends TestCase
                 ],
             ));
 
-        $this->assertCount(6, $matriz);
-        $this->assertSame(1225, $matriz->entry(0, 0)->distance->meters);
-        $this->assertFalse($matriz->entry(1, 0)->reachable);
+        $this->assertCount(6, $matrix);
+        $this->assertSame(1225, $matrix->entry(0, 0)->distance->meters);
+        $this->assertFalse($matrix->entry(1, 0)->reachable);
 
         Http::assertSent(function ($request): bool {
             $url = urldecode($request->url());
@@ -54,7 +54,7 @@ final class HereRouteMatrixTest extends TestCase
             200,
         )]);
 
-        $matriz = $this->app->make(MapServiceFactory::class)
+        $matrix = $this->app->make(MapServiceFactory::class)
             ->routeMatrix(Provider::Here)
             ->matrix(new RouteMatrixRequest(
                 [new Coordinates(-23.5615, -46.6562), new Coordinates(-23.4400, -46.5300)],
@@ -65,6 +65,6 @@ final class HereRouteMatrixTest extends TestCase
                 ],
             ));
 
-        $this->assertCount(6, $matriz);
+        $this->assertCount(6, $matrix);
     }
 }

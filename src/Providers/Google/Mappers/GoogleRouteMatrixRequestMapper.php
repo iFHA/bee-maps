@@ -13,7 +13,7 @@ final class GoogleRouteMatrixRequestMapper
         return [
             'origins' => array_map($this->waypoint(...), $request->origins),
             'destinations' => array_map($this->waypoint(...), $request->destinations),
-            'travelMode' => $this->modo($request->mode),
+            'travelMode' => $this->mode($request->mode),
         ];
     }
 
@@ -26,23 +26,23 @@ final class GoogleRouteMatrixRequestMapper
         return 'originIndex,destinationIndex,distanceMeters,duration,condition';
     }
 
-    private function waypoint(Coordinates $ponto): array
+    private function waypoint(Coordinates $point): array
     {
         return [
             'waypoint' => [
                 'location' => [
                     'latLng' => [
-                        'latitude' => $ponto->latitude,
-                        'longitude' => $ponto->longitude,
+                        'latitude' => $point->latitude,
+                        'longitude' => $point->longitude,
                     ],
                 ],
             ],
         ];
     }
 
-    private function modo(TravelMode $modo): string
+    private function mode(TravelMode $mode): string
     {
-        return match ($modo) {
+        return match ($mode) {
             TravelMode::Drive => 'DRIVE',
             TravelMode::TwoWheeler => 'TWO_WHEELER',
             TravelMode::Bicycle => 'BICYCLE',

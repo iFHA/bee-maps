@@ -13,7 +13,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 final class HereMatrixMapperTest extends TestCase
 {
-    private function requisicao(): RouteMatrixRequest
+    private function request(): RouteMatrixRequest
     {
         return new RouteMatrixRequest(
             [new Coordinates(-23.5615, -46.6562), new Coordinates(-23.5505, -46.6425)],
@@ -24,7 +24,7 @@ final class HereMatrixMapperTest extends TestCase
 
     public function test_payload_usa_auto_circle_e_pede_distancia_e_tempo(): void
     {
-        $payload = (new HereMatrixRequestMapper())->toPayload($this->requisicao());
+        $payload = (new HereMatrixRequestMapper())->toPayload($this->request());
 
         $this->assertSame(['lat' => -23.5615, 'lng' => -46.6562], $payload['origins'][0]);
         $this->assertSame(['lat' => -23.5580, 'lng' => -46.6500], $payload['destinations'][0]);
@@ -37,40 +37,40 @@ final class HereMatrixMapperTest extends TestCase
 
     public function test_arrays_achatados_viram_entradas_por_par(): void
     {
-        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
+        $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 2, 3);
+        $collection = (new HereMatrixResponseMapper())->toCollection($response, 2, 3);
 
-        $this->assertCount(6, $colecao);
+        $this->assertCount(6, $collection);
 
         // Row-major: indice = origem * numDestinations + destino. O par (1,0)
         // fica de fora aqui de proposito: a fixture o marca como inalcancavel, e
         // o teste seguinte cuida dele.
-        $this->assertSame(1225, $colecao->entry(0, 0)->distance->meters);
-        $this->assertSame(262, $colecao->entry(0, 0)->duration->seconds);
-        $this->assertSame(1629, $colecao->entry(0, 1)->distance->meters);
-        $this->assertSame(300, $colecao->entry(0, 1)->duration->seconds);
-        $this->assertSame(2594, $colecao->entry(0, 2)->distance->meters);
-        $this->assertSame(428, $colecao->entry(0, 2)->duration->seconds);
-        $this->assertSame(26031, $colecao->entry(1, 1)->distance->meters);
-        $this->assertSame(2290, $colecao->entry(1, 1)->duration->seconds);
-        $this->assertSame(25021, $colecao->entry(1, 2)->distance->meters);
-        $this->assertSame(2201, $colecao->entry(1, 2)->duration->seconds);
+        $this->assertSame(1225, $collection->entry(0, 0)->distance->meters);
+        $this->assertSame(262, $collection->entry(0, 0)->duration->seconds);
+        $this->assertSame(1629, $collection->entry(0, 1)->distance->meters);
+        $this->assertSame(300, $collection->entry(0, 1)->duration->seconds);
+        $this->assertSame(2594, $collection->entry(0, 2)->distance->meters);
+        $this->assertSame(428, $collection->entry(0, 2)->duration->seconds);
+        $this->assertSame(26031, $collection->entry(1, 1)->distance->meters);
+        $this->assertSame(2290, $collection->entry(1, 1)->duration->seconds);
+        $this->assertSame(25021, $collection->entry(1, 2)->distance->meters);
+        $this->assertSame(2201, $collection->entry(1, 2)->duration->seconds);
     }
 
     public function test_error_code_diferente_de_zero_marca_par_inalcancavel(): void
     {
-        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
+        $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 2, 3);
+        $collection = (new HereMatrixResponseMapper())->toCollection($response, 2, 3);
 
-        $this->assertFalse($colecao->entry(1, 0)->reachable);
+        $this->assertFalse($collection->entry(1, 0)->reachable);
         // A fixture traz 26089 metros nessa posicao, mas o errorCode 3 diz que
         // nao ha rota: o contrato zera a medida em vez de propagar um numero
         // que nao corresponde a percurso nenhum.
-        $this->assertSame(0, $colecao->entry(1, 0)->distance->meters);
-        $this->assertSame(0, $colecao->entry(1, 0)->duration->seconds);
-        $this->assertTrue($colecao->entry(0, 0)->reachable);
+        $this->assertSame(0, $collection->entry(1, 0)->distance->meters);
+        $this->assertSame(0, $collection->entry(1, 0)->duration->seconds);
+        $this->assertTrue($collection->entry(0, 0)->reachable);
     }
 
     public function test_ausencia_de_error_codes_significa_tudo_alcancavel(): void
@@ -78,7 +78,7 @@ final class HereMatrixMapperTest extends TestCase
         // Resposta real do HERE quando nao ha par inalcancavel: o campo
         // errorCodes simplesmente nao vem. Tratar ausencia como erro marcaria
         // a matriz inteira como inalcancavel.
-        $resposta = [
+        $response = [
             'matrix' => [
                 'numOrigins' => 2,
                 'numDestinations' => 3,
@@ -87,12 +87,12 @@ final class HereMatrixMapperTest extends TestCase
             ],
         ];
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection($resposta, 2, 3);
+        $collection = (new HereMatrixResponseMapper())->toCollection($response, 2, 3);
 
-        $this->assertCount(6, $colecao);
+        $this->assertCount(6, $collection);
 
-        foreach ($colecao as $entrada) {
-            $this->assertTrue($entrada->reachable);
+        foreach ($collection as $entry) {
+            $this->assertTrue($entry->reachable);
         }
     }
 
@@ -226,32 +226,32 @@ final class HereMatrixMapperTest extends TestCase
         ]], 1, 1);
     }
 
-    public static function erroCodesInofensivos(): array
+    public static function harmlessErrorCodes(): array
     {
         // As tres formas carregam a mesma informacao: nenhum par com erro.
         return ['ausente' => [null], 'lista vazia' => [[]], 'nulo' => ['NULO']];
     }
 
-    #[DataProvider('erroCodesInofensivos')]
-    public function test_error_codes_vazio_ou_nulo_equivale_a_ausente(mixed $valor): void
+    #[DataProvider('harmlessErrorCodes')]
+    public function test_error_codes_vazio_ou_nulo_equivale_a_ausente(mixed $value): void
     {
-        $matriz = [
+        $matrix = [
             'numOrigins' => 1,
             'numDestinations' => 2,
             'distances' => [10, 20],
             'travelTimes' => [1, 2],
         ];
 
-        if ($valor !== null) {
-            $matriz['errorCodes'] = $valor === 'NULO' ? null : $valor;
+        if ($value !== null) {
+            $matrix['errorCodes'] = $value === 'NULO' ? null : $value;
         }
 
-        $colecao = (new HereMatrixResponseMapper())->toCollection(['matrix' => $matriz], 1, 2);
+        $collection = (new HereMatrixResponseMapper())->toCollection(['matrix' => $matrix], 1, 2);
 
         // Recusar `[]` seria rejeitar uma matriz completa e valida so porque o
         // HERE serializou o caso vazio em vez de omitir o campo.
-        $this->assertCount(2, $colecao);
-        $this->assertTrue($colecao->entry(0, 0)->reachable);
-        $this->assertTrue($colecao->entry(0, 1)->reachable);
+        $this->assertCount(2, $collection);
+        $this->assertTrue($collection->entry(0, 0)->reachable);
+        $this->assertTrue($collection->entry(0, 1)->reachable);
     }
 }

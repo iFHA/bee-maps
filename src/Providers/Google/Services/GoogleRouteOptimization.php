@@ -21,22 +21,22 @@ use Closure;
 final class GoogleRouteOptimization implements RouteOptimization
 {
     /**
-     * @param Closure(): OptimizationStrategy $porTempo
-     * @param Closure(): OptimizationStrategy $porDistancia
+     * @param Closure(): OptimizationStrategy $byTime
+     * @param Closure(): OptimizationStrategy $byDistance
      */
     public function __construct(
-        private readonly Closure $porTempo,
-        private readonly Closure $porDistancia,
+        private readonly Closure $byTime,
+        private readonly Closure $byDistance,
     ) {
     }
 
     public function optimize(OptimizeWaypointsRequest $request): OptimizedWaypoints
     {
-        $estrategia = match ($request->objective) {
-            OptimizationObjective::MinTravelTime => ($this->porTempo)(),
-            OptimizationObjective::MinDistance => ($this->porDistancia)(),
+        $strategy = match ($request->objective) {
+            OptimizationObjective::MinTravelTime => ($this->byTime)(),
+            OptimizationObjective::MinDistance => ($this->byDistance)(),
         };
 
-        return $estrategia->optimize($request);
+        return $strategy->optimize($request);
     }
 }

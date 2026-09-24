@@ -12,14 +12,14 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class GoogleRouteMapperTest extends TestCase
 {
-    private function requisicaoSimples(): RouteRequest
+    private function simpleRequest(): RouteRequest
     {
         return new RouteRequest(new Coordinates(-23.5, -46.6), new Coordinates(-23.6, -46.7));
     }
 
     public function test_payload_minimo_tem_origem_destino_e_modo(): void
     {
-        $payload = (new GoogleRouteRequestMapper())->toPayload($this->requisicaoSimples(), 'pt-BR');
+        $payload = (new GoogleRouteRequestMapper())->toPayload($this->simpleRequest(), 'pt-BR');
 
         $this->assertSame(-23.5, $payload['origin']['location']['latLng']['latitude']);
         $this->assertSame(-46.7, $payload['destination']['location']['latLng']['longitude']);
@@ -33,20 +33,20 @@ final class GoogleRouteMapperTest extends TestCase
     {
         $mapper = new GoogleRouteRequestMapper();
 
-        $modos = [
+        $modes = [
             TravelMode::Drive->value => 'DRIVE',
             TravelMode::TwoWheeler->value => 'TWO_WHEELER',
             TravelMode::Bicycle->value => 'BICYCLE',
             TravelMode::Walk->value => 'WALK',
         ];
 
-        foreach (TravelMode::cases() as $modo) {
+        foreach (TravelMode::cases() as $mode) {
             $payload = $mapper->toPayload(
-                new RouteRequest(new Coordinates(0, 0), new Coordinates(1, 1), [], $modo),
+                new RouteRequest(new Coordinates(0, 0), new Coordinates(1, 1), [], $mode),
                 'pt-BR',
             );
 
-            $this->assertSame($modos[$modo->value], $payload['travelMode']);
+            $this->assertSame($modes[$mode->value], $payload['travelMode']);
         }
     }
 
@@ -72,15 +72,15 @@ final class GoogleRouteMapperTest extends TestCase
     {
         $mapper = new GoogleRouteRequestMapper();
 
-        $minimo = $mapper->fieldMask($this->requisicaoSimples());
+        $minimum = $mapper->fieldMask($this->simpleRequest());
 
-        $this->assertStringContainsString('routes.distanceMeters', $minimo);
-        $this->assertStringContainsString('routes.duration', $minimo);
-        $this->assertStringNotContainsString('routes.polyline', $minimo);
-        $this->assertStringNotContainsString('routes.legs', $minimo);
-        $this->assertStringNotContainsString('optimizedIntermediateWaypointIndex', $minimo);
+        $this->assertStringContainsString('routes.distanceMeters', $minimum);
+        $this->assertStringContainsString('routes.duration', $minimum);
+        $this->assertStringNotContainsString('routes.polyline', $minimum);
+        $this->assertStringNotContainsString('routes.legs', $minimum);
+        $this->assertStringNotContainsString('optimizedIntermediateWaypointIndex', $minimum);
 
-        $completo = $mapper->fieldMask(new RouteRequest(
+        $full = $mapper->fieldMask(new RouteRequest(
             new Coordinates(-23.5, -46.6),
             new Coordinates(-23.6, -46.7),
             [new Coordinates(-23.55, -46.65)],
@@ -90,49 +90,49 @@ final class GoogleRouteMapperTest extends TestCase
             includeLegs: true,
         ));
 
-        $this->assertStringContainsString('routes.polyline.encodedPolyline', $completo);
-        $this->assertStringContainsString('routes.legs.distanceMeters', $completo);
-        $this->assertStringContainsString('routes.legs.polyline.encodedPolyline', $completo);
-        $this->assertStringContainsString('routes.optimizedIntermediateWaypointIndex', $completo);
+        $this->assertStringContainsString('routes.polyline.encodedPolyline', $full);
+        $this->assertStringContainsString('routes.legs.distanceMeters', $full);
+        $this->assertStringContainsString('routes.legs.polyline.encodedPolyline', $full);
+        $this->assertStringContainsString('routes.optimizedIntermediateWaypointIndex', $full);
     }
 
     public function test_resposta_vira_rota_tipada_com_duracao_em_segundos(): void
     {
-        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route.json'), true);
+        $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route.json'), true);
 
-        $rota = (new GoogleRouteResponseMapper())->toRoute($resposta, true, true);
+        $route = (new GoogleRouteResponseMapper())->toRoute($response, true, true);
 
-        $this->assertSame(12400, $rota->distance->meters);
+        $this->assertSame(12400, $route->distance->meters);
         // O Google devolve duracao como string "1830s"; o contrato e int.
-        $this->assertSame(1830, $rota->duration->seconds);
-        $this->assertSame('_p~iF~ps|U_ulLnnqC_mqNvxq`@', $rota->polyline->raw());
-        $this->assertCount(3, $rota->polyline->coordinates());
-        $this->assertSame([1, 0], $rota->optimizedOrder);
+        $this->assertSame(1830, $route->duration->seconds);
+        $this->assertSame('_p~iF~ps|U_ulLnnqC_mqNvxq`@', $route->polyline->raw());
+        $this->assertCount(3, $route->polyline->coordinates());
+        $this->assertSame([1, 0], $route->optimizedOrder);
 
-        $this->assertCount(2, $rota->legs);
-        $this->assertSame(5200, $rota->legs[0]->distance->meters);
-        $this->assertSame(780, $rota->legs[0]->duration->seconds);
-        $this->assertEqualsWithDelta(38.5, $rota->legs[0]->origin->latitude, 0.00001);
-        $this->assertEqualsWithDelta(43.252, $rota->legs[1]->destination->latitude, 0.00001);
-        $this->assertSame('_flwFn`faV_mqNvxq`@', $rota->legs[1]->polyline->raw());
+        $this->assertCount(2, $route->legs);
+        $this->assertSame(5200, $route->legs[0]->distance->meters);
+        $this->assertSame(780, $route->legs[0]->duration->seconds);
+        $this->assertEqualsWithDelta(38.5, $route->legs[0]->origin->latitude, 0.00001);
+        $this->assertEqualsWithDelta(43.252, $route->legs[1]->destination->latitude, 0.00001);
+        $this->assertSame('_flwFn`faV_mqNvxq`@', $route->legs[1]->polyline->raw());
         // Decodificar, nao so comparar a string: a polyline de uma perna tem que
         // ser autonoma. A primeira versao desta fixture usava um fragmento de
         // delta da polyline da rota, que sozinho decodificava para uma
         // coordenada no Golfo da Guine — e comparar raw() nao pegava isso.
-        $this->assertCount(2, $rota->legs[1]->polyline->coordinates());
-        $this->assertEqualsWithDelta(40.7, $rota->legs[1]->polyline->coordinates()[0]->latitude, 0.00001);
+        $this->assertCount(2, $route->legs[1]->polyline->coordinates());
+        $this->assertEqualsWithDelta(40.7, $route->legs[1]->polyline->coordinates()[0]->latitude, 0.00001);
     }
 
     public function test_pernas_so_aparecem_quando_pedidas(): void
     {
-        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route.json'), true);
+        $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route.json'), true);
 
         // Simetrico com o HERE: o contrato diz que pernas sao opt-in, entao o
         // mapper nao repassa o que a resposta trouxer sem ninguem ter pedido.
-        $rota = (new GoogleRouteResponseMapper())->toRoute($resposta, false);
+        $route = (new GoogleRouteResponseMapper())->toRoute($response, false);
 
-        $this->assertSame([], $rota->legs);
-        $this->assertSame(12400, $rota->distance->meters);
+        $this->assertSame([], $route->legs);
+        $this->assertSame(12400, $route->distance->meters);
     }
 
     public function test_resposta_sem_rota_vira_excecao_tipada(): void

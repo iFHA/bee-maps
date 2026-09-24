@@ -47,16 +47,16 @@ final class HereFindSequenceMapperTest extends TestCase
         // de com os ids escritos a mao na fixture. Sem isto, tirar o id do valor
         // em toQuery() deixa toOrder() sem casar nada: devolve [], a rota sai na
         // ordem original e NENHUM teste reclama — falha silenciosa, o pior caso.
-        $id = fn (string $parametro): string => explode(';', $query[$parametro])[0];
+        $id = fn (string $parameter): string => explode(';', $query[$parameter])[0];
 
-        $respostaSimulada = ['results' => [['waypoints' => [
+        $fakeResponse = ['results' => [['waypoints' => [
             ['id' => $id('start'), 'sequence' => 0],
             ['id' => $id('destination2'), 'sequence' => 1],
             ['id' => $id('destination1'), 'sequence' => 2],
             ['id' => $id('end'), 'sequence' => 3],
         ]]]];
 
-        $this->assertSame([1, 0], $mapper->toOrder($respostaSimulada, 2));
+        $this->assertSame([1, 0], $mapper->toOrder($fakeResponse, 2));
     }
 
     public function test_ordem_incompleta_lanca_excecao_em_vez_de_devolver_lista_parcial(): void
@@ -96,11 +96,11 @@ final class HereFindSequenceMapperTest extends TestCase
 
     public function test_ordem_devolvida_e_traduzida_para_indices_do_array_original(): void
     {
-        $resposta = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/findsequence.json'), true);
+        $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/findsequence.json'), true);
 
         // destination2 veio antes de destination1: em indices 0-based do array
         // de intermediarios, isso e [1, 0].
-        $this->assertSame([1, 0], (new HereFindSequenceMapper())->toOrder($resposta, 2));
+        $this->assertSame([1, 0], (new HereFindSequenceMapper())->toOrder($response, 2));
     }
 
     public function test_resposta_sem_resultado_vira_excecao_tipada(): void
@@ -176,15 +176,15 @@ final class HereFindSequenceMapperTest extends TestCase
 
     public function test_totais_saem_da_resposta(): void
     {
-        $resposta = json_decode(
+        $response = json_decode(
             file_get_contents(__DIR__ . '/../../../Fixtures/here/findsequence-otimizacao.json'),
             true,
         );
 
-        $totais = (new HereFindSequenceMapper())->toTotals($resposta);
+        $totals = (new HereFindSequenceMapper())->toTotals($response);
 
-        $this->assertSame(23787, $totais['distance']);
-        $this->assertSame(3058, $totais['duration']);
+        $this->assertSame(23787, $totals['distance']);
+        $this->assertSame(3058, $totals['duration']);
     }
 
     public function test_totais_ausentes_sao_erro(): void

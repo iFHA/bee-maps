@@ -28,9 +28,9 @@ final class HereGeocodingTest extends TestCase
             ),
         ]);
 
-        $colecao = $this->geocoding()->geocode('Av Paulista 1000');
+        $collection = $this->geocoding()->geocode('Av Paulista 1000');
 
-        $this->assertCount(1, $colecao);
+        $this->assertCount(1, $collection);
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'q=Av Paulista 1000'));
     }
 
@@ -57,9 +57,9 @@ final class HereGeocodingTest extends TestCase
             ),
         ]);
 
-        $resultado = $this->geocoding()->lookup(new PlaceReference(Provider::Here, 'here:pds:place:076sxxxx-abcdef'));
+        $result = $this->geocoding()->lookup(new PlaceReference(Provider::Here, 'here:pds:place:076sxxxx-abcdef'));
 
-        $this->assertNotNull($resultado);
+        $this->assertNotNull($result);
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'id=here:pds:place:076sxxxx-abcdef'));
     }
 

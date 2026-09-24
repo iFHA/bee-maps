@@ -15,34 +15,34 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class MapServiceFactoryTest extends TestCase
 {
-    private function fabrica(MapProvider ...$providers): MapServiceFactory
+    private function factory(MapProvider ...$providers): MapServiceFactory
     {
         return new MapServiceFactory(new ProviderRegistry($providers));
     }
 
     public function test_devolve_a_implementacao_do_provider_pedido(): void
     {
-        $fabrica = $this->fabrica(new ProviderCompleto());
+        $factory = $this->factory(new ProviderCompleto());
 
-        $this->assertInstanceOf(Autocomplete::class, $fabrica->autocomplete(Provider::Google));
+        $this->assertInstanceOf(Autocomplete::class, $factory->autocomplete(Provider::Google));
     }
 
     public function test_provider_nao_registrado_lanca_excecao(): void
     {
-        $fabrica = $this->fabrica(new ProviderCompleto());
+        $factory = $this->factory(new ProviderCompleto());
 
         $this->expectException(ProviderNotSupportedException::class);
 
-        $fabrica->autocomplete(Provider::Here);
+        $factory->autocomplete(Provider::Here);
     }
 
     public function test_provider_sem_a_capacidade_lanca_excecao(): void
     {
-        $fabrica = $this->fabrica(new ProviderSemCapacidades());
+        $factory = $this->factory(new ProviderSemCapacidades());
 
         $this->expectException(ServiceNotSupportedByProviderException::class);
 
-        $fabrica->autocomplete(Provider::Google);
+        $factory->autocomplete(Provider::Google);
     }
 
     public function test_route_optimization_falha_em_provider_sem_a_capacidade(): void

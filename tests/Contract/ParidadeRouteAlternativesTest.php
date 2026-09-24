@@ -34,7 +34,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
         ]);
     }
 
-    private function rota(Provider $provider, int $alternativas): Route
+    private function route(Provider $provider, int $alternativas): Route
     {
         return $this->app->make(MapServiceFactory::class)
             ->routing($provider)
@@ -45,7 +45,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
             ));
     }
 
-    public static function provedores(): array
+    public static function providers(): array
     {
         return [
             'google' => [Provider::Google, 'google', 'route-alternativas.json'],
@@ -55,22 +55,22 @@ final class ParidadeRouteAlternativesTest extends TestCase
 
     /**
      */
-    #[DataProvider('provedores')]
+    #[DataProvider('providers')]
     public function test_alternativas_chegam_no_dto_nos_dois_provedores(
         Provider $provider,
-        string $pasta,
+        string $folder,
         string $fixture,
     ): void {
-        $this->fake($pasta, $fixture);
+        $this->fake($folder, $fixture);
 
-        $rota = $this->rota($provider, 3);
+        $route = $this->route($provider, 3);
 
-        $this->assertNotSame([], $rota->alternatives, 'O provedor devolveu alternativas e elas sumiram no mapper.');
+        $this->assertNotSame([], $route->alternatives, 'O provedor devolveu alternativas e elas sumiram no mapper.');
 
-        foreach ($rota->alternatives as $alternativa) {
-            $this->assertInstanceOf(Route::class, $alternativa);
-            $this->assertGreaterThan(0, $alternativa->distance->meters, 'Alternativa sem distancia e medida fabricada.');
-            $this->assertSame([], $alternativa->alternatives, 'Alternativa nao pode aninhar alternativas.');
+        foreach ($route->alternatives as $alternative) {
+            $this->assertInstanceOf(Route::class, $alternative);
+            $this->assertGreaterThan(0, $alternative->distance->meters, 'Alternativa sem distancia e medida fabricada.');
+            $this->assertSame([], $alternative->alternatives, 'Alternativa nao pode aninhar alternativas.');
         }
     }
 
@@ -78,22 +78,22 @@ final class ParidadeRouteAlternativesTest extends TestCase
      * Simetria antes de generosidade: sem pedido, nenhum provedor devolve
      * alternativas, ainda que a resposta upstream as traga.
      */
-    #[DataProvider('provedores')]
+    #[DataProvider('providers')]
     public function test_sem_pedido_nenhum_provedor_devolve_alternativas(
         Provider $provider,
-        string $pasta,
+        string $folder,
         string $fixture,
     ): void {
-        $this->fake($pasta, $fixture);
+        $this->fake($folder, $fixture);
 
-        $this->assertSame([], $this->rota($provider, 0)->alternatives);
+        $this->assertSame([], $this->route($provider, 0)->alternatives);
     }
 
     /**
      * Caminho de erro tambem e contrato: o teto do HERE (6) vale para os dois,
      * com a mesma excecao, antes de qualquer chamada upstream.
      */
-    #[DataProvider('valoresForaDaFaixa')]
+    #[DataProvider('outOfRangeValues')]
     public function test_valor_fora_da_faixa_e_recusado_antes_da_chamada(int $alternativas): void
     {
         Http::fake();
@@ -107,7 +107,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
         );
     }
 
-    public static function valoresForaDaFaixa(): array
+    public static function outOfRangeValues(): array
     {
         return ['negativo' => [-1], 'acima do teto do HERE' => [7]];
     }
@@ -115,7 +115,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
     public function test_google_pede_liga_desliga_e_here_pede_a_quantidade(): void
     {
         $this->fake('google', 'route-alternativas.json');
-        $this->rota(Provider::Google, 3);
+        $this->route(Provider::Google, 3);
 
         Http::assertSent(function ($request): bool {
             $this->assertTrue($request->data()['computeAlternativeRoutes']);
@@ -124,7 +124,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
         });
 
         $this->fake('here', 'route-alternativas.json');
-        $this->rota(Provider::Here, 3);
+        $this->route(Provider::Here, 3);
 
         Http::assertSent(function ($request): bool {
             if (! str_contains($request->url(), 'hereapi')) {
@@ -145,8 +145,8 @@ final class ParidadeRouteAlternativesTest extends TestCase
     {
         $this->fake('here', 'route-alternativas.json');
 
-        foreach ($this->rota(Provider::Here, 3)->alternatives as $alternativa) {
-            $this->assertGreaterThan(0, $alternativa->distance->meters);
+        foreach ($this->route(Provider::Here, 3)->alternatives as $alternative) {
+            $this->assertGreaterThan(0, $alternative->distance->meters);
         }
     }
 }

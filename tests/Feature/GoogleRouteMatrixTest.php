@@ -12,15 +12,15 @@ use Illuminate\Support\Facades\Http;
 
 final class GoogleRouteMatrixTest extends TestCase
 {
-    private function pontos(int $quantidade): array
+    private function points(int $howMany): array
     {
-        $pontos = [];
+        $points = [];
 
-        for ($i = 0; $i < $quantidade; $i++) {
-            $pontos[] = new Coordinates(-23.5 - ($i / 10000), -46.6 - ($i / 10000));
+        for ($i = 0; $i < $howMany; $i++) {
+            $points[] = new Coordinates(-23.5 - ($i / 10000), -46.6 - ($i / 10000));
         }
 
-        return $pontos;
+        return $points;
     }
 
     public function test_calcula_matriz_e_devolve_colecao_endereçavel(): void
@@ -30,13 +30,13 @@ final class GoogleRouteMatrixTest extends TestCase
             200,
         )]);
 
-        $matriz = $this->app->make(MapServiceFactory::class)
+        $matrix = $this->app->make(MapServiceFactory::class)
             ->routeMatrix(Provider::Google)
-            ->matrix(new RouteMatrixRequest($this->pontos(2), $this->pontos(3)));
+            ->matrix(new RouteMatrixRequest($this->points(2), $this->points(3)));
 
-        $this->assertCount(6, $matriz);
-        $this->assertSame(1225, $matriz->entry(0, 0)->distance->meters);
-        $this->assertFalse($matriz->entry(1, 0)->reachable);
+        $this->assertCount(6, $matrix);
+        $this->assertSame(1225, $matrix->entry(0, 0)->distance->meters);
+        $this->assertFalse($matrix->entry(1, 0)->reachable);
 
         Http::assertSent(function ($request): bool {
             $this->assertSame('chave-google-de-teste', $request->header('X-Goog-Api-Key')[0]);
@@ -55,7 +55,7 @@ final class GoogleRouteMatrixTest extends TestCase
 
         $this->app->make(MapServiceFactory::class)
             ->routeMatrix(Provider::Google)
-            ->matrix(new RouteMatrixRequest($this->pontos(26), $this->pontos(26)));
+            ->matrix(new RouteMatrixRequest($this->points(26), $this->points(26)));
     }
 
     public function test_limite_vazio_no_config_significa_sem_guarda(): void
@@ -70,10 +70,10 @@ final class GoogleRouteMatrixTest extends TestCase
             200,
         )]);
 
-        $matriz = $this->app->make(MapServiceFactory::class)
+        $matrix = $this->app->make(MapServiceFactory::class)
             ->routeMatrix(Provider::Google)
-            ->matrix(new RouteMatrixRequest($this->pontos(2), $this->pontos(3)));
+            ->matrix(new RouteMatrixRequest($this->points(2), $this->points(3)));
 
-        $this->assertCount(6, $matriz);
+        $this->assertCount(6, $matrix);
     }
 }

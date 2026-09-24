@@ -32,15 +32,15 @@ enum HereAutocompleteStrategy: string
 
     case Autocomplete = 'autocomplete';
 
-    public static function fromConfig(mixed $valor): self
+    public static function fromConfig(mixed $value): self
     {
-        if ($valor === null || $valor === '') {
+        if ($value === null || $value === '') {
             return self::Auto;
         }
 
-        return self::tryFrom((string) $valor) ?? throw new ConfigurationException(sprintf(
+        return self::tryFrom((string) $value) ?? throw new ConfigurationException(sprintf(
             'bee-maps.here.autocomplete_strategy invalido: "%s". Valores aceitos: %s.',
-            (string) $valor,
+            (string) $value,
             implode(', ', array_column(self::cases(), 'value')),
         ));
     }
@@ -51,7 +51,7 @@ enum HereAutocompleteStrategy: string
      * entrasse, um centro esquecido no config reativaria em silencio o recorte
      * local numa busca que pediu alcance nacional.
      */
-    public function resolver(AutocompleteRequest $request): self
+    public function resolve(AutocompleteRequest $request): self
     {
         if ($this !== self::Auto) {
             return $this;

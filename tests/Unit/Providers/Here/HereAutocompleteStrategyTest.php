@@ -12,32 +12,32 @@ final class HereAutocompleteStrategyTest extends TestCase
 {
     public function test_auto_com_near_escolhe_autosuggest(): void
     {
-        $escolha = HereAutocompleteStrategy::Auto->resolver(
+        $choice = HereAutocompleteStrategy::Auto->resolve(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6)),
         );
 
-        $this->assertSame(HereAutocompleteStrategy::Autosuggest, $escolha);
+        $this->assertSame(HereAutocompleteStrategy::Autosuggest, $choice);
     }
 
     public function test_auto_sem_near_escolhe_autocomplete(): void
     {
-        $escolha = HereAutocompleteStrategy::Auto->resolver(new AutocompleteRequest('Av Paulista'));
+        $choice = HereAutocompleteStrategy::Auto->resolve(new AutocompleteRequest('Av Paulista'));
 
-        $this->assertSame(HereAutocompleteStrategy::Autocomplete, $escolha);
+        $this->assertSame(HereAutocompleteStrategy::Autocomplete, $choice);
     }
 
     public function test_estrategia_forcada_ignora_o_near(): void
     {
-        $comNear = new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6));
-        $semNear = new AutocompleteRequest('Av Paulista');
+        $withNear = new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6));
+        $withoutNear = new AutocompleteRequest('Av Paulista');
 
         $this->assertSame(
             HereAutocompleteStrategy::Autocomplete,
-            HereAutocompleteStrategy::Autocomplete->resolver($comNear),
+            HereAutocompleteStrategy::Autocomplete->resolve($withNear),
         );
         $this->assertSame(
             HereAutocompleteStrategy::Autosuggest,
-            HereAutocompleteStrategy::Autosuggest->resolver($semNear),
+            HereAutocompleteStrategy::Autosuggest->resolve($withoutNear),
         );
     }
 

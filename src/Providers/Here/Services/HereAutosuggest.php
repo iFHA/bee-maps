@@ -33,8 +33,8 @@ final class HereAutosuggest implements Autocomplete
         $query = $this->requestMapper->toQuery($request, $this->language, $this->region)
             + ['apiKey' => $this->apiKey];
 
-        $resposta = $this->http->get(Provider::Here, Service::Autocomplete, $this->url, $query);
+        $response = $this->http->get(Provider::Here, Service::Autocomplete, $this->url, $query);
 
-        return $this->responseMapper->toCollection($resposta);
+        return $this->responseMapper->toCollection($response);
     }
 }

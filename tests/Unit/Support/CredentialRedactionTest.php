@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 final class CredentialRedactionTest extends TestCase
 {
-    public static function textos(): array
+    public static function texts(): array
     {
         return [
             'apiKey do HERE' => ['https://x/y?apiKey=SEGREDO&lang=pt', 'https://x/y?apiKey=[REDACTED]&lang=pt'],
@@ -23,9 +23,9 @@ final class CredentialRedactionTest extends TestCase
         ];
     }
 
-    #[DataProvider('textos')]
-    public function test_redige_credencial_de_query(string $entrada, string $esperado): void
+    #[DataProvider('texts')]
+    public function test_redige_credencial_de_query(string $entry, string $expected): void
     {
-        $this->assertSame($esperado, CredentialRedaction::redigir($entrada));
+        $this->assertSame($expected, CredentialRedaction::redact($entry));
     }
 }

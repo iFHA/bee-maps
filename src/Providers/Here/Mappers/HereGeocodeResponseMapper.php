@@ -20,22 +20,22 @@ final class HereGeocodeResponseMapper
      */
     public function __construct(
         private readonly float $partialThreshold = 1.0,
-        private readonly HereAddressMapper $enderecos = new HereAddressMapper(),
+        private readonly HereAddressMapper $addresses = new HereAddressMapper(),
     ) {
     }
 
     /**
      * Aceita tanto {"items": [...]} (geocode e revgeocode) quanto um objeto unico (lookup).
      */
-    public function toCollection(array $resposta): GeocodeResultCollection
+    public function toCollection(array $response): GeocodeResultCollection
     {
-        $itens = array_key_exists('items', $resposta)
-            ? $resposta['items']
-            : (isset($resposta['position']) ? [$resposta] : []);
+        $items = array_key_exists('items', $response)
+            ? $response['items']
+            : (isset($response['position']) ? [$response] : []);
 
         return new GeocodeResultCollection(...array_map(
             fn (array $item) => $this->toResult($item),
-            $itens,
+            $items,
         ));
     }
 
@@ -44,7 +44,7 @@ final class HereGeocodeResponseMapper
         $score = isset($item['scoring']['queryScore']) ? (float) $item['scoring']['queryScore'] : null;
 
         return new GeocodeResult(
-            address: $this->enderecos->fromItem($item['address'] ?? [], $item['title'] ?? ''),
+            address: $this->addresses->fromItem($item['address'] ?? [], $item['title'] ?? ''),
             coordinates: new Coordinates(
                 (float) $item['position']['lat'],
                 (float) $item['position']['lng'],

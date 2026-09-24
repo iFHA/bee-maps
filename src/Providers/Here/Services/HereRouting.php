@@ -29,13 +29,13 @@ final class HereRouting implements Routing
     public function route(RouteRequest $request): Route
     {
         if (! $request->optimizeIntermediates || $request->intermediates === []) {
-            return $this->calcular($request, null);
+            return $this->calculate($request, null);
         }
 
         // Duas chamadas, um evento: o /v8/routes nao reordena waypoints, e sem
         // o agrupamento a latencia do HERE apareceria dobrada e sem explicacao.
-        return $this->http->operacao(Provider::Here, Service::Routing, function () use ($request): Route {
-            $sequencia = $this->http->get(
+        return $this->http->operation(Provider::Here, Service::Routing, function () use ($request): Route {
+            $sequence = $this->http->get(
                 Provider::Here,
                 Service::Routing,
                 $this->findSequenceUrl,
@@ -48,27 +48,27 @@ final class HereRouting implements Routing
                 ),
             );
 
-            return $this->calcular($request, $this->sequenceMapper->toOrder($sequencia, count($request->intermediates)));
+            return $this->calculate($request, $this->sequenceMapper->toOrder($sequence, count($request->intermediates)));
         });
     }
 
     /**
-     * @param list<int>|null $ordemIntermediarios
+     * @param list<int>|null $intermediatesOrder
      */
-    private function calcular(RouteRequest $request, ?array $ordemIntermediarios): Route
+    private function calculate(RouteRequest $request, ?array $intermediatesOrder): Route
     {
-        $resposta = $this->http->get(
+        $response = $this->http->get(
             Provider::Here,
             Service::Routing,
             $this->url,
-            $this->requestMapper->toQuery($request, $this->language, $ordemIntermediarios)
+            $this->requestMapper->toQuery($request, $this->language, $intermediatesOrder)
                 + ['apiKey' => $this->apiKey],
         );
 
         return $this->responseMapper->toRoute(
-            $resposta,
+            $response,
             $request->includeLegs,
-            $ordemIntermediarios ?? [],
+            $intermediatesOrder ?? [],
             $request->alternatives > 0,
         );
     }

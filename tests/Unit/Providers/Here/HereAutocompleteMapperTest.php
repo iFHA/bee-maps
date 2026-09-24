@@ -66,53 +66,53 @@ final class HereAutocompleteMapperTest extends TestCase
 
     public function test_main_text_sai_do_address_e_nao_do_title_invertido(): void
     {
-        $primeira = (new HereAutocompleteResponseMapper())->toCollection($this->fixture())->first();
+        $first = (new HereAutocompleteResponseMapper())->toCollection($this->fixture())->first();
 
         // O `title` deste endpoint comeca pelo pais; usa-lo aqui entregaria
         // "Brasil, Sao Paulo - SP, ..." como linha principal.
-        $this->assertSame('Avenida Paulista, 1000', $primeira->mainText);
-        $this->assertSame('Sao Paulo - SP, 01310-100, Brasil', $primeira->secondaryText);
-        $this->assertSame('Avenida Paulista, 1000, Sao Paulo - SP, 01310-100, Brasil', $primeira->description);
+        $this->assertSame('Avenida Paulista, 1000', $first->mainText);
+        $this->assertSame('Sao Paulo - SP, 01310-100, Brasil', $first->secondaryText);
+        $this->assertSame('Avenida Paulista, 1000, Sao Paulo - SP, 01310-100, Brasil', $first->description);
     }
 
     public function test_rua_sem_numero_nao_ganha_virgula_no_main_text(): void
     {
-        $rua = (new HereAutocompleteResponseMapper())->toCollection($this->fixture())->all()[1];
+        $street = (new HereAutocompleteResponseMapper())->toCollection($this->fixture())->all()[1];
 
         // O consumidor decide se pede o numero da casa contando virgulas no
         // mainText. Uma virgula a mais aqui pularia essa etapa do checkout.
-        $this->assertSame('Rua Blumenau', $rua->mainText);
-        $this->assertStringNotContainsString(',', $rua->mainText);
-        $this->assertSame('Joinville - SC, 89201-000, Brasil', $rua->secondaryText);
+        $this->assertSame('Rua Blumenau', $street->mainText);
+        $this->assertStringNotContainsString(',', $street->mainText);
+        $this->assertSame('Joinville - SC, 89201-000, Brasil', $street->secondaryText);
     }
 
     public function test_cidade_usa_a_localidade_como_linha_principal(): void
     {
-        $cidade = (new HereAutocompleteResponseMapper())->toCollection($this->fixture())->all()[2];
+        $city = (new HereAutocompleteResponseMapper())->toCollection($this->fixture())->all()[2];
 
-        $this->assertSame('Belo Horizonte', $cidade->mainText);
-        $this->assertSame('MG, Brasil', $cidade->secondaryText);
+        $this->assertSame('Belo Horizonte', $city->mainText);
+        $this->assertSame('MG, Brasil', $city->secondaryText);
     }
 
     public function test_todo_item_e_resolvivel_e_nenhum_e_estabelecimento(): void
     {
-        $colecao = (new HereAutocompleteResponseMapper())->toCollection($this->fixture());
+        $collection = (new HereAutocompleteResponseMapper())->toCollection($this->fixture());
 
-        $this->assertCount(3, $colecao);
+        $this->assertCount(3, $collection);
 
-        foreach ($colecao as $sugestao) {
+        foreach ($collection as $suggestion) {
             // Sem chainQuery/categoryQuery neste endpoint: todo id resolve no /lookup.
-            $this->assertNotNull($sugestao->place);
-            $this->assertSame(Provider::Here, $sugestao->place->provider);
+            $this->assertNotNull($suggestion->place);
+            $this->assertSame(Provider::Here, $suggestion->place->provider);
             // O resultType do /autocomplete nao tem `place`.
-            $this->assertFalse($sugestao->isEstablishment);
+            $this->assertFalse($suggestion->isEstablishment);
         }
     }
 
     public function test_resposta_malformada_vira_colecao_vazia(): void
     {
-        $colecao = (new HereAutocompleteResponseMapper())->toCollection(['items' => [['id' => 'sem-titulo']]]);
+        $collection = (new HereAutocompleteResponseMapper())->toCollection(['items' => [['id' => 'sem-titulo']]]);
 
-        $this->assertCount(0, $colecao);
+        $this->assertCount(0, $collection);
     }
 }

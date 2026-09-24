@@ -39,9 +39,9 @@ final class RoutesStrategy implements OptimizationStrategy
         // O computeRoutes EXIGE destination. Tour aberto vira ciclo fechado na
         // origem, e a perna de volta sai dos totais depois — e a unica emulacao
         // que sobrou no pacote, porque o findsequence2 do HERE aceita omitir o fim.
-        $aberto = $request->destination === null;
+        $open = $request->destination === null;
 
-        $rota = new RouteRequest(
+        $route = new RouteRequest(
             origin: $request->origin,
             destination: $request->destination ?? $request->origin,
             intermediates: $request->intermediates,
@@ -49,79 +49,79 @@ final class RoutesStrategy implements OptimizationStrategy
             optimizeIntermediates: true,
         );
 
-        $resposta = $this->http->post(
+        $response = $this->http->post(
             Provider::Google,
             Service::RouteOptimization,
             $this->url,
-            $this->requestMapper->toPayload($rota, $this->language),
+            $this->requestMapper->toPayload($route, $this->language),
             [
                 'X-Goog-Api-Key' => $this->apiKey,
                 'X-Goog-FieldMask' => self::FIELD_MASK,
             ],
         );
 
-        $primeira = $resposta['routes'][0] ?? null;
+        $first = $response['routes'][0] ?? null;
 
-        if (! is_array($primeira)) {
-            throw $this->erro('O Google nao devolveu rota para os pontos informados.');
+        if (! is_array($first)) {
+            throw $this->error('O Google nao devolveu rota para os pontos informados.');
         }
 
-        $ordem = WaypointOrder::validar(
-            $primeira['optimizedIntermediateWaypointIndex'] ?? [],
+        $order = WaypointOrder::validate(
+            $first['optimizedIntermediateWaypointIndex'] ?? [],
             count($request->intermediates),
             Provider::Google,
             'optimizedIntermediateWaypointIndex',
         );
 
-        $pernas = array_values($primeira['legs'] ?? []);
-        $esperadas = count($request->intermediates) + 1;
+        $legs = array_values($first['legs'] ?? []);
+        $expected = count($request->intermediates) + 1;
 
         // Contar pernas aqui verifica o invariante, nao um proxy: uma rota com
         // origem, N intermediarios e destino tem exatamente N+1 pernas. Com
         // menos, somar o que veio produz total silenciosamente menor.
-        if (count($pernas) !== $esperadas) {
-            throw $this->erro(sprintf(
+        if (count($legs) !== $expected) {
+            throw $this->error(sprintf(
                 'O Google devolveu %d pernas para uma rota de %d esperadas.',
-                count($pernas),
-                $esperadas,
+                count($legs),
+                $expected,
             ));
         }
 
-        if ($aberto) {
-            array_pop($pernas);
+        if ($open) {
+            array_pop($legs);
         }
 
-        $metros = 0;
-        $segundos = 0;
+        $meters = 0;
+        $seconds = 0;
 
-        foreach ($pernas as $perna) {
+        foreach ($legs as $leg) {
             // proto3 omite campo de valor zero: perna de 0 metros (duas paradas
             // na mesma coordenada) chega sem distanceMeters. Ler ausente como
             // zero aqui e decodificar o formato, nao inventar medida.
-            $metros += (int) ($perna['distanceMeters'] ?? 0);
-            $segundos += $this->segundos($perna['duration'] ?? null);
+            $meters += (int) ($leg['distanceMeters'] ?? 0);
+            $seconds += $this->seconds($leg['duration'] ?? null);
         }
 
         return new OptimizedWaypoints(
-            order: $ordem,
-            distance: new Distance($metros),
-            duration: new Duration($segundos),
+            order: $order,
+            distance: new Distance($meters),
+            duration: new Duration($seconds),
             objective: $request->objective,
             strategy: 'google.routes',
         );
     }
 
-    private function segundos(string|int|null $valor): int
+    private function seconds(string|int|null $value): int
     {
         return match (true) {
-            $valor === null => 0,
-            is_int($valor) => $valor,
-            default => (int) rtrim($valor, 's'),
+            $value === null => 0,
+            is_int($value) => $value,
+            default => (int) rtrim($value, 's'),
         };
     }
 
-    private function erro(string $mensagem): ProviderRequestException
+    private function error(string $message): ProviderRequestException
     {
-        return new ProviderRequestException(Provider::Google, Service::RouteOptimization, $mensagem, 200);
+        return new ProviderRequestException(Provider::Google, Service::RouteOptimization, $message, 200);
     }
 }
