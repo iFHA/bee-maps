@@ -40,7 +40,12 @@
             "aliases": { "BeeMaps": "BeeDelivery\\BeeMaps\\Facades\\BeeMaps" }
         }
     },
-    "config": { "sort-packages": true },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.3.0"
+        }
+    },
     "minimum-stability": "stable",
     "prefer-stable": true
 }
