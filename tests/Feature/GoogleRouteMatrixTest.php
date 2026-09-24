@@ -23,7 +23,7 @@ final class GoogleRouteMatrixTest extends TestCase
         return $points;
     }
 
-    public function test_calcula_matriz_e_devolve_colecao_endereçavel(): void
+    public function test_computes_the_matrix_and_returns_an_addressable_collection(): void
     {
         Http::fake(['routes.googleapis.com/distanceMatrix/*' => Http::response(
             json_decode(file_get_contents(__DIR__ . '/../Fixtures/google/route-matrix.json'), true),
@@ -46,7 +46,7 @@ final class GoogleRouteMatrixTest extends TestCase
         });
     }
 
-    public function test_matriz_acima_do_limite_falha_antes_de_sair_para_a_rede(): void
+    public function test_a_matrix_above_the_limit_fails_before_going_to_the_network(): void
     {
         // Sem Http::fake: se a chamada sair, preventStrayRequests quebra o teste.
         // 26 x 26 = 676 elementos, acima dos 625 que a API aceita.
@@ -58,7 +58,7 @@ final class GoogleRouteMatrixTest extends TestCase
             ->matrix(new RouteMatrixRequest($this->points(26), $this->points(26)));
     }
 
-    public function test_limite_vazio_no_config_significa_sem_guarda(): void
+    public function test_an_empty_limit_in_the_config_means_no_guard(): void
     {
         // `BEE_MAPS_GOOGLE_MATRIX_MAX_ELEMENTS=` no .env faz env() devolver ''
         // (o default so vale quando a variavel nao existe), e (int) '' e 0 — o

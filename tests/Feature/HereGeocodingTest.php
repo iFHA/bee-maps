@@ -19,7 +19,7 @@ final class HereGeocodingTest extends TestCase
         return $this->app->make(MapServiceFactory::class)->geocoding(Provider::Here);
     }
 
-    public function test_geocode_chama_o_host_de_geocode(): void
+    public function test_geocode_calls_the_geocode_host(): void
     {
         Http::fake([
             'geocode.search.hereapi.com/*' => Http::response(
@@ -34,7 +34,7 @@ final class HereGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'q=Av Paulista 1000'));
     }
 
-    public function test_reverse_chama_o_host_de_revgeocode(): void
+    public function test_reverse_calls_the_revgeocode_host(): void
     {
         Http::fake([
             'revgeocode.search.hereapi.com/*' => Http::response(
@@ -48,7 +48,7 @@ final class HereGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'at=-23.5615000,-46.6562000'));
     }
 
-    public function test_lookup_chama_o_host_de_lookup_e_devolve_um_resultado(): void
+    public function test_lookup_calls_the_lookup_host_and_returns_a_result(): void
     {
         Http::fake([
             'lookup.search.hereapi.com/*' => Http::response(
@@ -63,14 +63,14 @@ final class HereGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'id=here:pds:place:076sxxxx-abcdef'));
     }
 
-    public function test_lookup_recusa_place_id_do_google(): void
+    public function test_lookup_refuses_a_google_place_id(): void
     {
         $this->expectException(PlaceReferenceProviderMismatchException::class);
 
         $this->geocoding()->lookup(new PlaceReference(Provider::Google, 'ChIJ0WGkg4FEzpQRrlsz_whLqZs'));
     }
 
-    public function test_filtro_de_pais_alpha2_chega_como_countryCode_alpha3(): void
+    public function test_an_alpha2_country_filter_arrives_as_alpha3_countryCode(): void
     {
         Http::fake([
             'geocode.search.hereapi.com/*' => Http::response(
@@ -84,7 +84,7 @@ final class HereGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'in=countryCode:BRA'));
     }
 
-    public function test_filtro_de_pais_alpha3_tambem_funciona(): void
+    public function test_an_alpha3_country_filter_also_works(): void
     {
         Http::fake([
             'geocode.search.hereapi.com/*' => Http::response(
@@ -98,7 +98,7 @@ final class HereGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'in=countryCode:BRA'));
     }
 
-    public function test_filtro_de_pais_invalido_lanca_excecao(): void
+    public function test_an_invalid_country_filter_throws(): void
     {
         $this->expectException(InvalidRequestException::class);
 

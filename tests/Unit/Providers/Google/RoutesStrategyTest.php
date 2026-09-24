@@ -46,7 +46,7 @@ final class RoutesStrategyTest extends TestCase
         )]);
     }
 
-    public function test_fim_fixo_soma_todas_as_pernas(): void
+    public function test_a_fixed_end_sums_every_leg(): void
     {
         $this->fakeFromFixture();
 
@@ -63,7 +63,7 @@ final class RoutesStrategyTest extends TestCase
         $this->assertSame(OptimizationObjective::MinTravelTime, $result->objective);
     }
 
-    public function test_tour_aberto_descarta_a_ultima_perna(): void
+    public function test_an_open_tour_drops_the_last_leg(): void
     {
         // Sem destino, o computeRoutes — que EXIGE destination — recebe a origem
         // como destino. A ultima perna e a volta para casa, que ninguem pediu.
@@ -88,7 +88,7 @@ final class RoutesStrategyTest extends TestCase
         });
     }
 
-    public function test_field_mask_pede_so_o_que_o_contrato_usa(): void
+    public function test_the_field_mask_asks_only_for_what_the_contract_uses(): void
     {
         $this->fakeFromFixture();
 
@@ -110,7 +110,7 @@ final class RoutesStrategyTest extends TestCase
         });
     }
 
-    public function test_numero_de_pernas_diferente_do_esperado_e_erro(): void
+    public function test_a_leg_count_different_from_the_expected_is_an_error(): void
     {
         // 3 intermediarios => 4 pernas. Com 3, somar o que veio produziria um
         // total silenciosamente menor.
@@ -135,7 +135,7 @@ final class RoutesStrategyTest extends TestCase
         ));
     }
 
-    public function test_ordem_incompleta_e_erro(): void
+    public function test_an_incomplete_order_is_an_error(): void
     {
         Http::fake(['routes.googleapis.com/directions/*' => Http::response([
             'routes' => [[
@@ -159,7 +159,7 @@ final class RoutesStrategyTest extends TestCase
         ));
     }
 
-    public function test_resposta_sem_rota_e_erro(): void
+    public function test_a_response_without_a_route_is_an_error(): void
     {
         Http::fake(['routes.googleapis.com/directions/*' => Http::response(['routes' => []], 200)]);
 
@@ -172,7 +172,7 @@ final class RoutesStrategyTest extends TestCase
         ));
     }
 
-    public function test_perna_sem_distanceMeters_vale_zero_porque_proto3_omite_zero(): void
+    public function test_a_leg_without_distanceMeters_counts_as_zero_because_proto3_omits_zero(): void
     {
         // Duas paradas na mesma coordenada produzem perna de 0 metros, e o proto3
         // omite o campo. Recusar aqui rejeitaria resposta valida.

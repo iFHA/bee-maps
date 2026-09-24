@@ -7,7 +7,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class ConfigMergeTest extends TestCase
 {
-    public function test_chave_aninhada_nova_aparece_em_config_publicado_antigo(): void
+    public function test_a_new_nested_key_shows_up_in_an_old_published_config(): void
     {
         $patterns = ['google' => [
             'key' => null,
@@ -29,7 +29,7 @@ final class ConfigMergeTest extends TestCase
         $this->assertSame(625, $result['google']['matrix_max_elements']);
     }
 
-    public function test_lista_publicada_vence_inteira(): void
+    public function test_a_published_list_wins_whole(): void
     {
         $patterns = ['providers' => ['GoogleProvider', 'HereProvider']];
         $published = ['providers' => ['GoogleProvider']];
@@ -40,21 +40,21 @@ final class ConfigMergeTest extends TestCase
         $this->assertSame(['GoogleProvider'], $result['providers']);
     }
 
-    public function test_sem_config_publicado_devolve_os_padroes(): void
+    public function test_without_a_published_config_it_returns_the_defaults(): void
     {
         $patterns = ['a' => 1, 'b' => ['c' => 2]];
 
         $this->assertSame($patterns, ConfigMerge::deep($patterns, []));
     }
 
-    public function test_escalar_publicado_vence_o_padrao(): void
+    public function test_a_published_scalar_beats_the_default(): void
     {
         $result = ConfigMerge::deep(['http' => ['timeout' => 10]], ['http' => ['timeout' => 30]]);
 
         $this->assertSame(30, $result['http']['timeout']);
     }
 
-    public function test_null_publicado_e_respeitado_e_nao_volta_para_o_padrao(): void
+    public function test_a_published_null_is_respected_and_does_not_fall_back_to_the_default(): void
     {
         // Consumidor que zerou uma chave de proposito nao pode ve-la ressuscitar.
         $result = ConfigMerge::deep(['here' => ['api_key' => 'padrao']], ['here' => ['api_key' => null]]);
@@ -62,7 +62,7 @@ final class ConfigMergeTest extends TestCase
         $this->assertNull($result['here']['api_key']);
     }
 
-    public function test_lista_publicada_com_buraco_ainda_vence_inteira(): void
+    public function test_a_published_list_with_a_hole_still_wins_whole(): void
     {
         $patterns = ['providers' => ['GoogleProvider', 'HereProvider']];
 
@@ -78,14 +78,14 @@ final class ConfigMergeTest extends TestCase
         $this->assertNotContains('GoogleProvider', $result['providers']);
     }
 
-    public function test_lista_publicada_vazia_e_respeitada(): void
+    public function test_an_empty_published_list_is_respected(): void
     {
         $result = ConfigMerge::deep(['providers' => ['GoogleProvider']], ['providers' => []]);
 
         $this->assertSame([], $result['providers']);
     }
 
-    public function test_padrao_de_array_vazio_nao_descarta_chaves_do_publicado(): void
+    public function test_an_empty_array_default_does_not_discard_published_keys(): void
     {
         // array_is_list([]) e true, entao um padrao vazio caia na regra de lista
         // e rodava array_values() sobre o mapa publicado, perdendo as chaves.
@@ -97,7 +97,7 @@ final class ConfigMergeTest extends TestCase
         $this->assertSame(['X-Trace' => 'abc'], $result['http']['headers']);
     }
 
-    public function test_padrao_de_array_vazio_com_lista_publicada_tambem_e_preservado(): void
+    public function test_an_empty_array_default_with_a_published_list_is_preserved_too(): void
     {
         $result = ConfigMerge::deep(['tags' => []], ['tags' => ['a', 'b']]);
 

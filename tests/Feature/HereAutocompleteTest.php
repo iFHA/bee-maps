@@ -45,7 +45,7 @@ final class HereAutocompleteTest extends TestCase
             ->suggest($request);
     }
 
-    public function test_com_coordenada_o_padrao_vai_para_o_autosuggest(): void
+    public function test_with_coordinates_the_default_goes_to_autosuggest(): void
     {
         // Sem fake do /autocomplete: se o despacho errar o endpoint,
         // preventStrayRequests quebra o teste em vez de mascarar a rota.
@@ -58,7 +58,7 @@ final class HereAutocompleteTest extends TestCase
         Http::assertSent(fn ($request) => str_contains($request->url(), 'apiKey=chave-here-de-teste'));
     }
 
-    public function test_sem_coordenada_o_padrao_vai_para_o_autocomplete_e_cobre_o_pais(): void
+    public function test_without_coordinates_the_default_goes_to_autocomplete_and_covers_the_country(): void
     {
         $this->fakeAutocomplete();
 
@@ -81,7 +81,7 @@ final class HereAutocompleteTest extends TestCase
         });
     }
 
-    public function test_centro_configurado_nao_encolhe_a_busca_nacional_no_modo_auto(): void
+    public function test_a_configured_center_does_not_shrink_the_nationwide_search_in_auto_mode(): void
     {
         // O autosuggest_center segue setado pelo defineEnvironment. Se ele
         // influenciasse o modo `auto`, esta chamada viraria um circle de 50 km
@@ -95,7 +95,7 @@ final class HereAutocompleteTest extends TestCase
         Http::assertSent(fn ($request) => ! str_contains(urldecode($request->url()), 'circle:'));
     }
 
-    public function test_near_e_radius_geram_circle_e_countryCode_como_parametros_in_repetidos(): void
+    public function test_near_and_radius_produce_circle_and_countryCode_as_repeated_in_parameters(): void
     {
         $this->fakeAutosuggest();
 
@@ -114,7 +114,7 @@ final class HereAutocompleteTest extends TestCase
         });
     }
 
-    public function test_estrategia_autocomplete_forcada_usa_o_endpoint_mesmo_com_coordenada(): void
+    public function test_the_forced_autocomplete_strategy_uses_the_endpoint_even_with_coordinates(): void
     {
         $this->strategy('autocomplete');
         $this->fakeAutocomplete();
@@ -131,7 +131,7 @@ final class HereAutocompleteTest extends TestCase
         });
     }
 
-    public function test_estrategia_autosuggest_forcada_cai_no_centro_configurado_sem_coordenada(): void
+    public function test_the_forced_autosuggest_strategy_falls_back_to_the_configured_center_without_coordinates(): void
     {
         $this->strategy('autosuggest');
         $this->fakeAutosuggest();
@@ -143,7 +143,7 @@ final class HereAutocompleteTest extends TestCase
         );
     }
 
-    public function test_estrategia_autosuggest_sem_centro_e_sem_coordenada_falha_antes_da_rede(): void
+    public function test_the_autosuggest_strategy_without_center_or_coordinates_fails_before_the_network(): void
     {
         // Sem Http::fake: se a excecao nao vier, preventStrayRequests quebra o
         // teste — que e o comportamento desejado.
@@ -155,7 +155,7 @@ final class HereAutocompleteTest extends TestCase
         $this->suggest(new AutocompleteRequest('Av Paulista'));
     }
 
-    public function test_estrategia_invalida_e_erro_de_configuracao(): void
+    public function test_an_invalid_strategy_is_a_configuration_error(): void
     {
         $this->strategy('discover');
 
@@ -164,7 +164,7 @@ final class HereAutocompleteTest extends TestCase
         $this->suggest(new AutocompleteRequest('Av Paulista'));
     }
 
-    public function test_countries_vazio_usa_a_regiao_configurada_como_padrao(): void
+    public function test_empty_countries_uses_the_configured_region_as_the_default(): void
     {
         $this->fakeAutocomplete();
 

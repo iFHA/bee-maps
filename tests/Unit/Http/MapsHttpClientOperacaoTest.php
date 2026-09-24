@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Http;
 
 final class MapsHttpClientOperacaoTest extends TestCase
 {
-    public function test_duas_chamadas_dentro_de_uma_operacao_viram_um_unico_evento(): void
+    public function test_two_calls_inside_one_operation_become_a_single_event(): void
     {
         Event::fake([MapRequestCompleted::class]);
 
@@ -42,7 +42,7 @@ final class MapsHttpClientOperacaoTest extends TestCase
         );
     }
 
-    public function test_chamada_fora_de_operacao_continua_disparando_um_evento_por_chamada(): void
+    public function test_a_call_outside_an_operation_still_fires_one_event_per_call(): void
     {
         Event::fake([MapRequestCompleted::class]);
 
@@ -59,7 +59,7 @@ final class MapsHttpClientOperacaoTest extends TestCase
         );
     }
 
-    public function test_falha_no_meio_da_operacao_ainda_emite_o_evento_e_propaga_a_excecao(): void
+    public function test_failing_mid_operation_still_emits_the_event_and_propagates_the_exception(): void
     {
         Event::fake([MapRequestCompleted::class]);
 
@@ -90,7 +90,7 @@ final class MapsHttpClientOperacaoTest extends TestCase
         );
     }
 
-    public function test_operacao_sem_nenhuma_chamada_nao_emite_evento(): void
+    public function test_an_operation_with_no_calls_emits_no_event(): void
     {
         Event::fake([MapRequestCompleted::class]);
 

@@ -10,7 +10,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class CollectionTest extends TestCase
 {
-    public function test_colecao_vazia_nao_e_erro(): void
+    public function test_an_empty_collection_is_not_an_error(): void
     {
         $collection = new SuggestionCollection();
 
@@ -19,7 +19,7 @@ final class CollectionTest extends TestCase
         $this->assertNull($collection->first());
     }
 
-    public function test_colecao_e_iteravel_e_preserva_a_ordem(): void
+    public function test_the_collection_is_iterable_and_preserves_order(): void
     {
         $collection = new SuggestionCollection(
             new Suggestion(new PlaceReference(Provider::Google, 'a'), 'Rua A', 'Rua A', 'Centro', false),
@@ -37,7 +37,7 @@ final class CollectionTest extends TestCase
         $this->assertSame(['Rua A', 'Postos Shell'], $descriptions);
     }
 
-    public function test_sugestao_sem_lugar_resolvivel_tem_place_nulo(): void
+    public function test_a_suggestion_without_a_resolvable_place_has_a_null_place(): void
     {
         $suggestion = new Suggestion(null, 'Postos Shell', 'Postos Shell', '', true);
 

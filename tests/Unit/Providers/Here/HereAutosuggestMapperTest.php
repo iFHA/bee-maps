@@ -24,7 +24,7 @@ final class HereAutosuggestMapperTest extends TestCase
         return new HereAutosuggestRequestMapper(new Coordinates(-23.5615, -46.6562));
     }
 
-    public function test_coordenada_com_raio_vira_circle_e_nunca_emite_at(): void
+    public function test_coordinates_with_a_radius_become_a_circle_and_never_emit_at(): void
     {
         $query = $this->withCenter()->toQuery(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), 3000, ['BR']),
@@ -40,7 +40,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertArrayNotHasKey('at', $query);
     }
 
-    public function test_coordenada_sem_raio_vira_at(): void
+    public function test_coordinates_without_a_radius_become_at(): void
     {
         $query = $this->withCenter()->toQuery(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), null, ['BR']),
@@ -52,7 +52,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame(['countryCode:BRA'], $query['in']);
     }
 
-    public function test_sem_coordenada_cai_no_centro_configurado(): void
+    public function test_without_coordinates_it_falls_back_to_the_configured_center(): void
     {
         $query = $this->withCenter()->toQuery(new AutocompleteRequest('Av Paulista'), 'pt-BR', 'BR');
 
@@ -61,7 +61,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertArrayNotHasKey('at', $query);
     }
 
-    public function test_sem_coordenada_e_sem_raio_usa_o_centro_como_at(): void
+    public function test_without_coordinates_or_radius_it_uses_the_center_as_at(): void
     {
         $query = $this->withCenter()->toQuery(
             new AutocompleteRequest('Av Paulista', null, null, ['BR']),
@@ -73,7 +73,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame(['countryCode:BRA'], $query['in']);
     }
 
-    public function test_sem_coordenada_e_sem_centro_configurado_lanca_excecao_acionavel(): void
+    public function test_without_coordinates_or_a_configured_center_it_throws_an_actionable_exception(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/autosuggest_center|near/');
@@ -83,7 +83,7 @@ final class HereAutosuggestMapperTest extends TestCase
         (new HereAutosuggestRequestMapper())->toQuery(new AutocompleteRequest('Av Paulista'), 'pt-BR', 'BR');
     }
 
-    public function test_pais_invalido_falha_pelo_pais_mesmo_sem_centro(): void
+    public function test_an_invalid_country_fails_on_the_country_even_without_a_center(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/pais|ISO 3166/i');
@@ -97,7 +97,7 @@ final class HereAutosuggestMapperTest extends TestCase
         );
     }
 
-    public function test_mapeia_itens_e_anula_place_em_chain_query(): void
+    public function test_maps_items_and_nulls_place_on_a_chain_query(): void
     {
         $items = (new HereAutosuggestResponseMapper())->toCollection($this->fixture())->all();
 
@@ -112,7 +112,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame('Postos Shell', $items[3]->mainText);
     }
 
-    public function test_separa_main_text_de_secondary_text(): void
+    public function test_separates_main_text_from_secondary_text(): void
     {
         $first = (new HereAutosuggestResponseMapper())->toCollection($this->fixture())->first();
 
@@ -122,7 +122,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame('Bela Vista, Sao Paulo - SP, 01310-100, Brasil', $first->secondaryText);
     }
 
-    public function test_rua_sem_numero_nao_ganha_virgula_no_main_text(): void
+    public function test_a_street_without_a_number_gets_no_comma_in_main_text(): void
     {
         $street = (new HereAutosuggestResponseMapper())->toCollection($this->fixture())->all()[2];
 
@@ -134,7 +134,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame('Joinville - SC, Brasil', $street->secondaryText);
     }
 
-    public function test_lugar_mantem_o_nome_proprio_como_linha_principal(): void
+    public function test_a_place_keeps_its_proper_name_as_the_main_line(): void
     {
         $place = (new HereAutosuggestResponseMapper())->toCollection($this->fixture())->all()[1];
 
@@ -144,7 +144,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame('Rua Treze de Maio, Bela Vista, Sao Paulo - SP, Brasil', $place->secondaryText);
     }
 
-    public function test_pede_o_endereco_estruturado_ao_autosuggest(): void
+    public function test_asks_autosuggest_for_the_structured_address(): void
     {
         $query = $this->withCenter()->toQuery(new AutocompleteRequest('Av Paulista'), 'pt-BR', 'BR');
 
@@ -153,7 +153,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame('details', $query['show']);
     }
 
-    public function test_converte_pais_fora_das_quatro_entradas_antigas(): void
+    public function test_converts_a_country_outside_the_four_legacy_entries(): void
     {
         $query = $this->withCenter()->toQuery(
             new AutocompleteRequest('Zocalo', null, null, ['MX']),
@@ -164,7 +164,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame(['countryCode:MEX'], $query['in']);
     }
 
-    public function test_codigo_alpha3_passa_direto(): void
+    public function test_an_alpha3_code_passes_through(): void
     {
         $query = $this->withCenter()->toQuery(
             new AutocompleteRequest('Av Paulista', null, null, ['BRA']),
@@ -175,7 +175,7 @@ final class HereAutosuggestMapperTest extends TestCase
         $this->assertSame(['countryCode:BRA'], $query['in']);
     }
 
-    public function test_codigo_de_pais_invalido_lanca_excecao(): void
+    public function test_an_invalid_country_code_throws(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/XX/');
@@ -187,7 +187,7 @@ final class HereAutosuggestMapperTest extends TestCase
         );
     }
 
-    public function test_codigo_de_pais_com_nome_por_extenso_lanca_excecao(): void
+    public function test_a_spelled_out_country_name_throws(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/Brasil/');
@@ -199,7 +199,7 @@ final class HereAutosuggestMapperTest extends TestCase
         );
     }
 
-    public function test_multiplos_paises_sao_convertidos_e_unidos(): void
+    public function test_multiple_countries_are_converted_and_joined(): void
     {
         // Precisa do centro: sem coordenada e sem raio, o foco vem do config.
         $query = $this->withCenter()->toQuery(

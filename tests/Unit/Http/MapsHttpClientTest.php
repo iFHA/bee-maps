@@ -22,7 +22,7 @@ final class MapsHttpClientTest extends TestCase
         return $this->app->make(MapsHttpClient::class);
     }
 
-    public function test_get_devolve_o_json_decodificado(): void
+    public function test_get_returns_the_decoded_json(): void
     {
         Http::fake(['exemplo.test/*' => Http::response(['ok' => true], 200)]);
 
@@ -31,7 +31,7 @@ final class MapsHttpClientTest extends TestCase
         $this->assertSame(['ok' => true], $response);
     }
 
-    public function test_valor_de_query_em_array_vira_chave_repetida_em_vez_de_indexada(): void
+    public function test_an_array_query_value_becomes_a_repeated_key_instead_of_an_indexed_one(): void
     {
         Http::fake(['exemplo.test/*' => Http::response(['ok' => true], 200)]);
 
@@ -55,7 +55,7 @@ final class MapsHttpClientTest extends TestCase
         });
     }
 
-    public function test_dispara_evento_com_provider_servico_e_status(): void
+    public function test_fires_an_event_with_provider_service_and_status(): void
     {
         Event::fake([MapRequestCompleted::class]);
         Http::fake(['exemplo.test/*' => Http::response(['ok' => true], 200)]);
@@ -70,7 +70,7 @@ final class MapsHttpClientTest extends TestCase
         });
     }
 
-    public function test_401_vira_excecao_de_autenticacao(): void
+    public function test_401_becomes_an_authentication_exception(): void
     {
         Http::fake(['exemplo.test/*' => Http::response(['error' => 'bad key'], 401)]);
 
@@ -79,7 +79,7 @@ final class MapsHttpClientTest extends TestCase
         $this->client()->get(Provider::Google, Service::Geocoding, 'https://exemplo.test/x');
     }
 
-    public function test_401_nao_e_reenviado(): void
+    public function test_401_is_not_retried(): void
     {
         Http::fake(['exemplo.test/*' => Http::response(['error' => 'bad key'], 401)]);
 
@@ -93,7 +93,7 @@ final class MapsHttpClientTest extends TestCase
         Http::assertSentCount(1);
     }
 
-    public function test_429_vira_excecao_de_rate_limit(): void
+    public function test_429_becomes_a_rate_limit_exception(): void
     {
         Http::fake(['exemplo.test/*' => Http::response([], 429)]);
 
@@ -102,7 +102,7 @@ final class MapsHttpClientTest extends TestCase
         $this->client()->get(Provider::Google, Service::Geocoding, 'https://exemplo.test/x');
     }
 
-    public function test_500_vira_excecao_de_indisponibilidade(): void
+    public function test_500_becomes_an_unavailable_exception(): void
     {
         Http::fake(['exemplo.test/*' => Http::response([], 503)]);
 
@@ -111,7 +111,7 @@ final class MapsHttpClientTest extends TestCase
         $this->client()->post(Provider::Google, Service::Autocomplete, 'https://exemplo.test/x', ['input' => 'a']);
     }
 
-    public function test_preserva_null_quando_provider_nao_envia_codigo(): void
+    public function test_preserves_null_when_the_provider_sends_no_code(): void
     {
         Http::fake(['exemplo.test/*' => Http::response([], 429)]);
 
@@ -123,7 +123,7 @@ final class MapsHttpClientTest extends TestCase
         }
     }
 
-    public function test_converte_codigo_para_string_quando_provider_envia(): void
+    public function test_converts_the_code_to_a_string_when_the_provider_sends_one(): void
     {
         Http::fake(['exemplo.test/*' => Http::response([
             'error' => [
@@ -141,7 +141,7 @@ final class MapsHttpClientTest extends TestCase
         }
     }
 
-    public function test_falha_de_conexao_nao_vaza_credencial_na_mensagem_da_excecao(): void
+    public function test_a_connection_failure_does_not_leak_the_credential_in_the_exception_message(): void
     {
         Http::fake(function () {
             throw new ConnectionException('cURL error 28: timed out for https://exemplo.test/v1/x?q=rua&apiKey=SEGREDO_NAO_PODE_VAZAR');
@@ -156,7 +156,7 @@ final class MapsHttpClientTest extends TestCase
         }
     }
 
-    public function test_falha_de_conexao_dispara_evento_com_status_zero(): void
+    public function test_a_connection_failure_fires_an_event_with_status_zero(): void
     {
         Event::fake([MapRequestCompleted::class]);
         Http::fake(function () {
@@ -177,7 +177,7 @@ final class MapsHttpClientTest extends TestCase
         });
     }
 
-    public function test_falha_de_conexao_preserva_parametro_que_apenas_contem_palavra_chave_como_substring(): void
+    public function test_a_connection_failure_preserves_a_parameter_that_only_contains_a_keyword_as_a_substring(): void
     {
         Http::fake(function () {
             throw new ConnectionException('cURL error 28: timed out for https://exemplo.test/v1/x?monkey=banana');
@@ -191,7 +191,7 @@ final class MapsHttpClientTest extends TestCase
         }
     }
 
-    public function test_erro_do_google_embrulhado_em_array_preserva_mensagem_e_codigo(): void
+    public function test_a_google_error_wrapped_in_an_array_preserves_message_and_code(): void
     {
         // Corpo real do computeRouteMatrix quando a matriz passa de 625 elementos.
         Http::fake(['matriz.exemplo.test/*' => Http::response([[

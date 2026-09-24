@@ -10,7 +10,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class PlaceCollectionTest extends TestCase
 {
-    public function test_colecao_vazia_e_o_caso_de_sem_resultado(): void
+    public function test_an_empty_collection_is_the_no_result_case(): void
     {
         $collection = new PlaceCollection();
 
@@ -20,7 +20,7 @@ final class PlaceCollectionTest extends TestCase
         $this->assertSame([], $collection->all());
     }
 
-    public function test_colecao_itera_e_devolve_o_primeiro(): void
+    public function test_the_collection_iterates_and_returns_the_first(): void
     {
         $place = new Place(
             place: null,

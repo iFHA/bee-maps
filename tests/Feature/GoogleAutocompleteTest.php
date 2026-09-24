@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Http;
 
 final class GoogleAutocompleteTest extends TestCase
 {
-    public function test_consulta_o_google_e_devolve_sugestoes_tipadas(): void
+    public function test_queries_google_and_returns_typed_suggestions(): void
     {
         Http::fake([
             'places.googleapis.com/*' => Http::response(
@@ -31,7 +31,7 @@ final class GoogleAutocompleteTest extends TestCase
             && $request->hasHeader('X-Goog-FieldMask', (new GoogleAutocompleteRequestMapper())->fieldMask()));
     }
 
-    public function test_countries_vazio_usa_a_regiao_configurada_como_padrao(): void
+    public function test_empty_countries_uses_the_configured_region_as_the_default(): void
     {
         Http::fake([
             'places.googleapis.com/*' => Http::response(

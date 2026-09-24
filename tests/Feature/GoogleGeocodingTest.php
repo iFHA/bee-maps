@@ -29,7 +29,7 @@ final class GoogleGeocodingTest extends TestCase
         return $this->app->make(MapServiceFactory::class)->geocoding(Provider::Google);
     }
 
-    public function test_geocode_por_texto_envia_parametro_address(): void
+    public function test_geocode_by_text_sends_the_address_parameter(): void
     {
         $this->fakeOk();
 
@@ -39,7 +39,7 @@ final class GoogleGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'address=Av Paulista 1000'));
     }
 
-    public function test_reverse_envia_parametro_latlng(): void
+    public function test_reverse_sends_the_latlng_parameter(): void
     {
         $this->fakeOk();
 
@@ -48,7 +48,7 @@ final class GoogleGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'latlng=-23.5615000,-46.6562000'));
     }
 
-    public function test_lookup_envia_place_id_e_devolve_um_resultado(): void
+    public function test_lookup_sends_the_place_id_and_returns_a_result(): void
     {
         $this->fakeOk();
 
@@ -58,7 +58,7 @@ final class GoogleGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains($r->url(), 'place_id=ChIJ0WGkg4FEzpQRrlsz_whLqZs'));
     }
 
-    public function test_lookup_recusa_referencia_de_outro_provider(): void
+    public function test_lookup_refuses_a_reference_from_another_provider(): void
     {
         $this->fakeOk();
 
@@ -67,7 +67,7 @@ final class GoogleGeocodingTest extends TestCase
         $this->geocoding()->lookup(new PlaceReference(Provider::Here, 'here:pds:place:123'));
     }
 
-    public function test_filtro_de_pais_alpha2_chega_como_country_alpha2(): void
+    public function test_an_alpha2_country_filter_arrives_as_alpha2_country(): void
     {
         $this->fakeOk();
 
@@ -76,7 +76,7 @@ final class GoogleGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'components=country:BR'));
     }
 
-    public function test_filtro_de_pais_alpha3_e_convertido_para_alpha2(): void
+    public function test_an_alpha3_country_filter_is_converted_to_alpha2(): void
     {
         $this->fakeOk();
 
@@ -85,7 +85,7 @@ final class GoogleGeocodingTest extends TestCase
         Http::assertSent(fn ($r) => str_contains(urldecode($r->url()), 'components=country:BR'));
     }
 
-    public function test_filtro_de_pais_invalido_lanca_excecao(): void
+    public function test_an_invalid_country_filter_throws(): void
     {
         $this->fakeOk();
 

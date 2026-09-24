@@ -10,7 +10,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class PolylineTest extends TestCase
 {
-    public function test_decodifica_polyline_do_google(): void
+    public function test_decodes_a_google_polyline(): void
     {
         $polyline = new Polyline('_p~iF~ps|U_ulLnnqC_mqNvxq`@', new GoogleEncodedPolylineDecoder());
 
@@ -23,7 +23,7 @@ final class PolylineTest extends TestCase
         $this->assertEqualsWithDelta(-126.453, $coordinates[2]->longitude, 0.00001);
     }
 
-    public function test_decodifica_flexible_polyline_do_here(): void
+    public function test_decodes_a_here_flexible_polyline(): void
     {
         $polyline = new Polyline('BFoz5xJ67i1B1B7PzIhaxL7Y', new HereFlexiblePolylineDecoder());
 
@@ -36,7 +36,7 @@ final class PolylineTest extends TestCase
         $this->assertEqualsWithDelta(8.68752, $coordinates[3]->longitude, 0.00001);
     }
 
-    public function test_raw_devolve_a_string_original_sem_decodificar(): void
+    public function test_raw_returns_the_original_string_undecoded(): void
     {
         $decoder = new class implements \BeeDelivery\BeeMaps\Contracts\PolylineDecoder {
             public int $calls = 0;
@@ -55,7 +55,7 @@ final class PolylineTest extends TestCase
         $this->assertSame(0, $decoder->calls, 'raw() nao pode disparar decodificacao.');
     }
 
-    public function test_decodificacao_e_memoizada(): void
+    public function test_decoding_is_memoized(): void
     {
         $decoder = new class implements \BeeDelivery\BeeMaps\Contracts\PolylineDecoder {
             public int $calls = 0;
@@ -75,7 +75,7 @@ final class PolylineTest extends TestCase
         $this->assertSame(1, $decoder->calls);
     }
 
-    public function test_polyline_do_google_truncada_vira_excecao_tipada(): void
+    public function test_a_truncated_google_polyline_becomes_a_typed_exception(): void
     {
         $this->expectException(InvalidRequestException::class);
 
@@ -84,14 +84,14 @@ final class PolylineTest extends TestCase
         (new Polyline('_p~iF', new GoogleEncodedPolylineDecoder()))->coordinates();
     }
 
-    public function test_flexible_polyline_com_caractere_invalido_vira_excecao_tipada(): void
+    public function test_a_flexible_polyline_with_an_invalid_character_becomes_a_typed_exception(): void
     {
         $this->expectException(InvalidRequestException::class);
 
         (new Polyline('BFoz5xJ!!!', new HereFlexiblePolylineDecoder()))->coordinates();
     }
 
-    public function test_decodificador_do_google_rejeita_polyline_de_outro_provider(): void
+    public function test_the_google_decoder_rejects_a_polyline_from_another_provider(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/caractere|invalid/i');
@@ -102,7 +102,7 @@ final class PolylineTest extends TestCase
         (new Polyline('BFoz5xJ67i1B1B7PzIhaxL7Y', new GoogleEncodedPolylineDecoder()))->coordinates();
     }
 
-    public function test_decodificador_do_google_rejeita_caractere_fora_do_alfabeto(): void
+    public function test_the_google_decoder_rejects_a_character_outside_the_alphabet(): void
     {
         $this->expectException(InvalidRequestException::class);
 

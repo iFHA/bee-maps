@@ -24,7 +24,7 @@ final class CredentialRedactionTest extends TestCase
     }
 
     #[DataProvider('texts')]
-    public function test_redige_credencial_de_query(string $entry, string $expected): void
+    public function test_redacts_a_credential_from_the_query(string $entry, string $expected): void
     {
         $this->assertSame($expected, CredentialRedaction::redact($entry));
     }

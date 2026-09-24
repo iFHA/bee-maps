@@ -23,7 +23,7 @@ final class GooglePlaceSearchTest extends TestCase
         ]);
     }
 
-    public function test_busca_lugares_e_devolve_colecao_tipada(): void
+    public function test_searches_places_and_returns_a_typed_collection(): void
     {
         $this->fake();
 
@@ -43,7 +43,7 @@ final class GooglePlaceSearchTest extends TestCase
         });
     }
 
-    public function test_erro_429_vira_excecao_tipada(): void
+    public function test_a_429_becomes_a_typed_exception(): void
     {
         $this->fake(429);
 

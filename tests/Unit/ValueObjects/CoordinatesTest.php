@@ -9,36 +9,36 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 final class CoordinatesTest extends TestCase
 {
-    public function test_formata_como_lat_lng(): void
+    public function test_formats_as_lat_lng(): void
     {
         $this->assertSame('-23.5505000,-46.6333000', (new Coordinates(-23.5505, -46.6333))->toString());
     }
 
-    public function test_formata_zero_sem_virar_apenas_0(): void
+    public function test_formats_zero_without_collapsing_to_just_0(): void
     {
         $this->assertSame('0.0000000,0.0000000', (new Coordinates(0.0, 0.0))->toString());
     }
 
-    public function test_formata_valor_pequeno_sem_notacao_cientifica(): void
+    public function test_formats_a_small_value_without_scientific_notation(): void
     {
         $this->assertSame('0.0000005,-0.0000005', (new Coordinates(0.0000005, -0.0000005))->toString());
     }
 
-    public function test_rejeita_latitude_fora_do_intervalo(): void
+    public function test_rejects_a_latitude_outside_the_range(): void
     {
         $this->expectException(InvalidRequestException::class);
 
         new Coordinates(91.0, 0.0);
     }
 
-    public function test_rejeita_longitude_fora_do_intervalo(): void
+    public function test_rejects_a_longitude_outside_the_range(): void
     {
         $this->expectException(InvalidRequestException::class);
 
         new Coordinates(0.0, 181.0);
     }
 
-    public function test_from_string_aceita_o_formato_que_to_string_produz(): void
+    public function test_from_string_accepts_the_format_to_string_produces(): void
     {
         $original = new Coordinates(-23.5615, -46.6562);
 
@@ -48,7 +48,7 @@ final class CoordinatesTest extends TestCase
         $this->assertEqualsWithDelta($original->longitude, $rebuilt->longitude, 0.0000001);
     }
 
-    public function test_from_string_tolera_espacos_em_volta(): void
+    public function test_from_string_tolerates_surrounding_spaces(): void
     {
         $coordinate = Coordinates::fromString('  -23.5 , -46.6  ');
 
@@ -68,14 +68,14 @@ final class CoordinatesTest extends TestCase
     }
 
     #[DataProvider('invalidPairs')]
-    public function test_from_string_rejeita_par_malformado(string $pair): void
+    public function test_from_string_rejects_a_malformed_pair(string $pair): void
     {
         $this->expectException(InvalidRequestException::class);
 
         Coordinates::fromString($pair);
     }
 
-    public function test_from_string_ainda_valida_a_faixa(): void
+    public function test_from_string_still_validates_the_range(): void
     {
         $this->expectException(InvalidRequestException::class);
 

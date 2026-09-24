@@ -94,7 +94,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_autocomplete_sem_coordenada_responde(Provider $provider): void
+    public function test_autocomplete_without_coordinates_responds(Provider $provider): void
     {
         $collection = $this->app->make(MapServiceFactory::class)
             ->autocomplete($provider)
@@ -109,7 +109,7 @@ final class SmokeLiveTest extends TestCase
      * E a combinacao que o /autosuggest recusa com 400, e por isso a unica
      * prova de que o /autocomplete aceita — o Http::fake nao valida query.
      */
-    public function test_autocomplete_nacional_do_here_responde_sem_foco_espacial(): void
+    public function test_nationwide_here_autocomplete_responds_without_a_spatial_focus(): void
     {
         $this->requireKey(Provider::Here);
 
@@ -124,7 +124,7 @@ final class SmokeLiveTest extends TestCase
         $this->assertNotNull($collection->first()->place);
     }
 
-    public function test_autosuggest_forcado_do_here_responde_com_o_centro_configurado(): void
+    public function test_forced_here_autosuggest_responds_with_the_configured_center(): void
     {
         $this->requireKey(Provider::Here);
 
@@ -138,7 +138,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_autocomplete_com_coordenada_e_raio_default_responde(Provider $provider): void
+    public function test_autocomplete_with_coordinates_and_the_default_radius_responds(Provider $provider): void
     {
         // Esta e a chamada que dava 400 no HERE: near presente e radiusMeters no
         // default de 50000. Nenhum teste com Http::fake pega isso, porque o fake
@@ -151,7 +151,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_autocomplete_com_coordenada_e_sem_raio_responde(Provider $provider): void
+    public function test_autocomplete_with_coordinates_and_no_radius_responds(Provider $provider): void
     {
         $collection = $this->app->make(MapServiceFactory::class)
             ->autocomplete($provider)
@@ -161,7 +161,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_geocoding_responde(Provider $provider): void
+    public function test_geocoding_responds(Provider $provider): void
     {
         $collection = $this->app->make(MapServiceFactory::class)
             ->geocoding($provider)
@@ -172,7 +172,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_place_search_responde_com_endereco_estruturado(Provider $provider): void
+    public function test_place_search_responds_with_a_structured_address(Provider $provider): void
     {
         $collection = $this->app->make(MapServiceFactory::class)
             ->placeSearch($provider)
@@ -187,7 +187,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_rota_simples_responde_com_polyline(Provider $provider): void
+    public function test_a_simple_route_responds_with_a_polyline(Provider $provider): void
     {
         $route = $this->app->make(MapServiceFactory::class)
             ->routing($provider)
@@ -214,7 +214,7 @@ final class SmokeLiveTest extends TestCase
      * 404 aqui = a ambiguidade `findsequence2` vs `findsequence.json` caiu para o
      * outro lado; trocar bee-maps.here.endpoints.findsequence e rodar de novo.
      */
-    public function test_rota_otimizada_do_here_usa_o_endpoint_de_sequencia_configurado(): void
+    public function test_an_optimized_here_route_uses_the_configured_sequence_endpoint(): void
     {
         $this->requireKey(Provider::Here);
 
@@ -235,7 +235,7 @@ final class SmokeLiveTest extends TestCase
         $this->assertGreaterThan(0, $route->distance->meters);
     }
 
-    public function test_rota_otimizada_do_here_em_duas_rodas_responde(): void
+    public function test_an_optimized_here_route_on_two_wheels_responds(): void
     {
         $this->requireKey(Provider::Here);
 
@@ -254,7 +254,7 @@ final class SmokeLiveTest extends TestCase
         $this->assertCount(2, $route->optimizedOrder);
     }
 
-    public function test_rota_otimizada_do_google_resolve_em_uma_chamada(): void
+    public function test_an_optimized_google_route_resolves_in_one_call(): void
     {
         $this->requireKey(Provider::Google);
 
@@ -276,7 +276,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_matriz_2x2_responde(Provider $provider): void
+    public function test_a_2x2_matrix_responds(Provider $provider): void
     {
         $matrix = $this->app->make(MapServiceFactory::class)
             ->routeMatrix($provider)
@@ -300,7 +300,7 @@ final class SmokeLiveTest extends TestCase
         }
     }
 
-    public function test_matriz_acima_de_625_elementos_e_recusada_pelo_google(): void
+    public function test_a_matrix_above_625_elements_is_refused_by_google(): void
     {
         $this->expectException(\BeeDelivery\BeeMaps\Exceptions\MatrixTooLargeException::class);
 
@@ -330,7 +330,7 @@ final class SmokeLiveTest extends TestCase
      * e isso nenhum Http::fake responde.
      */
     #[DataProvider('providers')]
-    public function test_live_rota_com_alternativas_devolve_mais_de_uma(Provider $provider): void
+    public function test_live_a_route_with_alternatives_returns_more_than_one(Provider $provider): void
     {
         $route = $this->app->make(MapServiceFactory::class)
             ->routing($provider)
@@ -348,7 +348,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_live_sem_pedir_alternativas_vem_rota_unica(Provider $provider): void
+    public function test_live_without_asking_for_alternatives_a_single_route_comes_back(Provider $provider): void
     {
         $route = $this->app->make(MapServiceFactory::class)
             ->routing($provider)
@@ -361,7 +361,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_live_otimiza_com_fim_fixo(Provider $provider): void
+    public function test_live_optimizes_with_a_fixed_end(Provider $provider): void
     {
         $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
@@ -376,7 +376,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_live_otimiza_tour_aberto(Provider $provider): void
+    public function test_live_optimizes_an_open_tour(Provider $provider): void
     {
         $result = $this->app->make(MapServiceFactory::class)
             ->routeOptimization($provider)
@@ -390,7 +390,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_live_otimiza_com_volta_a_origem(Provider $provider): void
+    public function test_live_optimizes_with_a_return_to_origin(Provider $provider): void
     {
         $origin = new Coordinates(-23.5615, -46.6562);
 
@@ -406,7 +406,7 @@ final class SmokeLiveTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_live_objetivo_de_distancia_e_aceito(Provider $provider): void
+    public function test_live_the_distance_objective_is_accepted(Provider $provider): void
     {
         // No HERE vira improveFor=distance; no Google, a matriz + TSP local.
         // A estrategia fleet_routing NAO entra no smoke: a service account nao

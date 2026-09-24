@@ -16,7 +16,7 @@ final class OptimizeWaypointsRequestTest extends TestCase
         return new Coordinates(-23.5 - $offset, -46.6 - $offset);
     }
 
-    public function test_destino_nulo_significa_tour_aberto(): void
+    public function test_a_null_destination_means_an_open_tour(): void
     {
         $request = new OptimizeWaypointsRequest(
             origin: $this->point(0),
@@ -28,7 +28,7 @@ final class OptimizeWaypointsRequestTest extends TestCase
         $this->assertSame(OptimizationObjective::MinTravelTime, $request->objective);
     }
 
-    public function test_intermediarios_sao_reindexados(): void
+    public function test_intermediates_are_reindexed(): void
     {
         // array_filter preserva chaves: sem reindexar, a lista vira objeto no
         // json_encode e os indices devolvidos em $order deixam de casar com o
@@ -44,7 +44,7 @@ final class OptimizeWaypointsRequestTest extends TestCase
         $this->assertSame([0, 1, 2], array_keys($request->intermediates));
     }
 
-    public function test_sem_intermediarios_nao_ha_ordem_para_devolver(): void
+    public function test_without_intermediates_there_is_no_order_to_return(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/intermediari/i');
@@ -52,7 +52,7 @@ final class OptimizeWaypointsRequestTest extends TestCase
         new OptimizeWaypointsRequest(origin: $this->point(0), destination: $this->point(0.9));
     }
 
-    public function test_um_intermediario_so_nao_e_erro(): void
+    public function test_a_single_intermediate_is_not_an_error(): void
     {
         // A ordem e trivialmente [0], mas os totais nao sao: o chamador ainda
         // quer saber quanto custa origem -> parada -> destino. Recusar quebraria

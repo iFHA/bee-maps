@@ -11,7 +11,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class HereFindSequenceMapperTest extends TestCase
 {
-    public function test_query_nomeia_os_waypoints_como_a_api_espera(): void
+    public function test_the_query_names_the_waypoints_the_way_the_api_expects(): void
     {
         $query = (new HereFindSequenceMapper())->toQuery(
             new Coordinates(50.10228, 8.69821),
@@ -31,7 +31,7 @@ final class HereFindSequenceMapperTest extends TestCase
         $this->assertSame('chave', $query['apiKey']);
     }
 
-    public function test_os_ids_enviados_casam_com_os_ids_que_a_resposta_ecoa(): void
+    public function test_the_sent_ids_match_the_ids_the_response_echoes(): void
     {
         $mapper = new HereFindSequenceMapper();
 
@@ -59,7 +59,7 @@ final class HereFindSequenceMapperTest extends TestCase
         $this->assertSame([1, 0], $mapper->toOrder($fakeResponse, 2));
     }
 
-    public function test_ordem_incompleta_lanca_excecao_em_vez_de_devolver_lista_parcial(): void
+    public function test_an_incomplete_order_throws_instead_of_returning_a_partial_list(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/sequencia|ordem/i');
@@ -72,7 +72,7 @@ final class HereFindSequenceMapperTest extends TestCase
         ]]]], 2);
     }
 
-    public function test_indice_fora_de_faixa_lanca_excecao_tipada(): void
+    public function test_an_out_of_range_index_throws_a_typed_exception(): void
     {
         $this->expectException(InvalidRequestException::class);
 
@@ -84,7 +84,7 @@ final class HereFindSequenceMapperTest extends TestCase
         ]]]], 2);
     }
 
-    public function test_indice_repetido_lanca_excecao_tipada(): void
+    public function test_a_repeated_index_throws_a_typed_exception(): void
     {
         $this->expectException(InvalidRequestException::class);
 
@@ -94,7 +94,7 @@ final class HereFindSequenceMapperTest extends TestCase
         ]]]], 2);
     }
 
-    public function test_ordem_devolvida_e_traduzida_para_indices_do_array_original(): void
+    public function test_the_returned_order_is_translated_to_indexes_of_the_original_array(): void
     {
         $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/findsequence.json'), true);
 
@@ -103,14 +103,14 @@ final class HereFindSequenceMapperTest extends TestCase
         $this->assertSame([1, 0], (new HereFindSequenceMapper())->toOrder($response, 2));
     }
 
-    public function test_resposta_sem_resultado_vira_excecao_tipada(): void
+    public function test_a_response_without_a_result_becomes_a_typed_exception(): void
     {
         $this->expectException(InvalidRequestException::class);
 
         (new HereFindSequenceMapper())->toOrder(['results' => []], 2);
     }
 
-    public function test_objetivo_de_distancia_vira_improveFor(): void
+    public function test_the_distance_objective_becomes_improveFor(): void
     {
         // Medido ao vivo em 22/09: improveFor aceita 'time' e 'distance', e o
         // default da API e 'time'. Valor invalido responde 400.
@@ -129,7 +129,7 @@ final class HereFindSequenceMapperTest extends TestCase
         $this->assertSame('fastest;car', $query['mode']);
     }
 
-    public function test_objetivo_de_tempo_vira_improveFor(): void
+    public function test_the_time_objective_becomes_improveFor(): void
     {
         $query = (new HereFindSequenceMapper())->toQuery(
             new Coordinates(-23.5615, -46.6562),
@@ -143,7 +143,7 @@ final class HereFindSequenceMapperTest extends TestCase
         $this->assertSame('time', $query['improveFor']);
     }
 
-    public function test_tour_aberto_omite_end(): void
+    public function test_an_open_tour_omits_end(): void
     {
         // Medido ao vivo: o findsequence2 aceita requisicao sem `end` e responde
         // 200. Tour aberto e nativo no HERE — nada de emular ciclo e descontar.
@@ -159,7 +159,7 @@ final class HereFindSequenceMapperTest extends TestCase
         $this->assertSame('start;-23.5615000,-46.6562000', $query['start']);
     }
 
-    public function test_sem_objetivo_nao_manda_improveFor(): void
+    public function test_without_an_objective_it_does_not_send_improveFor(): void
     {
         // O contrato Routing nao tem objetivo. Mandar improveFor ali mudaria o
         // comportamento do HereRouting, que este refactor nao pode tocar.
@@ -174,7 +174,7 @@ final class HereFindSequenceMapperTest extends TestCase
         $this->assertArrayNotHasKey('improveFor', $query);
     }
 
-    public function test_totais_saem_da_resposta(): void
+    public function test_totals_come_from_the_response(): void
     {
         $response = json_decode(
             file_get_contents(__DIR__ . '/../../../Fixtures/here/findsequence-otimizacao.json'),
@@ -187,7 +187,7 @@ final class HereFindSequenceMapperTest extends TestCase
         $this->assertSame(3058, $totals['duration']);
     }
 
-    public function test_totais_ausentes_sao_erro(): void
+    public function test_missing_totals_are_an_error(): void
     {
         // O HERE manda distance e time explicitos — ausencia aqui e falha de
         // verdade, nao omissao de valor zero como no proto3 do Google.

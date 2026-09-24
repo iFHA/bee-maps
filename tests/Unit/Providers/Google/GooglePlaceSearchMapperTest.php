@@ -11,7 +11,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class GooglePlaceSearchMapperTest extends TestCase
 {
-    public function test_payload_minimo_usa_idioma_e_regiao_do_config(): void
+    public function test_the_minimal_payload_uses_the_language_and_region_from_the_config(): void
     {
         $payload = (new GooglePlaceSearchRequestMapper())
             ->toPayload(new PlaceSearchRequest('farmacia'), 'pt-BR', 'BR');
@@ -22,7 +22,7 @@ final class GooglePlaceSearchMapperTest extends TestCase
         $this->assertArrayNotHasKey('locationBias', $payload);
     }
 
-    public function test_near_vira_location_bias_circular(): void
+    public function test_near_becomes_a_circular_location_bias(): void
     {
         $payload = (new GooglePlaceSearchRequestMapper())
             ->toPayload(new PlaceSearchRequest('farmacia', new Coordinates(-23.5, -46.6)), 'pt-BR', 'BR');
@@ -31,7 +31,7 @@ final class GooglePlaceSearchMapperTest extends TestCase
         $this->assertSame(-46.6, $payload['locationBias']['circle']['center']['longitude']);
     }
 
-    public function test_region_da_requisicao_tem_precedencia_sobre_o_config(): void
+    public function test_the_region_from_the_request_takes_precedence_over_the_config(): void
     {
         $payload = (new GooglePlaceSearchRequestMapper())
             ->toPayload(new PlaceSearchRequest('farmacia', null, 'PRT'), 'pt-BR', 'BR');
@@ -40,7 +40,7 @@ final class GooglePlaceSearchMapperTest extends TestCase
         $this->assertSame('PT', $payload['regionCode']);
     }
 
-    public function test_field_mask_pede_componentes_estruturados(): void
+    public function test_the_field_mask_asks_for_structured_components(): void
     {
         $mask = (new GooglePlaceSearchRequestMapper())->fieldMask();
 
@@ -52,7 +52,7 @@ final class GooglePlaceSearchMapperTest extends TestCase
         $this->assertStringContainsString('places.addressComponents', $mask);
     }
 
-    public function test_resposta_vira_colecao_tipada_com_endereco_estruturado(): void
+    public function test_the_response_becomes_a_typed_collection_with_a_structured_address(): void
     {
         $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/place-search.json'), true);
 
@@ -78,7 +78,7 @@ final class GooglePlaceSearchMapperTest extends TestCase
         $this->assertNull($second->address->postalCode);
     }
 
-    public function test_resposta_sem_places_vira_colecao_vazia(): void
+    public function test_a_response_without_places_becomes_an_empty_collection(): void
     {
         $collection = (new GooglePlaceSearchResponseMapper())->toCollection([]);
 

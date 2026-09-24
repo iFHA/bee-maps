@@ -25,7 +25,7 @@ final class GoogleRoutingTest extends TestCase
         ]);
     }
 
-    public function test_calcula_rota_e_devolve_dto_tipado(): void
+    public function test_computes_the_route_and_returns_a_typed_dto(): void
     {
         $this->fake();
 
@@ -56,7 +56,7 @@ final class GoogleRoutingTest extends TestCase
         });
     }
 
-    public function test_uma_rota_no_google_e_uma_chamada_upstream(): void
+    public function test_one_google_route_is_one_upstream_call(): void
     {
         Event::fake([MapRequestCompleted::class]);
         $this->fake();

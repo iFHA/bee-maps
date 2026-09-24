@@ -13,7 +13,7 @@ final class GoogleGeocodeMapperTest extends TestCase
         return json_decode(file_get_contents(__DIR__ . "/../../../Fixtures/google/{$name}.json"), true);
     }
 
-    public function test_mapeia_componentes_de_endereco(): void
+    public function test_maps_address_components(): void
     {
         $result = (new GoogleGeocodeResponseMapper())->toCollection($this->fixture('geocode'))->first();
 
@@ -29,7 +29,7 @@ final class GoogleGeocodeMapperTest extends TestCase
         $this->assertSame(Provider::Google, $result->place->provider);
     }
 
-    public function test_partial_match_false_nao_vira_true(): void
+    public function test_partial_match_false_does_not_become_true(): void
     {
         $result = (new GoogleGeocodeResponseMapper())
             ->toCollection($this->fixture('geocode-partial-match-false'))
@@ -38,7 +38,7 @@ final class GoogleGeocodeMapperTest extends TestCase
         $this->assertFalse($result->partial);
     }
 
-    public function test_zero_results_devolve_colecao_vazia(): void
+    public function test_zero_results_returns_an_empty_collection(): void
     {
         $collection = (new GoogleGeocodeResponseMapper())->toCollection($this->fixture('geocode-zero-results'));
 

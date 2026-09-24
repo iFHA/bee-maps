@@ -10,7 +10,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class HereAutocompleteStrategyTest extends TestCase
 {
-    public function test_auto_com_near_escolhe_autosuggest(): void
+    public function test_auto_with_near_picks_autosuggest(): void
     {
         $choice = HereAutocompleteStrategy::Auto->resolve(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6)),
@@ -19,14 +19,14 @@ final class HereAutocompleteStrategyTest extends TestCase
         $this->assertSame(HereAutocompleteStrategy::Autosuggest, $choice);
     }
 
-    public function test_auto_sem_near_escolhe_autocomplete(): void
+    public function test_auto_without_near_picks_autocomplete(): void
     {
         $choice = HereAutocompleteStrategy::Auto->resolve(new AutocompleteRequest('Av Paulista'));
 
         $this->assertSame(HereAutocompleteStrategy::Autocomplete, $choice);
     }
 
-    public function test_estrategia_forcada_ignora_o_near(): void
+    public function test_a_forced_strategy_ignores_near(): void
     {
         $withNear = new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6));
         $withoutNear = new AutocompleteRequest('Av Paulista');
@@ -41,13 +41,13 @@ final class HereAutocompleteStrategyTest extends TestCase
         );
     }
 
-    public function test_config_vazio_cai_em_auto(): void
+    public function test_an_empty_config_falls_back_to_auto(): void
     {
         $this->assertSame(HereAutocompleteStrategy::Auto, HereAutocompleteStrategy::fromConfig(null));
         $this->assertSame(HereAutocompleteStrategy::Auto, HereAutocompleteStrategy::fromConfig(''));
     }
 
-    public function test_config_invalido_e_erro_de_configuracao_e_lista_os_valores(): void
+    public function test_an_invalid_config_is_a_configuration_error_and_lists_the_values(): void
     {
         $this->expectException(ConfigurationException::class);
         $this->expectExceptionMessageMatches('/autocomplete_strategy.*discover.*auto, autosuggest, autocomplete/s');

@@ -43,7 +43,7 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_autocomplete_devolve_o_mesmo_contrato(Provider $provider): void
+    public function test_autocomplete_returns_the_same_contract(Provider $provider): void
     {
         $this->fakeTudo();
 
@@ -122,7 +122,7 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
      * — e o contrato tem que sobreviver a essa troca.
      */
     #[DataProvider('providers')]
-    public function test_autocomplete_sem_foco_devolve_o_mesmo_contrato(Provider $provider): void
+    public function test_autocomplete_without_focus_returns_the_same_contract(Provider $provider): void
     {
         $this->fakeTudo();
 
@@ -159,7 +159,7 @@ final class ParidadeAutocompleteGeocodingTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_geocode_devolve_o_mesmo_contrato(Provider $provider): void
+    public function test_geocode_returns_the_same_contract(Provider $provider): void
     {
         $this->fakeTudo();
 

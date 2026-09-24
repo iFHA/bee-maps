@@ -24,7 +24,7 @@ final class MatrixLimitTest extends TestCase
     }
 
     #[DataProvider('values')]
-    public function test_normaliza(mixed $entry, ?int $expected): void
+    public function test_normalizes(mixed $entry, ?int $expected): void
     {
         $this->assertSame($expected, MatrixLimit::normalize($entry));
     }

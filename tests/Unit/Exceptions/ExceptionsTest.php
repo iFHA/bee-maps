@@ -11,7 +11,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class ExceptionsTest extends TestCase
 {
-    public function test_toda_excecao_do_pacote_descende_da_base(): void
+    public function test_every_package_exception_descends_from_the_base(): void
     {
         $e = ServiceNotSupportedByProviderException::make(Provider::Here, Service::RouteOptimization);
 
@@ -20,7 +20,7 @@ final class ExceptionsTest extends TestCase
         $this->assertStringContainsString('route_optimization', $e->getMessage());
     }
 
-    public function test_erro_de_provider_carrega_contexto_para_o_log(): void
+    public function test_a_provider_error_carries_context_for_the_log(): void
     {
         $e = new ProviderRateLimitException(Provider::Google, Service::Geocoding, 'quota estourada', 429, 'OVER_QUERY_LIMIT');
 

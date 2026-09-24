@@ -22,7 +22,7 @@ final class HerePlaceSearchTest extends TestCase
         ]);
     }
 
-    public function test_busca_lugares_e_devolve_colecao_tipada(): void
+    public function test_searches_places_and_returns_a_typed_collection(): void
     {
         $this->fake();
 
@@ -43,7 +43,7 @@ final class HerePlaceSearchTest extends TestCase
         });
     }
 
-    public function test_sem_contexto_geografico_falha_antes_de_sair_para_a_rede(): void
+    public function test_without_geographic_context_it_fails_before_going_to_the_network(): void
     {
         // Sem Http::fake: se a excecao nao for lancada, preventStrayRequests
         // quebra o teste — que e exatamente o comportamento desejado.

@@ -21,7 +21,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         );
     }
 
-    public function test_payload_envolve_cada_ponto_em_waypoint(): void
+    public function test_the_payload_wraps_every_point_in_a_waypoint(): void
     {
         $payload = (new GoogleRouteMatrixRequestMapper())->toPayload($this->request());
 
@@ -32,7 +32,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         $this->assertSame('TWO_WHEELER', $payload['travelMode']);
     }
 
-    public function test_field_mask_nao_usa_o_prefixo_routes(): void
+    public function test_the_field_mask_does_not_use_the_routes_prefix(): void
     {
         $mask = (new GoogleRouteMatrixRequestMapper())->fieldMask();
 
@@ -46,7 +46,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         $this->assertStringContainsString('condition', $mask);
     }
 
-    public function test_resposta_fora_de_ordem_vira_colecao_endereçavel(): void
+    public function test_an_out_of_order_response_becomes_an_addressable_collection(): void
     {
         $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
@@ -64,7 +64,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         $this->assertSame(25021, $collection->entry(1, 2)->distance->meters);
     }
 
-    public function test_par_sem_rota_vira_entrada_inalcancavel_e_nao_some(): void
+    public function test_a_pair_without_a_route_becomes_an_unreachable_entry_and_does_not_vanish(): void
     {
         $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route-matrix.json'), true);
 
@@ -76,12 +76,12 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         $this->assertSame(0, $entry->duration->seconds);
     }
 
-    public function test_resposta_vazia_vira_colecao_vazia(): void
+    public function test_an_empty_response_becomes_an_empty_collection(): void
     {
         $this->assertTrue((new GoogleRouteMatrixResponseMapper())->toCollection([], 0, 0)->isEmpty());
     }
 
-    public function test_elemento_de_erro_no_stream_vira_excecao_em_vez_de_par_falso(): void
+    public function test_an_error_element_in_the_stream_becomes_an_exception_instead_of_a_fake_pair(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/internal|erro/i');
@@ -96,7 +96,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         ], 1, 2);
     }
 
-    public function test_condition_ausente_nao_conta_como_alcancavel(): void
+    public function test_a_missing_condition_does_not_count_as_reachable(): void
     {
         // proto3 omite o valor default do enum, e
         // ROUTE_MATRIX_ELEMENT_CONDITION_UNSPECIFIED vale 0: ausencia significa
@@ -108,7 +108,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         $this->assertFalse($collection->entry(0, 0)->reachable);
     }
 
-    public function test_stream_truncado_vira_excecao(): void
+    public function test_a_truncated_stream_becomes_an_exception(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/incompleta|1 de 4|elementos/i');
@@ -118,7 +118,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         ], 2, 2);
     }
 
-    public function test_par_duplicado_vira_excecao_mesmo_com_a_contagem_certa(): void
+    public function test_a_duplicated_pair_becomes_an_exception_even_with_the_right_count(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/duplicad|repetid/i');
@@ -132,7 +132,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         ], 1, 2);
     }
 
-    public function test_indice_fora_da_faixa_pedida_vira_excecao(): void
+    public function test_an_index_outside_the_requested_range_becomes_an_exception(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/fora da faixa|indice/i');
@@ -143,7 +143,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         ], 1, 2);
     }
 
-    public function test_grade_completa_passa(): void
+    public function test_a_complete_grid_passes(): void
     {
         $collection = (new GoogleRouteMatrixResponseMapper())->toCollection([
             ['originIndex' => 0, 'destinationIndex' => 1, 'distanceMeters' => 20, 'duration' => '2s', 'condition' => 'ROUTE_EXISTS'],
@@ -155,7 +155,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         $this->assertSame(20, $collection->entry(0, 1)->distance->meters);
     }
 
-    public function test_erro_no_topo_do_corpo_vira_excecao_e_nao_par_sem_rota(): void
+    public function test_a_top_level_error_in_the_body_becomes_an_exception_not_an_unrouted_pair(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/internal/i');
@@ -171,7 +171,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         );
     }
 
-    public function test_matriz_normal_continua_passando(): void
+    public function test_a_normal_matrix_still_passes(): void
     {
         $collection = (new GoogleRouteMatrixResponseMapper())->toCollection([
             ['originIndex' => 0, 'destinationIndex' => 0, 'distanceMeters' => 10, 'duration' => '1s', 'condition' => 'ROUTE_EXISTS'],
@@ -180,7 +180,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         $this->assertSame(10, $collection->entry(0, 0)->distance->meters);
     }
 
-    public function test_error_de_tipo_inesperado_tambem_vira_excecao(): void
+    public function test_an_error_of_an_unexpected_type_also_becomes_an_exception(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/boom/');
@@ -190,14 +190,14 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         (new GoogleRouteMatrixResponseMapper())->toCollection([['error' => 'boom']], 1, 1);
     }
 
-    public function test_erro_no_topo_com_tipo_inesperado_tambem_vira_excecao(): void
+    public function test_a_top_level_error_with_an_unexpected_type_also_becomes_an_exception(): void
     {
         $this->expectException(ProviderRequestException::class);
 
         (new GoogleRouteMatrixResponseMapper())->toCollection(['error' => 'boom'], 1, 1);
     }
 
-    public function test_credencial_na_mensagem_do_provider_e_redigida(): void
+    public function test_a_credential_in_the_provider_message_is_redacted(): void
     {
         try {
             (new GoogleRouteMatrixResponseMapper())->toCollection(
@@ -218,7 +218,7 @@ final class GoogleRouteMatrixMapperTest extends TestCase
         }
     }
 
-    public function test_status_tem_precedencia_sobre_code_no_provider_code(): void
+    public function test_status_takes_precedence_over_code_in_the_provider_code(): void
     {
         try {
             (new GoogleRouteMatrixResponseMapper())->toCollection(

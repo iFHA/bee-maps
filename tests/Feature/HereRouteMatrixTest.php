@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Http;
 
 final class HereRouteMatrixTest extends TestCase
 {
-    public function test_calcula_matriz_e_devolve_colecao_endereçavel(): void
+    public function test_computes_the_matrix_and_returns_an_addressable_collection(): void
     {
         Http::fake(['matrix.router.hereapi.com/*' => Http::response(
             json_decode(file_get_contents(__DIR__ . '/../Fixtures/here/matrix.json'), true),
@@ -45,7 +45,7 @@ final class HereRouteMatrixTest extends TestCase
         });
     }
 
-    public function test_limite_vazio_no_config_significa_sem_guarda(): void
+    public function test_an_empty_limit_in_the_config_means_no_guard(): void
     {
         $this->app['config']->set('bee-maps.here.matrix_max_elements', '');
 

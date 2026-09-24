@@ -35,7 +35,7 @@ final class ParidadeRouteMatrixTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_matriz_devolve_o_mesmo_contrato(Provider $provider): void
+    public function test_the_matrix_returns_the_same_contract(Provider $provider): void
     {
         $this->fakeTudo();
 

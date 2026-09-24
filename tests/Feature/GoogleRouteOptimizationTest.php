@@ -32,7 +32,7 @@ final class GoogleRouteOptimizationTest extends TestCase
         );
     }
 
-    public function test_objetivo_de_tempo_vai_para_o_computeRoutes(): void
+    public function test_the_time_objective_goes_to_computeRoutes(): void
     {
         Http::fake(['routes.googleapis.com/directions/*' => Http::response(
             json_decode(file_get_contents(__DIR__ . '/../Fixtures/google/route-optimized.json'), true),
@@ -47,7 +47,7 @@ final class GoogleRouteOptimizationTest extends TestCase
         $this->assertSame([2, 0, 1], $result->order);
     }
 
-    public function test_objetivo_de_distancia_vai_para_a_matriz_por_default(): void
+    public function test_the_distance_objective_goes_to_the_matrix_by_default(): void
     {
         // Sem Http::fake para o computeRoutes: se o seletor mandar o MinDistance
         // para la, preventStrayRequests quebra o teste em vez de passar por acaso.
@@ -64,7 +64,7 @@ final class GoogleRouteOptimizationTest extends TestCase
         $this->assertCount(3, $result->order);
     }
 
-    public function test_fleet_routing_sem_a_dependencia_diz_o_comando_exato(): void
+    public function test_fleet_routing_without_the_dependency_states_the_exact_command(): void
     {
         // Sem google/apiclient instalado (o pacote so o sugere), pedir a
         // estrategia tem que falhar dizendo a saida — inclusive a de nao trocar.
@@ -85,7 +85,7 @@ final class GoogleRouteOptimizationTest extends TestCase
             ->optimize($this->request(OptimizationObjective::MinDistance));
     }
 
-    public function test_fleet_routing_mal_configurado_nao_derruba_o_objetivo_de_tempo(): void
+    public function test_a_misconfigured_fleet_routing_does_not_break_the_time_objective(): void
     {
         // MinTravelTime nunca toca a Fleet Routing. Construir as duas estrategias
         // antes de saber qual sera usada fazia um typo no .env derrubar tambem o
@@ -108,7 +108,7 @@ final class GoogleRouteOptimizationTest extends TestCase
         $this->assertSame('google.routes', $result->strategy);
     }
 
-    public function test_matriz_e_tsp_reportam_como_route_optimization(): void
+    public function test_matrix_and_tsp_report_as_route_optimization(): void
     {
         // A estrategia delega para o contrato RouteMatrix, que emite o evento em
         // nome dele. Sem agrupar, uma otimizacao por distancia no Google some das
@@ -133,7 +133,7 @@ final class GoogleRouteOptimizationTest extends TestCase
         $this->assertSame(1, $events[0]->upstreamCalls);
     }
 
-    public function test_min_distance_api_desconhecido_cai_no_default(): void
+    public function test_an_unknown_min_distance_api_falls_back_to_the_default(): void
     {
         $this->app['config']->set('bee-maps.google.route_optimization.min_distance_api', 'banana');
 
@@ -146,7 +146,7 @@ final class GoogleRouteOptimizationTest extends TestCase
         $this->assertSame('google.matrix_tsp', $result->strategy);
     }
 
-    public function test_falha_antes_da_rede_nao_emite_evento_de_operacao(): void
+    public function test_failing_before_the_network_emits_no_operation_event(): void
     {
         // 24 paradas => 26 pontos => 676 elementos, acima dos 625 do Google. A
         // guarda dispara antes de sair para a rede: o agrupamento nao pode

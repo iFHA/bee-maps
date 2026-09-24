@@ -12,7 +12,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class GoogleAutocompleteMapperTest extends TestCase
 {
-    public function test_monta_payload_minimo_sem_coordenada(): void
+    public function test_builds_a_minimal_payload_without_coordinates(): void
     {
         $payload = (new GoogleAutocompleteRequestMapper())->toPayload(
             new AutocompleteRequest('Av Paulista'),
@@ -25,7 +25,7 @@ final class GoogleAutocompleteMapperTest extends TestCase
         $this->assertArrayNotHasKey('locationRestriction', $payload);
     }
 
-    public function test_inclui_restricao_circular_quando_ha_coordenada(): void
+    public function test_includes_a_circular_restriction_when_coordinates_are_present(): void
     {
         $payload = (new GoogleAutocompleteRequestMapper())->toPayload(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), 3000, ['BR']),
@@ -38,7 +38,7 @@ final class GoogleAutocompleteMapperTest extends TestCase
         $this->assertSame(['BR'], $payload['includedRegionCodes']);
     }
 
-    public function test_raio_nulo_com_coordenada_nao_envia_radius(): void
+    public function test_a_null_radius_with_coordinates_sends_no_radius(): void
     {
         $payload = (new GoogleAutocompleteRequestMapper())->toPayload(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), null),
@@ -50,7 +50,7 @@ final class GoogleAutocompleteMapperTest extends TestCase
         $this->assertArrayNotHasKey('radius', $payload['locationRestriction']['circle']);
     }
 
-    public function test_countries_vazio_cai_para_a_regiao_configurada(): void
+    public function test_empty_countries_falls_back_to_the_configured_region(): void
     {
         $payload = (new GoogleAutocompleteRequestMapper())->toPayload(
             new AutocompleteRequest('Av Paulista'),
@@ -61,7 +61,7 @@ final class GoogleAutocompleteMapperTest extends TestCase
         $this->assertSame(['BR'], $payload['includedRegionCodes']);
     }
 
-    public function test_codigo_alpha3_e_convertido_para_alpha2(): void
+    public function test_an_alpha3_code_is_converted_to_alpha2(): void
     {
         $payload = (new GoogleAutocompleteRequestMapper())->toPayload(
             new AutocompleteRequest('Av Paulista', countries: ['BRA']),
@@ -72,7 +72,7 @@ final class GoogleAutocompleteMapperTest extends TestCase
         $this->assertSame(['BR'], $payload['includedRegionCodes']);
     }
 
-    public function test_codigo_de_pais_invalido_lanca_excecao(): void
+    public function test_an_invalid_country_code_throws(): void
     {
         $this->expectException(InvalidRequestException::class);
 
@@ -83,7 +83,7 @@ final class GoogleAutocompleteMapperTest extends TestCase
         );
     }
 
-    public function test_mapeia_resposta_para_sugestoes(): void
+    public function test_maps_the_response_to_suggestions(): void
     {
         $json = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/autocomplete.json'), true);
 
@@ -100,7 +100,7 @@ final class GoogleAutocompleteMapperTest extends TestCase
         $this->assertTrue($collection->all()[1]->isEstablishment);
     }
 
-    public function test_resposta_sem_sugestoes_devolve_colecao_vazia(): void
+    public function test_a_response_without_suggestions_returns_an_empty_collection(): void
     {
         $collection = (new GoogleAutocompleteResponseMapper())->toCollection([]);
 

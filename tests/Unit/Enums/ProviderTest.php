@@ -8,13 +8,13 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class ProviderTest extends TestCase
 {
-    public function test_provider_e_criado_a_partir_do_slug(): void
+    public function test_the_provider_is_created_from_the_slug(): void
     {
         $this->assertSame(Provider::Here, Provider::from('here'));
         $this->assertSame('google', Provider::Google->value);
     }
 
-    public function test_service_usa_snake_case_como_valor(): void
+    public function test_service_uses_snake_case_as_its_value(): void
     {
         $this->assertSame('route_optimization', Service::RouteOptimization->value);
         $this->assertCount(6, Service::cases());

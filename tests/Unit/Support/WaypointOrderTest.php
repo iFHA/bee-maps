@@ -9,12 +9,12 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class WaypointOrderTest extends TestCase
 {
-    public function test_permutacao_completa_passa(): void
+    public function test_a_complete_permutation_passes(): void
     {
         $this->assertSame([2, 0, 1], WaypointOrder::validate([2, 0, 1], 3, Provider::Google, 'teste'));
     }
 
-    public function test_ordem_curta_e_recusada(): void
+    public function test_a_short_order_is_refused(): void
     {
         // Ordem parcial e pior que erro: o chamador usa $order para reordenar a
         // propria lista de entregas, e uma ordem com buraco apaga paradas.
@@ -24,7 +24,7 @@ final class WaypointOrderTest extends TestCase
         WaypointOrder::validate([0, 1], 3, Provider::Google, 'teste');
     }
 
-    public function test_indice_repetido_e_recusado(): void
+    public function test_a_repeated_index_is_refused(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/repetid/i');
@@ -32,7 +32,7 @@ final class WaypointOrderTest extends TestCase
         WaypointOrder::validate([0, 1, 1], 3, Provider::Google, 'teste');
     }
 
-    public function test_indice_fora_da_faixa_e_recusado(): void
+    public function test_an_out_of_range_index_is_refused(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/fora da faixa/i');
@@ -40,7 +40,7 @@ final class WaypointOrderTest extends TestCase
         WaypointOrder::validate([0, 1, 7], 3, Provider::Google, 'teste');
     }
 
-    public function test_contagem_certa_com_indice_fora_da_faixa_nao_passa(): void
+    public function test_the_right_count_with_an_out_of_range_index_does_not_pass(): void
     {
         // A guarda de contagem sozinha aprovaria: 3 elementos para 3 esperados.
         // O invariante e "permutacao de 0..N-1", nao "tem N elementos".

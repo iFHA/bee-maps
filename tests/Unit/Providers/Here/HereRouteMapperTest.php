@@ -17,7 +17,7 @@ final class HereRouteMapperTest extends TestCase
         return json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/' . $name), true);
     }
 
-    public function test_query_minima_tem_origem_destino_modo_e_return(): void
+    public function test_the_minimal_query_has_origin_destination_mode_and_return(): void
     {
         $query = (new HereRouteRequestMapper())->toQuery(
             new RouteRequest(new Coordinates(-23.5, -46.6), new Coordinates(-23.6, -46.7)),
@@ -31,7 +31,7 @@ final class HereRouteMapperTest extends TestCase
         $this->assertArrayNotHasKey('via', $query);
     }
 
-    public function test_cada_modo_de_viagem_vira_o_transport_mode_do_here(): void
+    public function test_each_travel_mode_becomes_the_here_transport_mode(): void
     {
         $mapper = new HereRouteRequestMapper();
 
@@ -52,7 +52,7 @@ final class HereRouteMapperTest extends TestCase
         }
     }
 
-    public function test_polyline_entra_no_return_quando_pedida(): void
+    public function test_the_polyline_enters_the_return_when_asked_for(): void
     {
         $query = (new HereRouteRequestMapper())->toQuery(
             new RouteRequest(
@@ -66,7 +66,7 @@ final class HereRouteMapperTest extends TestCase
         $this->assertSame('summary,polyline', $query['return']);
     }
 
-    public function test_intermediarios_viram_via_repetido_na_ordem_original(): void
+    public function test_intermediates_become_repeated_via_in_the_original_order(): void
     {
         $query = (new HereRouteRequestMapper())->toQuery(
             new RouteRequest(
@@ -83,7 +83,7 @@ final class HereRouteMapperTest extends TestCase
         );
     }
 
-    public function test_ordem_otimizada_reordena_os_via(): void
+    public function test_the_optimized_order_reorders_the_via(): void
     {
         $query = (new HereRouteRequestMapper())->toQuery(
             new RouteRequest(
@@ -101,7 +101,7 @@ final class HereRouteMapperTest extends TestCase
         );
     }
 
-    public function test_ordem_de_tamanho_divergente_lanca_excecao_em_vez_de_apagar_os_via(): void
+    public function test_an_order_of_a_different_size_throws_instead_of_erasing_the_via(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/ordem|intermediari/i');
@@ -119,7 +119,7 @@ final class HereRouteMapperTest extends TestCase
         );
     }
 
-    public function test_uma_secao_vira_rota_com_polyline_propria(): void
+    public function test_a_single_section_becomes_a_route_with_its_own_polyline(): void
     {
         $route = (new HereRouteResponseMapper())->toRoute($this->fixture('route-uma-secao.json'), true);
 
@@ -133,7 +133,7 @@ final class HereRouteMapperTest extends TestCase
         $this->assertEqualsWithDelta(50.09878, $route->legs[0]->destination->latitude, 0.00001);
     }
 
-    public function test_duas_secoes_somam_os_totais_e_deixam_a_polyline_da_rota_nula(): void
+    public function test_two_sections_sum_the_totals_and_leave_the_route_polyline_null(): void
     {
         $route = (new HereRouteResponseMapper())->toRoute($this->fixture('route.json'), true);
 
@@ -148,7 +148,7 @@ final class HereRouteMapperTest extends TestCase
         $this->assertSame(7200, $route->legs[1]->distance->meters);
     }
 
-    public function test_pernas_so_aparecem_quando_pedidas(): void
+    public function test_legs_only_show_up_when_asked_for(): void
     {
         $route = (new HereRouteResponseMapper())->toRoute($this->fixture('route.json'), false);
 
@@ -156,14 +156,14 @@ final class HereRouteMapperTest extends TestCase
         $this->assertSame(12400, $route->distance->meters);
     }
 
-    public function test_ordem_otimizada_e_repassada_para_o_dto(): void
+    public function test_the_optimized_order_is_passed_through_to_the_dto(): void
     {
         $route = (new HereRouteResponseMapper())->toRoute($this->fixture('route.json'), false, [1, 0]);
 
         $this->assertSame([1, 0], $route->optimizedOrder);
     }
 
-    public function test_resposta_sem_rota_vira_excecao_tipada(): void
+    public function test_a_response_without_a_route_becomes_a_typed_exception(): void
     {
         $this->expectException(InvalidRequestException::class);
 

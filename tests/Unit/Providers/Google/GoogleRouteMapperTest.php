@@ -17,7 +17,7 @@ final class GoogleRouteMapperTest extends TestCase
         return new RouteRequest(new Coordinates(-23.5, -46.6), new Coordinates(-23.6, -46.7));
     }
 
-    public function test_payload_minimo_tem_origem_destino_e_modo(): void
+    public function test_the_minimal_payload_has_origin_destination_and_mode(): void
     {
         $payload = (new GoogleRouteRequestMapper())->toPayload($this->simpleRequest(), 'pt-BR');
 
@@ -29,7 +29,7 @@ final class GoogleRouteMapperTest extends TestCase
         $this->assertArrayNotHasKey('optimizeWaypointOrder', $payload);
     }
 
-    public function test_cada_modo_de_viagem_vira_o_enum_do_google(): void
+    public function test_each_travel_mode_becomes_the_google_enum(): void
     {
         $mapper = new GoogleRouteRequestMapper();
 
@@ -50,7 +50,7 @@ final class GoogleRouteMapperTest extends TestCase
         }
     }
 
-    public function test_intermediarios_e_otimizacao_entram_no_payload(): void
+    public function test_intermediates_and_optimization_enter_the_payload(): void
     {
         $payload = (new GoogleRouteRequestMapper())->toPayload(
             new RouteRequest(
@@ -68,7 +68,7 @@ final class GoogleRouteMapperTest extends TestCase
         $this->assertTrue($payload['optimizeWaypointOrder']);
     }
 
-    public function test_field_mask_so_pede_o_que_a_requisicao_precisa(): void
+    public function test_the_field_mask_asks_only_for_what_the_request_needs(): void
     {
         $mapper = new GoogleRouteRequestMapper();
 
@@ -96,7 +96,7 @@ final class GoogleRouteMapperTest extends TestCase
         $this->assertStringContainsString('routes.optimizedIntermediateWaypointIndex', $full);
     }
 
-    public function test_resposta_vira_rota_tipada_com_duracao_em_segundos(): void
+    public function test_the_response_becomes_a_typed_route_with_duration_in_seconds(): void
     {
         $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route.json'), true);
 
@@ -123,7 +123,7 @@ final class GoogleRouteMapperTest extends TestCase
         $this->assertEqualsWithDelta(40.7, $route->legs[1]->polyline->coordinates()[0]->latitude, 0.00001);
     }
 
-    public function test_pernas_so_aparecem_quando_pedidas(): void
+    public function test_legs_only_show_up_when_asked_for(): void
     {
         $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/google/route.json'), true);
 
@@ -135,7 +135,7 @@ final class GoogleRouteMapperTest extends TestCase
         $this->assertSame(12400, $route->distance->meters);
     }
 
-    public function test_resposta_sem_rota_vira_excecao_tipada(): void
+    public function test_a_response_without_a_route_becomes_a_typed_exception(): void
     {
         $this->expectException(InvalidRequestException::class);
 

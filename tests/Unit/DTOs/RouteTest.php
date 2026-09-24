@@ -13,7 +13,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class RouteTest extends TestCase
 {
-    public function test_request_tem_defaults_conservadores(): void
+    public function test_the_request_has_conservative_defaults(): void
     {
         $request = new RouteRequest(new Coordinates(-23.5, -46.6), new Coordinates(-23.6, -46.7));
 
@@ -26,7 +26,7 @@ final class RouteTest extends TestCase
         $this->assertFalse($request->includeLegs);
     }
 
-    public function test_rota_sem_pernas_nem_otimizacao_tem_colecoes_vazias(): void
+    public function test_a_route_without_legs_or_optimization_has_empty_collections(): void
     {
         $route = new Route(new Distance(1200), new Duration(300), null);
 
@@ -37,7 +37,7 @@ final class RouteTest extends TestCase
         $this->assertSame([], $route->optimizedOrder);
     }
 
-    public function test_rota_carrega_pernas_e_ordem_otimizada(): void
+    public function test_the_route_carries_legs_and_the_optimized_order(): void
     {
         $leg = new RouteLeg(
             origin: new Coordinates(-23.5, -46.6),

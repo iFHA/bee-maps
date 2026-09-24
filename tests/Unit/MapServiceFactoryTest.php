@@ -20,14 +20,14 @@ final class MapServiceFactoryTest extends TestCase
         return new MapServiceFactory(new ProviderRegistry($providers));
     }
 
-    public function test_devolve_a_implementacao_do_provider_pedido(): void
+    public function test_returns_the_implementation_of_the_requested_provider(): void
     {
         $factory = $this->factory(new ProviderCompleto());
 
         $this->assertInstanceOf(Autocomplete::class, $factory->autocomplete(Provider::Google));
     }
 
-    public function test_provider_nao_registrado_lanca_excecao(): void
+    public function test_an_unregistered_provider_throws(): void
     {
         $factory = $this->factory(new ProviderCompleto());
 
@@ -36,7 +36,7 @@ final class MapServiceFactoryTest extends TestCase
         $factory->autocomplete(Provider::Here);
     }
 
-    public function test_provider_sem_a_capacidade_lanca_excecao(): void
+    public function test_a_provider_without_the_capability_throws(): void
     {
         $factory = $this->factory(new ProviderSemCapacidades());
 
@@ -45,7 +45,7 @@ final class MapServiceFactoryTest extends TestCase
         $factory->autocomplete(Provider::Google);
     }
 
-    public function test_route_optimization_falha_em_provider_sem_a_capacidade(): void
+    public function test_route_optimization_fails_on_a_provider_without_the_capability(): void
     {
         $this->expectException(ServiceNotSupportedByProviderException::class);
 

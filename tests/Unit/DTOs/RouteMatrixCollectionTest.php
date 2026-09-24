@@ -20,7 +20,7 @@ final class RouteMatrixCollectionTest extends TestCase
         return new RouteMatrixEntry($origin, $destination, new Distance($meters), new Duration(60), true);
     }
 
-    public function test_colecao_vazia(): void
+    public function test_empty_collection(): void
     {
         $collection = new RouteMatrixEntryCollection();
 
@@ -29,7 +29,7 @@ final class RouteMatrixCollectionTest extends TestCase
         $this->assertNull($collection->entry(0, 0));
     }
 
-    public function test_entrada_e_endereçavel_por_par_mesmo_fora_de_ordem(): void
+    public function test_an_entry_is_addressable_by_pair_even_out_of_order(): void
     {
         // Ordem literal que o Google devolveu numa matriz 2x2 real.
         $collection = new RouteMatrixEntryCollection(
@@ -47,7 +47,7 @@ final class RouteMatrixCollectionTest extends TestCase
         $this->assertNull($collection->entry(9, 9));
     }
 
-    public function test_request_conta_elementos(): void
+    public function test_the_request_counts_elements(): void
     {
         $request = new RouteMatrixRequest(
             [new Coordinates(-23.5, -46.6), new Coordinates(-23.6, -46.7)],
@@ -57,14 +57,14 @@ final class RouteMatrixCollectionTest extends TestCase
         $this->assertSame(6, $request->elements());
     }
 
-    public function test_request_sem_origem_ou_sem_destino_e_rejeitado(): void
+    public function test_a_request_without_origin_or_destination_is_rejected(): void
     {
         $this->expectException(InvalidRequestException::class);
 
         new RouteMatrixRequest([], [new Coordinates(-23.5, -46.6)]);
     }
 
-    public function test_excecao_de_matriz_grande_diz_o_numero_e_o_limite(): void
+    public function test_the_oversized_matrix_exception_states_the_size_and_the_limit(): void
     {
         $exception = MatrixTooLargeException::make(Provider::Google, 900, 625);
 
@@ -73,7 +73,7 @@ final class RouteMatrixCollectionTest extends TestCase
         $this->assertStringContainsString('625', $exception->getMessage());
     }
 
-    public function test_pontos_com_chaves_nao_sequenciais_sao_reindexados(): void
+    public function test_points_with_non_sequential_keys_are_reindexed(): void
     {
         $points = [
             new Coordinates(-23.5, -46.6),

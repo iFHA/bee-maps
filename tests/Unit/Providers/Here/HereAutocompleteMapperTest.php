@@ -17,7 +17,7 @@ final class HereAutocompleteMapperTest extends TestCase
         return json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/autocomplete.json'), true);
     }
 
-    public function test_sem_coordenada_manda_so_o_filtro_de_pais(): void
+    public function test_without_coordinates_it_sends_only_the_country_filter(): void
     {
         $query = (new HereAutocompleteRequestMapper())
             ->toQuery(new AutocompleteRequest('Rua Blumenau'), 'pt-BR', 'BR');
@@ -28,7 +28,7 @@ final class HereAutocompleteMapperTest extends TestCase
         $this->assertArrayNotHasKey('at', $query);
     }
 
-    public function test_coordenada_com_raio_vira_circle_e_nunca_emite_at(): void
+    public function test_coordinates_with_a_radius_become_a_circle_and_never_emit_at(): void
     {
         $query = (new HereAutocompleteRequestMapper())->toQuery(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), 3000, ['BR']),
@@ -40,7 +40,7 @@ final class HereAutocompleteMapperTest extends TestCase
         $this->assertArrayNotHasKey('at', $query);
     }
 
-    public function test_coordenada_sem_raio_vira_at(): void
+    public function test_coordinates_without_a_radius_become_at(): void
     {
         $query = (new HereAutocompleteRequestMapper())->toQuery(
             new AutocompleteRequest('Av Paulista', new Coordinates(-23.5, -46.6), null, ['BR']),
@@ -52,7 +52,7 @@ final class HereAutocompleteMapperTest extends TestCase
         $this->assertSame(['countryCode:BRA'], $query['in']);
     }
 
-    public function test_codigo_de_pais_invalido_lanca_excecao(): void
+    public function test_an_invalid_country_code_throws(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/XX/');
@@ -64,7 +64,7 @@ final class HereAutocompleteMapperTest extends TestCase
         );
     }
 
-    public function test_main_text_sai_do_address_e_nao_do_title_invertido(): void
+    public function test_main_text_comes_from_the_address_not_from_the_inverted_title(): void
     {
         $first = (new HereAutocompleteResponseMapper())->toCollection($this->fixture())->first();
 
@@ -75,7 +75,7 @@ final class HereAutocompleteMapperTest extends TestCase
         $this->assertSame('Avenida Paulista, 1000, Sao Paulo - SP, 01310-100, Brasil', $first->description);
     }
 
-    public function test_rua_sem_numero_nao_ganha_virgula_no_main_text(): void
+    public function test_a_street_without_a_number_gets_no_comma_in_main_text(): void
     {
         $street = (new HereAutocompleteResponseMapper())->toCollection($this->fixture())->all()[1];
 
@@ -86,7 +86,7 @@ final class HereAutocompleteMapperTest extends TestCase
         $this->assertSame('Joinville - SC, 89201-000, Brasil', $street->secondaryText);
     }
 
-    public function test_cidade_usa_a_localidade_como_linha_principal(): void
+    public function test_a_city_uses_the_locality_as_the_main_line(): void
     {
         $city = (new HereAutocompleteResponseMapper())->toCollection($this->fixture())->all()[2];
 
@@ -94,7 +94,7 @@ final class HereAutocompleteMapperTest extends TestCase
         $this->assertSame('MG, Brasil', $city->secondaryText);
     }
 
-    public function test_todo_item_e_resolvivel_e_nenhum_e_estabelecimento(): void
+    public function test_every_item_is_resolvable_and_none_is_an_establishment(): void
     {
         $collection = (new HereAutocompleteResponseMapper())->toCollection($this->fixture());
 
@@ -109,7 +109,7 @@ final class HereAutocompleteMapperTest extends TestCase
         }
     }
 
-    public function test_resposta_malformada_vira_colecao_vazia(): void
+    public function test_a_malformed_response_becomes_an_empty_collection(): void
     {
         $collection = (new HereAutocompleteResponseMapper())->toCollection(['items' => [['id' => 'sem-titulo']]]);
 

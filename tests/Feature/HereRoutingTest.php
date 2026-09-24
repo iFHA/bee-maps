@@ -25,7 +25,7 @@ final class HereRoutingTest extends TestCase
         ]);
     }
 
-    public function test_calcula_rota_e_devolve_dto_tipado(): void
+    public function test_computes_the_route_and_returns_a_typed_dto(): void
     {
         $this->fake();
 
@@ -53,7 +53,7 @@ final class HereRoutingTest extends TestCase
         });
     }
 
-    public function test_rota_sem_otimizacao_e_uma_unica_chamada_upstream(): void
+    public function test_a_route_without_optimization_is_a_single_upstream_call(): void
     {
         Event::fake([MapRequestCompleted::class]);
         $this->fake();
@@ -96,7 +96,7 @@ final class HereRoutingTest extends TestCase
         );
     }
 
-    public function test_rota_otimizada_consulta_a_sequencia_e_depois_a_rota(): void
+    public function test_an_optimized_route_queries_the_sequence_and_then_the_route(): void
     {
         $this->fakeOptimized();
 
@@ -125,7 +125,7 @@ final class HereRoutingTest extends TestCase
         });
     }
 
-    public function test_rota_otimizada_e_uma_operacao_com_duas_chamadas_upstream(): void
+    public function test_an_optimized_route_is_one_operation_with_two_upstream_calls(): void
     {
         Event::fake([MapRequestCompleted::class]);
         $this->fakeOptimized();
@@ -144,7 +144,7 @@ final class HereRoutingTest extends TestCase
         );
     }
 
-    public function test_otimizacao_sem_intermediarios_nao_chama_o_findsequence(): void
+    public function test_optimizing_without_intermediates_does_not_call_findsequence(): void
     {
         // So o router responde: se o findsequence for chamado,
         // preventStrayRequests quebra o teste.

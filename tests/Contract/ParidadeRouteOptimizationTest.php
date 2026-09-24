@@ -85,7 +85,7 @@ final class ParidadeRouteOptimizationTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_fim_fixo_devolve_permutacao_completa_dos_intermediarios(Provider $provider): void
+    public function test_a_fixed_end_returns_a_full_permutation_of_the_intermediates(Provider $provider): void
     {
         $this->fakeBoth();
 
@@ -101,7 +101,7 @@ final class ParidadeRouteOptimizationTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_tour_aberto_funciona_nos_dois(Provider $provider): void
+    public function test_an_open_tour_works_on_both(Provider $provider): void
     {
         $this->fakeBoth();
 
@@ -114,7 +114,7 @@ final class ParidadeRouteOptimizationTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_volta_a_origem_funciona_nos_dois(Provider $provider): void
+    public function test_returning_to_origin_works_on_both(Provider $provider): void
     {
         $this->fakeBoth();
 
@@ -137,7 +137,7 @@ final class ParidadeRouteOptimizationTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_a_ordem_nunca_inclui_origem_nem_destino(Provider $provider): void
+    public function test_the_order_never_includes_origin_or_destination(Provider $provider): void
     {
         $this->fakeBoth();
 
@@ -154,7 +154,7 @@ final class ParidadeRouteOptimizationTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_resposta_inutilizavel_lanca_a_mesma_excecao_nos_dois(Provider $provider): void
+    public function test_an_unusable_response_throws_the_same_exception_on_both(Provider $provider): void
     {
         // O portao so cobria o caminho feliz, e era exatamente ai que os dois
         // divergiam: Google lancava ProviderRequestException e HERE
@@ -177,7 +177,7 @@ final class ParidadeRouteOptimizationTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_ordem_incompleta_lanca_a_mesma_excecao_nos_dois(Provider $provider): void
+    public function test_an_incomplete_order_throws_the_same_exception_on_both(Provider $provider): void
     {
         Http::fake([
             'routes.googleapis.com/directions/*' => Http::response(['routes' => [[

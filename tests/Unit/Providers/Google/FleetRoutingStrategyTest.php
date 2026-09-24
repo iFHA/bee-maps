@@ -61,7 +61,7 @@ final class FleetRoutingStrategyTest extends TestCase
         ];
     }
 
-    public function test_le_ordem_e_totais_da_resposta(): void
+    public function test_reads_order_and_totals_from_the_response(): void
     {
         Http::fake(['routeoptimization.googleapis.com/*' => Http::response($this->validResponse(), 200)]);
 
@@ -73,7 +73,7 @@ final class FleetRoutingStrategyTest extends TestCase
         $this->assertSame('google.fleet_routing', $result->strategy);
     }
 
-    public function test_objetivo_vira_custo_no_payload(): void
+    public function test_the_objective_becomes_cost_in_the_payload(): void
     {
         Http::fake(['routeoptimization.googleapis.com/*' => Http::response($this->validResponse(), 200)]);
 
@@ -90,7 +90,7 @@ final class FleetRoutingStrategyTest extends TestCase
         });
     }
 
-    public function test_objetivo_de_tempo_troca_o_custo(): void
+    public function test_the_time_objective_switches_the_cost(): void
     {
         Http::fake(['routeoptimization.googleapis.com/*' => Http::response($this->validResponse(), 200)]);
 
@@ -106,7 +106,7 @@ final class FleetRoutingStrategyTest extends TestCase
         });
     }
 
-    public function test_tour_aberto_omite_endLocation(): void
+    public function test_an_open_tour_omits_endLocation(): void
     {
         Http::fake(['routeoptimization.googleapis.com/*' => Http::response($this->validResponse(), 200)]);
 
@@ -122,7 +122,7 @@ final class FleetRoutingStrategyTest extends TestCase
         });
     }
 
-    public function test_deliveries_vai_como_lista(): void
+    public function test_deliveries_go_as_a_list(): void
     {
         Http::fake(['routeoptimization.googleapis.com/*' => Http::response($this->validResponse(), 200)]);
 
@@ -142,7 +142,7 @@ final class FleetRoutingStrategyTest extends TestCase
         });
     }
 
-    public function test_ordem_incompleta_e_erro(): void
+    public function test_an_incomplete_order_is_an_error(): void
     {
         Http::fake(['routeoptimization.googleapis.com/*' => Http::response([
             'routes' => [['visits' => [['shipmentIndex' => 0], ['shipmentIndex' => 1]]]],
@@ -155,7 +155,7 @@ final class FleetRoutingStrategyTest extends TestCase
         $this->strategy()->optimize($this->request());
     }
 
-    public function test_resposta_sem_rota_e_erro(): void
+    public function test_a_response_without_a_route_is_an_error(): void
     {
         Http::fake(['routeoptimization.googleapis.com/*' => Http::response(['routes' => []], 200)]);
 
@@ -164,7 +164,7 @@ final class FleetRoutingStrategyTest extends TestCase
         $this->strategy()->optimize($this->request());
     }
 
-    public function test_total_zerado_nao_e_erro(): void
+    public function test_a_zeroed_total_is_not_an_error(): void
     {
         // O legado lancava quando a distancia era zero. E guarda por procuracao:
         // o invariante e "a resposta descreve a rota", nao "a distancia e positiva".

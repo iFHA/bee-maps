@@ -36,7 +36,7 @@ final class HereRouteOptimizationTest extends TestCase
         );
     }
 
-    public function test_devolve_ordem_e_totais_numa_chamada_so(): void
+    public function test_returns_order_and_totals_in_a_single_call(): void
     {
         $this->fake();
 
@@ -56,7 +56,7 @@ final class HereRouteOptimizationTest extends TestCase
         Http::assertSentCount(1);
     }
 
-    public function test_objetivo_vai_na_query(): void
+    public function test_the_objective_goes_in_the_query(): void
     {
         $this->fake();
 
@@ -71,7 +71,7 @@ final class HereRouteOptimizationTest extends TestCase
         });
     }
 
-    public function test_tour_aberto_nao_manda_end(): void
+    public function test_an_open_tour_sends_no_end(): void
     {
         $this->fake();
 
@@ -86,7 +86,7 @@ final class HereRouteOptimizationTest extends TestCase
         });
     }
 
-    public function test_resposta_inutilizavel_vira_excecao_de_provider(): void
+    public function test_an_unusable_response_becomes_a_provider_exception(): void
     {
         // Mesmo evento do lado Google: 200 com corpo que nao descreve resposta
         // usavel. Tem que ser a MESMA classe de excecao nos dois, senao quem
@@ -106,7 +106,7 @@ final class HereRouteOptimizationTest extends TestCase
         }
     }
 
-    public function test_ordem_incompleta_vira_excecao_de_provider(): void
+    public function test_an_incomplete_order_becomes_a_provider_exception(): void
     {
         Http::fake(['wps.hereapi.com/*' => Http::response(['results' => [[
             'waypoints' => [
@@ -127,7 +127,7 @@ final class HereRouteOptimizationTest extends TestCase
             ->optimize($this->request(new Coordinates(-23.598, -46.686), OptimizationObjective::MinDistance));
     }
 
-    public function test_totais_ausentes_viram_excecao_de_provider(): void
+    public function test_missing_totals_become_a_provider_exception(): void
     {
         Http::fake(['wps.hereapi.com/*' => Http::response(['results' => [[
             'waypoints' => [

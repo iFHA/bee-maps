@@ -12,7 +12,7 @@ use BeeDelivery\BeeMaps\Tests\TestCase;
 
 final class HereDiscoverMapperTest extends TestCase
 {
-    public function test_sem_coordenada_usa_a_regiao_do_config_como_filtro_in(): void
+    public function test_without_coordinates_it_uses_the_config_region_as_the_in_filter(): void
     {
         $query = (new HereDiscoverRequestMapper())
             ->toQuery(new PlaceSearchRequest('farmacia'), 'pt-BR', 'BR');
@@ -23,7 +23,7 @@ final class HereDiscoverMapperTest extends TestCase
         $this->assertArrayNotHasKey('at', $query);
     }
 
-    public function test_coordenada_vira_at_e_dispensa_o_filtro_in(): void
+    public function test_coordinates_become_at_and_drop_the_in_filter(): void
     {
         $query = (new HereDiscoverRequestMapper())
             ->toQuery(new PlaceSearchRequest('farmacia', new Coordinates(-23.5, -46.6)), 'pt-BR', 'BR');
@@ -32,7 +32,7 @@ final class HereDiscoverMapperTest extends TestCase
         $this->assertArrayNotHasKey('in', $query);
     }
 
-    public function test_sem_coordenada_e_sem_regiao_lanca_excecao_dizendo_o_que_faltou(): void
+    public function test_without_coordinates_or_region_it_throws_stating_what_was_missing(): void
     {
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessageMatches('/at|regi/i');
@@ -40,7 +40,7 @@ final class HereDiscoverMapperTest extends TestCase
         (new HereDiscoverRequestMapper())->toQuery(new PlaceSearchRequest('farmacia'), 'pt-BR', '');
     }
 
-    public function test_resposta_vira_colecao_tipada(): void
+    public function test_the_response_becomes_a_typed_collection(): void
     {
         $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/discover.json'), true);
 
@@ -64,7 +64,7 @@ final class HereDiscoverMapperTest extends TestCase
         $this->assertNull($collection->all()[1]->address->postalCode);
     }
 
-    public function test_resposta_sem_items_vira_colecao_vazia(): void
+    public function test_a_response_without_items_becomes_an_empty_collection(): void
     {
         $this->assertTrue((new HereDiscoverResponseMapper())->toCollection([])->isEmpty());
     }

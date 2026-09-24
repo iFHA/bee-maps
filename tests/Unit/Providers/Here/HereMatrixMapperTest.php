@@ -22,7 +22,7 @@ final class HereMatrixMapperTest extends TestCase
         );
     }
 
-    public function test_payload_usa_auto_circle_e_pede_distancia_e_tempo(): void
+    public function test_the_payload_uses_auto_circle_and_asks_for_distance_and_time(): void
     {
         $payload = (new HereMatrixRequestMapper())->toPayload($this->request());
 
@@ -35,7 +35,7 @@ final class HereMatrixMapperTest extends TestCase
         $this->assertSame('scooter', $payload['transportMode']);
     }
 
-    public function test_arrays_achatados_viram_entradas_por_par(): void
+    public function test_flattened_arrays_become_entries_per_pair(): void
     {
         $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
@@ -58,7 +58,7 @@ final class HereMatrixMapperTest extends TestCase
         $this->assertSame(2201, $collection->entry(1, 2)->duration->seconds);
     }
 
-    public function test_error_code_diferente_de_zero_marca_par_inalcancavel(): void
+    public function test_a_nonzero_error_code_marks_the_pair_unreachable(): void
     {
         $response = json_decode(file_get_contents(__DIR__ . '/../../../Fixtures/here/matrix.json'), true);
 
@@ -73,7 +73,7 @@ final class HereMatrixMapperTest extends TestCase
         $this->assertTrue($collection->entry(0, 0)->reachable);
     }
 
-    public function test_ausencia_de_error_codes_significa_tudo_alcancavel(): void
+    public function test_missing_error_codes_means_everything_is_reachable(): void
     {
         // Resposta real do HERE quando nao ha par inalcancavel: o campo
         // errorCodes simplesmente nao vem. Tratar ausencia como erro marcaria
@@ -96,7 +96,7 @@ final class HereMatrixMapperTest extends TestCase
         }
     }
 
-    public function test_resposta_sem_matriz_vira_excecao(): void
+    public function test_a_response_without_a_matrix_becomes_an_exception(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/matriz/i');
@@ -108,7 +108,7 @@ final class HereMatrixMapperTest extends TestCase
         (new HereMatrixResponseMapper())->toCollection(['matrixId' => 'abc', 'status' => 'pending'], 2, 2);
     }
 
-    public function test_matriz_menor_que_o_pedido_vira_excecao(): void
+    public function test_a_matrix_smaller_than_requested_becomes_an_exception(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/1x2|incompleta|dimens/i');
@@ -123,7 +123,7 @@ final class HereMatrixMapperTest extends TestCase
         ], 2, 2);
     }
 
-    public function test_dimensoes_trocadas_viram_excecao_mesmo_com_o_produto_certo(): void
+    public function test_swapped_dimensions_become_an_exception_even_with_the_right_product(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/3x2|2x3|dimens/i');
@@ -138,7 +138,7 @@ final class HereMatrixMapperTest extends TestCase
         ]], 2, 3);
     }
 
-    public function test_distances_ausente_vira_excecao_em_vez_de_matriz_de_zero_metros(): void
+    public function test_missing_distances_become_an_exception_instead_of_a_zero_meter_matrix(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/distances|medida/i');
@@ -153,7 +153,7 @@ final class HereMatrixMapperTest extends TestCase
         ]], 2, 3);
     }
 
-    public function test_array_de_medida_mais_curto_que_a_grade_vira_excecao(): void
+    public function test_a_measure_array_shorter_than_the_grid_becomes_an_exception(): void
     {
         $this->expectException(ProviderRequestException::class);
 
@@ -165,7 +165,7 @@ final class HereMatrixMapperTest extends TestCase
         ]], 2, 3);
     }
 
-    public function test_error_codes_presente_e_curto_vira_excecao(): void
+    public function test_error_codes_present_but_short_become_an_exception(): void
     {
         $this->expectException(ProviderRequestException::class);
 
@@ -181,7 +181,7 @@ final class HereMatrixMapperTest extends TestCase
         ]], 2, 3);
     }
 
-    public function test_campo_de_medida_escalar_vira_excecao_tipada_e_nao_type_error(): void
+    public function test_a_scalar_measure_field_becomes_a_typed_exception_not_a_type_error(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/lista|distances/i');
@@ -196,7 +196,7 @@ final class HereMatrixMapperTest extends TestCase
         ]], 1, 1);
     }
 
-    public function test_medida_nao_numerica_vira_excecao_em_vez_de_zero_inventado(): void
+    public function test_a_non_numeric_measure_becomes_an_exception_instead_of_an_invented_zero(): void
     {
         $this->expectException(ProviderRequestException::class);
         $this->expectExceptionMessageMatches('/numero|numeric/i');
@@ -213,7 +213,7 @@ final class HereMatrixMapperTest extends TestCase
         ]], 1, 2);
     }
 
-    public function test_error_codes_escalar_vira_excecao_tipada(): void
+    public function test_scalar_error_codes_become_a_typed_exception(): void
     {
         $this->expectException(ProviderRequestException::class);
 
@@ -233,7 +233,7 @@ final class HereMatrixMapperTest extends TestCase
     }
 
     #[DataProvider('harmlessErrorCodes')]
-    public function test_error_codes_vazio_ou_nulo_equivale_a_ausente(mixed $value): void
+    public function test_empty_or_null_error_codes_are_equivalent_to_missing(mixed $value): void
     {
         $matrix = [
             'numOrigins' => 1,

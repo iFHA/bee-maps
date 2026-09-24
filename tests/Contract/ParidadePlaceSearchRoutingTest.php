@@ -41,7 +41,7 @@ final class ParidadePlaceSearchRoutingTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_place_search_devolve_o_mesmo_contrato(Provider $provider): void
+    public function test_place_search_returns_the_same_contract(Provider $provider): void
     {
         $this->fakeTudo();
 
@@ -83,7 +83,7 @@ final class ParidadePlaceSearchRoutingTest extends TestCase
      * polyline de rota, D17 — isolada de uma diferenca de fixture.
      */
     #[DataProvider('providers')]
-    public function test_rota_com_intermediarios_devolve_o_mesmo_contrato(Provider $provider): void
+    public function test_a_route_with_intermediates_returns_the_same_contract(Provider $provider): void
     {
         $this->fakeTudo();
 
@@ -129,7 +129,7 @@ final class ParidadePlaceSearchRoutingTest extends TestCase
     }
 
     #[DataProvider('providers')]
-    public function test_rota_simples_devolve_o_mesmo_contrato(Provider $provider): void
+    public function test_a_simple_route_returns_the_same_contract(Provider $provider): void
     {
         $this->fakeTudo();
 

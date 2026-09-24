@@ -42,7 +42,7 @@ final class NearestNeighbourTourTest extends TestCase
         return new RouteMatrixEntryCollection(...$entries);
     }
 
-    public function test_tour_aberto_nao_soma_volta_para_lugar_nenhum(): void
+    public function test_an_open_tour_sums_no_return_to_nowhere(): void
     {
         // Pontos: 0m, 100m, 200m, 300m. Aberto a partir do indice 0.
         $tour = (new NearestNeighbourTour())->tour(
@@ -57,7 +57,7 @@ final class NearestNeighbourTourTest extends TestCase
         $this->assertSame(1800, $tour->duration->seconds);
     }
 
-    public function test_fim_fixo_entra_nos_totais_e_fica_fora_da_ordem(): void
+    public function test_a_fixed_end_counts_in_the_totals_and_stays_out_of_the_order(): void
     {
         // Pontos: 0m, 100m, 200m, 300m. Fim pinado no indice 3.
         $tour = (new NearestNeighbourTour())->tour(
@@ -71,7 +71,7 @@ final class NearestNeighbourTourTest extends TestCase
         $this->assertSame(300, $tour->distance->meters);
     }
 
-    public function test_volta_a_origem_e_o_fim_apontando_para_a_propria_origem(): void
+    public function test_returning_to_origin_is_the_end_pointing_at_the_origin_itself(): void
     {
         // destination = origin no contrato vira fim = indice da origem.
         $tour = (new NearestNeighbourTour())->tour(
@@ -86,7 +86,7 @@ final class NearestNeighbourTourTest extends TestCase
         $this->assertSame(400, $tour->distance->meters);
     }
 
-    public function test_origem_duplicada_no_fim_nao_sequestra_a_primeira_iteracao(): void
+    public function test_a_duplicated_origin_at_the_end_does_not_hijack_the_first_iteration(): void
     {
         // Caso que o legado so sobrevivia por causa do filtro `distanceMeters <= 0`:
         // o mesmo ponto aparece nos indices 0 e 3, entao o par (0,3) mede 0 metros.
@@ -102,7 +102,7 @@ final class NearestNeighbourTourTest extends TestCase
         $this->assertSame(400, $tour->distance->meters);
     }
 
-    public function test_duas_paradas_na_mesma_coordenada_nao_somem(): void
+    public function test_two_stops_at_the_same_coordinate_do_not_disappear(): void
     {
         // Distancia 0 entre dois pontos DISTINTOS e medida valida: duas entregas
         // no mesmo predio existem. O legado descartava o par e a parada sumia.
@@ -118,7 +118,7 @@ final class NearestNeighbourTourTest extends TestCase
         $this->assertSame(300, $tour->distance->meters);
     }
 
-    public function test_objetivo_escolhe_o_criterio_de_ordenacao(): void
+    public function test_the_objective_picks_the_sorting_criterion(): void
     {
         // Matriz montada a mao: de 0, o indice 1 e mais PERTO e o indice 2 e mais
         // RAPIDO. Os dois objetivos tem que divergir na primeira escolha.
@@ -152,7 +152,7 @@ final class NearestNeighbourTourTest extends TestCase
         );
     }
 
-    public function test_par_inalcancavel_nao_e_tratado_como_distancia_qualquer(): void
+    public function test_an_unreachable_pair_is_not_treated_as_just_another_distance(): void
     {
         // Unico caminho de 0 sai para 1, e ele nao existe. Ordem que atravessa
         // trecho sem rota e pior que erro: chega ao entregador como itinerario
@@ -175,7 +175,7 @@ final class NearestNeighbourTourTest extends TestCase
         );
     }
 
-    public function test_perna_final_ausente_na_matriz_e_erro(): void
+    public function test_a_missing_final_leg_in_the_matrix_is_an_error(): void
     {
         // A matriz nao traz o par ultima-parada -> fim. Fabricar 0 aqui inventaria
         // distancia; a regra do pacote e que medida ausente e erro.

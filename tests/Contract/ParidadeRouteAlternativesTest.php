@@ -56,7 +56,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
     /**
      */
     #[DataProvider('providers')]
-    public function test_alternativas_chegam_no_dto_nos_dois_provedores(
+    public function test_alternatives_reach_the_dto_on_both_providers(
         Provider $provider,
         string $folder,
         string $fixture,
@@ -79,7 +79,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
      * alternativas, ainda que a resposta upstream as traga.
      */
     #[DataProvider('providers')]
-    public function test_sem_pedido_nenhum_provedor_devolve_alternativas(
+    public function test_without_asking_no_provider_returns_alternatives(
         Provider $provider,
         string $folder,
         string $fixture,
@@ -94,7 +94,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
      * com a mesma excecao, antes de qualquer chamada upstream.
      */
     #[DataProvider('outOfRangeValues')]
-    public function test_valor_fora_da_faixa_e_recusado_antes_da_chamada(int $alternativas): void
+    public function test_an_out_of_range_value_is_refused_before_the_call(int $alternativas): void
     {
         Http::fake();
 
@@ -112,7 +112,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
         return ['negativo' => [-1], 'acima do teto do HERE' => [7]];
     }
 
-    public function test_google_pede_liga_desliga_e_here_pede_a_quantidade(): void
+    public function test_google_asks_on_off_and_here_asks_for_the_count(): void
     {
         $this->fake('google', 'route-alternativas.json');
         $this->route(Provider::Google, 3);
@@ -141,7 +141,7 @@ final class ParidadeRouteAlternativesTest extends TestCase
      * O HERE devolve uma alternativa sem secoes na fixture: resposta incompleta
      * do provider e descarte, nao rota de zero metro.
      */
-    public function test_alternativa_sem_medida_nao_vira_rota_de_zero(): void
+    public function test_an_alternative_without_measures_does_not_become_a_zero_route(): void
     {
         $this->fake('here', 'route-alternativas.json');
 
