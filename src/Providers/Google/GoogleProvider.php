@@ -40,6 +40,8 @@ use BeeDelivery\BeeMaps\Providers\Google\Services\GoogleRouting;
 use BeeDelivery\BeeMaps\Support\Http\MapsHttpClient;
 use BeeDelivery\BeeMaps\Support\MatrixLimit;
 use BeeDelivery\BeeMaps\Support\Tsp\NearestNeighbourTour;
+use BeeDelivery\BeeMaps\Support\Tsp\TourMeasure;
+use BeeDelivery\BeeMaps\Support\Tsp\TwoOptRefinement;
 
 final class GoogleProvider implements MapProvider, ProvidesAutocomplete, ProvidesGeocoding, ProvidesPlaceSearch, ProvidesRouteMatrix, ProvidesRouteOptimization, ProvidesRouting
 {
@@ -142,7 +144,13 @@ final class GoogleProvider implements MapProvider, ProvidesAutocomplete, Provide
         // de um typo no .env e pior do que usar a estrategia que nao precisa de
         // credencial extra.
         if (($config['min_distance_api'] ?? 'matrix_tsp') !== 'fleet_routing') {
-            return new MatrixTspStrategy($this->http, $this->routeMatrix(), new NearestNeighbourTour());
+            return new MatrixTspStrategy(
+                $this->http,
+                $this->routeMatrix(),
+                new NearestNeighbourTour(),
+                new TwoOptRefinement(new TourMeasure()),
+                new TourMeasure(),
+            );
         }
 
         $credentials = $config['service_account'] ?? [];

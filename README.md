@@ -295,7 +295,7 @@ $resultado->strategy;   // 'google.matrix_tsp'
 | `strategy` | Quando | O que usa |
 |---|---|---|
 | `google.routes` | `MinTravelTime` | `computeRoutes` com `optimizeWaypointOrder` |
-| `google.matrix_tsp` | `MinDistance` (default) | matriz de rotas + TSP local |
+| `google.matrix_tsp` | `MinDistance` (default) | matriz de rotas + TSP local (vizinho-mais-próximo + 2-opt) |
 | `google.fleet_routing` | `MinDistance`, se configurado | Cloud Fleet Routing (`optimizeTours`) |
 | `here.findsequence` | sempre | `/v8/findsequence2` com `improveFor` |
 
@@ -389,24 +389,6 @@ Event::listen(MapRequestCompleted::class, function (MapRequestCompleted $e) {
 ```
 
 O evento dispara **também em falha e em timeout** — sem isso, um provedor que estoura tempo em 30% das chamadas seria indistinguível de um que nunca foi chamado.
-
-**Cache e métricas ficam por sua conta.** O pacote não cacheia nada. Como os contratos são interfaces, um decorator no seu projeto resolve — e lembre-se de incluir o provedor na chave, senão uma conta que mudar de provedor continuará recebendo a resposta cacheada da anterior:
-
-```php
-final class AutocompleteComCache implements \BeeDelivery\BeeMaps\Contracts\Services\Autocomplete
-{
-    public function __construct(private Autocomplete $inner, private string $provider) {}
-
-    public function suggest(AutocompleteRequest $request): SuggestionCollection
-    {
-        return Cache::remember(
-            "{$this->provider}:autocomplete:" . sha1(serialize($request)),
-            now()->addDay(),
-            fn () => $this->inner->suggest($request),
-        );
-    }
-}
-```
 
 ## Configuração
 
@@ -527,10 +509,14 @@ Um valor malformado em qualquer uma das duas é `ConfigurationException`, não `
 
 **Sobre a otimização de paradas:**
 
-- **O TSP local é vizinho-mais-próximo, uma heurística.** A `google.matrix_tsp` devolve uma
-  boa rota, não a ótima. Trocar por 2-opt ou Held-Karp mudaria os números de toda
-  otimização por distância no mesmo deploy que troca o pacote, então fica para depois da
-  migração, com A/B contra o algoritmo atual sobre a mesma matriz.
+- **O TSP local é vizinho-mais-próximo com refino 2-opt, e a rota devolvida nunca é mais
+  longa que a ordem que você mandou.** A `google.matrix_tsp` continua sendo heurística —
+  devolve uma boa rota, não a ótima —, mas a rota do guloso passa por 2-opt e é comparada
+  com a ordem de entrada: vence a menor, e o empate mantém a sua ordem intacta. Sem essa
+  comparação a "otimização" podia devolver rota mais longa que a rota sem otimização
+  nenhuma, o que vira cobrança maior onde a taxa sai da distância (BEE-12720 no pacote
+  legado, corrigido lá na 1.3.5). Held-Karp continua fora: o custo exponencial do exato
+  não se paga com o teto de 25 paradas.
 - **No HERE o `mode` é sempre `fastest`**, nunca `shortest`. O `shortest` muda como cada
   perna é roteada e não tem equivalente no `computeRouteMatrix` do Google — usá-lo faria a
   comparação entre provedores medir perguntas diferentes. O objetivo entra por `improveFor`.
